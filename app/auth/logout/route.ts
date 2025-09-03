@@ -7,8 +7,13 @@ export async function GET(request: Request) {
   return NextResponse.redirect(new URL("/auth/login", request.url));
 }
 
+<<<<<<< Current (Your changes)
 export async function POST() {
   return GET();
+=======
+export async function POST(request: Request) {
+  return GET(request);
+>>>>>>> Incoming (Background Agent changes)
 }
 
 

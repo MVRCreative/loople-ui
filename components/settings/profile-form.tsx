@@ -249,7 +249,7 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
         <div className="border-b border-border pb-12">
           <h2 className="text-base font-semibold text-foreground">Notifications</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            We'll always let you know about important changes, but you pick what else you want to hear about.
+            We&apos;ll always let you know about important changes, but you pick what else you want to hear about.
           </p>
 
           <div className="mt-10 space-y-10">
