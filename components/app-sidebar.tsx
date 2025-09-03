@@ -28,74 +28,70 @@ import {
 
 const data = {
   user: {
-    name: "Design System",
-    email: "design@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "Loople Admin",
+    email: "admin@loople.com",
+    avatar: "🏊‍♂️",
   },
   navMain: [
     {
-      title: "Overview",
+      title: "Newsfeed",
       url: "/",
       icon: SquareTerminal,
       isActive: true,
       items: [
         {
-          title: "Design Tokens",
-          url: "/#tokens",
+          title: "Recent Posts",
+          url: "/",
         },
         {
-          title: "Components",
-          url: "/#components",
+          title: "Events",
+          url: "/",
         },
         {
-          title: "Forms",
-          url: "/#forms",
-        },
-        {
-          title: "Tables",
-          url: "/#tables",
+          title: "Polls",
+          url: "/",
         },
       ],
     },
     {
-      title: "Components",
-      url: "/#components",
+      title: "Admin Dashboard",
+      url: "/admin",
       icon: Frame,
       items: [
         {
-          title: "Buttons",
-          url: "/#components",
+          title: "Overview",
+          url: "/admin",
         },
         {
-          title: "Forms",
-          url: "/#forms",
+          title: "Members",
+          url: "/admin",
         },
         {
-          title: "Tables",
-          url: "/#tables",
+          title: "Events",
+          url: "/admin",
         },
         {
-          title: "Navigation",
-          url: "/#components",
+          title: "Analytics",
+          url: "/admin",
         },
       ],
     },
     {
-      title: "Design System",
-      url: "/#tokens",
+      title: "Club Management",
+      url: "/admin",
       icon: Palette,
       items: [
         {
-          title: "Color Tokens",
-          url: "/#tokens",
+          title: "Members",
+          url: "/admin",
         },
         {
-          title: "Typography",
-          url: "/#tokens",
+          title: "Events",
+          url: "/admin",
         },
         {
-          title: "Spacing",
-          url: "/#tokens",
+          title: "Settings",
+          url: "/admin",
         },
       ],
     },
@@ -129,13 +125,13 @@ const data = {
   ],
   projects: [
     {
-      name: "Design Tokens",
-      url: "/#tokens",
-      icon: Palette,
+      name: "Newsfeed",
+      url: "/",
+      icon: SquareTerminal,
     },
     {
-      name: "Component Library",
-      url: "/#components",
+      name: "Admin Panel",
+      url: "/admin",
       icon: Frame,
     },
     {
@@ -158,8 +154,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <Command className="size-4" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">Mover Labs</span>
-                  <span className="truncate text-xs">Design system</span>
+                  <span className="truncate font-medium">Loople</span>
+                  <span className="truncate text-xs">Swimming Club</span>
                 </div>
               </Link>
             </SidebarMenuButton>
