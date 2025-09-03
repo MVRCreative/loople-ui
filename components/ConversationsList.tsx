@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Mail } from "lucide-react";
-import { mockConversations } from "@/lib/mock-messages";
+import { mockConversations } from "@/lib/mock-messages"; // TODO(step1): replace mock with live Supabase query
 
 interface ConversationsListProps {
   selectedId?: string;

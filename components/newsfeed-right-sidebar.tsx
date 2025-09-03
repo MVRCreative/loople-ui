@@ -49,11 +49,12 @@ export function NewsfeedRightSidebar() {
     <div className="w-[350px] border-l border-border bg-background p-6 sticky top-0 h-screen overflow-y-auto">
       {/* Search */}
       <div className="mb-6">
-        <div className="relative">
+        <div className="relative" suppressHydrationWarning>
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search..."
             className="pl-10"
+            suppressHydrationWarning
           />
         </div>
       </div>

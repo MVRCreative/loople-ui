@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { mockConversations, mockMessages } from "@/lib/mock-messages";
+import { mockConversations, mockMessages } from "@/lib/mock-messages"; // TODO(step1): replace mock with live Supabase query
 
 interface MessageThreadProps {
   id: string;

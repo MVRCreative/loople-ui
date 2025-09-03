@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { ConditionalSidebar } from "@/components/conditional-sidebar";
+import AuthBadge from "@/components/auth-badge";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -48,6 +49,12 @@ export default function RootLayout({
         <ThemeProvider>
           <SidebarProvider>
             <ConditionalSidebar>
+              <header className="flex items-center justify-between px-3 py-2">
+                <div />
+                <div className="flex items-center gap-2">
+                  <AuthBadge />
+                </div>
+              </header>
               {children}
             </ConditionalSidebar>
           </SidebarProvider>

@@ -9,26 +9,54 @@ import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { createClient } from "@/lib/server"
+import { headers } from "next/headers"
 import { Users, Calendar, BarChart3, Settings, Activity, TrendingUp } from "lucide-react"
 
-type Member = {
+type MemberRow = {
   id: string;
-  email: string | null;
-  full_name: string | null;
   role: string | null;
   created_at: string | null;
+  profile: {
+    id: string;
+    email: string | null;
+    full_name: string | null;
+  } | null;
 };
 
-export default async function AdminPage() {
+export default async function AdminPage({
+  searchParams,
+}: {
+  searchParams?: { [key: string]: string | string[] | undefined }
+}) {
   const supabase = await createClient()
+  const h = await headers()
+  const clubSlugFromHeader = h.get('x-tenant-club-slug') || undefined
+  const clubIdFromQuery = typeof searchParams?.club_id === 'string' ? searchParams!.club_id : undefined
 
-  const { data: profiles, error: profilesError } = await supabase
-    .from("profiles")
-    .select("id, email, full_name, role, created_at")
-    .order("created_at", { ascending: false })
-    .limit(50)
+  // Resolve club by slug if present, otherwise use explicit club_id query param
+  let resolvedClubId: string | undefined = clubIdFromQuery
+  if (!resolvedClubId && clubSlugFromHeader) {
+    const { data: clubBySlug } = await supabase
+      .from('clubs')
+      .select('id')
+      .eq('slug', clubSlugFromHeader)
+      .maybeSingle()
+    resolvedClubId = clubBySlug?.id
+  }
 
-  const rows: Member[] = Array.isArray(profiles) ? (profiles as unknown as Member[]) : []
+  let rows: MemberRow[] = []
+  let membersError: { message?: string } | null = null
+
+  if (resolvedClubId) {
+    const { data: members, error } = await supabase
+      .from('members')
+      .select('id, role, created_at, profile:profiles ( id, email, full_name )')
+      .eq('club_id', resolvedClubId)
+      .order('created_at', { ascending: false })
+      .limit(50)
+    membersError = error as any
+    rows = Array.isArray(members) ? (members as unknown as MemberRow[]) : []
+  }
   return (
     <SidebarInset>
       <header className="flex h-16 shrink-0 items-center gap-2">
@@ -228,7 +256,11 @@ export default async function AdminPage() {
                 <CardDescription>All registered users</CardDescription>
               </CardHeader>
               <CardContent>
-                {profilesError ? (
+                {!resolvedClubId ? (
+                  <div className="text-sm text-muted-foreground">
+                    No club selected. Use a subdomain or pass <code>club_id</code>.
+                  </div>
+                ) : membersError ? (
                   <div className="text-sm text-destructive">Failed to load members.</div>
                 ) : (
                   <Table>
@@ -248,8 +280,8 @@ export default async function AdminPage() {
                       ) : (
                         rows.map((m) => (
                           <TableRow key={m.id}>
-                            <TableCell>{m.full_name ?? "—"}</TableCell>
-                            <TableCell>{m.email ?? "—"}</TableCell>
+                            <TableCell>{m.profile?.full_name ?? "—"}</TableCell>
+                            <TableCell>{m.profile?.email ?? "—"}</TableCell>
                             <TableCell>{m.role ?? "Member"}</TableCell>
                             <TableCell>{m.created_at ? new Date(m.created_at).toLocaleDateString() : "—"}</TableCell>
                           </TableRow>

@@ -12,10 +12,10 @@ const credentialsSchema = z.object({
   password: z.string().min(6),
 });
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   async function login(formData: FormData) {
     "use server";
@@ -40,8 +40,9 @@ export default function LoginPage({
     redirect("/");
   }
 
-  const errorMessage = (() => {
-    const raw = searchParams?.error;
+  const errorMessage = (async () => {
+    const params = await searchParams;
+    const raw = params?.error;
     if (!raw) return undefined;
     return Array.isArray(raw) ? raw[0] : raw;
   })();
@@ -55,9 +56,9 @@ export default function LoginPage({
           <CardDescription>Use your email and password to continue.</CardDescription>
         </CardHeader>
         <CardContent>
-          {errorMessage ? (
+          {(await errorMessage) ? (
             <div className="mb-4 rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800">
-              {errorMessage}
+              {await errorMessage}
             </div>
           ) : null}
           <form action={login} className="space-y-4">

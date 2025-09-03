@@ -15,18 +15,19 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const pathname = usePathname();
   const isNewsfeedRoute = pathname === "/";
   const isMessagesRoute = pathname.startsWith("/messages");
+  const isSettingsRoute = pathname.startsWith("/settings");
   const isAuthRoute = pathname.startsWith("/auth");
 
-  if (isNewsfeedRoute || isMessagesRoute) {
-    const gridClasses = isNewsfeedRoute
-      ? `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
+  if (isNewsfeedRoute || isMessagesRoute || isSettingsRoute) {
+    const newsfeedGrid = `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
          [grid-template-columns:600px]
          lg:[grid-template-columns:600px_350px]
-         xl:[grid-template-columns:275px_600px_350px]`
-      : `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
+         xl:[grid-template-columns:275px_600px_350px]`;
+    const messagesGrid = `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
          [grid-template-columns:600px]
          lg:[grid-template-columns:350px_600px]
          xl:[grid-template-columns:275px_350px_600px]`;
+    const gridClasses = isMessagesRoute ? messagesGrid : newsfeedGrid;
 
     // Extract thread id from /messages/[id]
     const threadId = isMessagesRoute ? pathname.split("/")[2] : undefined;

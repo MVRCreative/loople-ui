@@ -12,10 +12,10 @@ const signupSchema = z.object({
   password: z.string().min(6),
 });
 
-export default function SignupPage({
+export default async function SignupPage({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   async function signup(formData: FormData) {
     "use server";
@@ -45,8 +45,9 @@ export default function SignupPage({
     redirect("/");
   }
 
-  const errorMessage = (() => {
-    const raw = searchParams?.error;
+  const errorMessage = (async () => {
+    const params = await searchParams;
+    const raw = params?.error;
     if (!raw) return undefined;
     return Array.isArray(raw) ? raw[0] : raw;
   })();
@@ -60,9 +61,9 @@ export default function SignupPage({
           <CardDescription>Sign up with your email and a password.</CardDescription>
         </CardHeader>
         <CardContent>
-          {errorMessage ? (
+          {(await errorMessage) ? (
             <div className="mb-4 rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800">
-              {errorMessage}
+              {await errorMessage}
             </div>
           ) : null}
           <form action={signup} className="space-y-4">
