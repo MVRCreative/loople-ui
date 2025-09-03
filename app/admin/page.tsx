@@ -1,4 +1,4 @@
-"use client";
+ 
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -7,9 +7,28 @@ import { AnimatedList, AnimatedListItem } from "@/components/ui/animated-list"
 import { ThemeSwitch } from "@/components/ui/theme-switch"
 import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { createClient } from "@/lib/server"
 import { Users, Calendar, BarChart3, Settings, Activity, TrendingUp } from "lucide-react"
 
-export default function AdminPage() {
+type Member = {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  role: string | null;
+  created_at: string | null;
+};
+
+export default async function AdminPage() {
+  const supabase = await createClient()
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, email, full_name, role, created_at")
+    .order("created_at", { ascending: false })
+    .limit(50)
+
+  const rows: Member[] = Array.isArray(profiles) ? (profiles as unknown as Member[]) : []
   return (
     <SidebarInset>
       <header className="flex h-16 shrink-0 items-center gap-2">
@@ -197,6 +216,48 @@ export default function AdminPage() {
                     <Badge variant="outline">Upcoming</Badge>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </AnimatedListItem>
+
+          {/* Members Table */}
+          <AnimatedListItem>
+            <Card>
+              <CardHeader>
+                <CardTitle>Members</CardTitle>
+                <CardDescription>All registered users</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {profilesError ? (
+                  <div className="text-sm text-destructive">Failed to load members.</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Joined</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {rows.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-muted-foreground">No members found.</TableCell>
+                        </TableRow>
+                      ) : (
+                        rows.map((m) => (
+                          <TableRow key={m.id}>
+                            <TableCell>{m.full_name ?? "—"}</TableCell>
+                            <TableCell>{m.email ?? "—"}</TableCell>
+                            <TableCell>{m.role ?? "Member"}</TableCell>
+                            <TableCell>{m.created_at ? new Date(m.created_at).toLocaleDateString() : "—"}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </AnimatedListItem>
