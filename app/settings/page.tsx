@@ -16,6 +16,12 @@ export default async function Page() {
     .eq("id", user.id)
     .single()
 
+  // Split full_name into first_name and last_name
+  const fullName = profile?.full_name ?? ""
+  const nameParts = fullName.trim().split(" ")
+  const firstName = nameParts[0] ?? ""
+  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : ""
+
   return (
     <>
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -27,7 +33,8 @@ export default async function Page() {
           <ProfileForm
             initialData={{
               email: profile?.email ?? user.email ?? "",
-              full_name: profile?.full_name ?? "",
+              first_name: firstName,
+              last_name: lastName,
               avatar_url: profile?.avatar_url ?? "",
             }}
           />

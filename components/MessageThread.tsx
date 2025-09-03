@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,10 +7,9 @@ import { mockConversations, mockMessages } from "@/lib/mock-messages"; // TODO(s
 
 interface MessageThreadProps {
   id: string;
-  showBackOnMobile?: boolean;
 }
 
-export function MessageThread({ id, showBackOnMobile }: MessageThreadProps) {
+export function MessageThread({ id }: MessageThreadProps) {
   const convo = useMemo(() => mockConversations.find((c) => c.id === id), [id]);
   const messages = useMemo(
     () => mockMessages.filter((m) => m.conversationId === id),
