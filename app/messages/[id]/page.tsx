@@ -12,7 +12,7 @@ export default function MessageThreadPage() {
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* On mobile (<lg), only show the thread with a back button; at >=lg, list + thread are shown via ConditionalSidebar's right rail */}
       <div className="lg:hidden">
-        <MessageThread id={id} showBackOnMobile />
+        <MessageThread id={id} />
       </div>
       <div className="hidden lg:block">
         <ConversationsList selectedId={id} />

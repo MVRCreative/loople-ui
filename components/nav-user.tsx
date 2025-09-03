@@ -8,7 +8,7 @@ import {
   LogOut,
   Sparkles,
 } from "lucide-react"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { createClient } from "@/lib/client"
 
 import {
@@ -73,7 +73,7 @@ export function NavUser({
     return () => {
       sub.subscription.unsubscribe()
     }
-  }, [])
+  }, [email, name])
 
   return (
     <SidebarMenu>

@@ -54,7 +54,7 @@ export default async function AdminPage({
       .eq('club_id', resolvedClubId)
       .order('created_at', { ascending: false })
       .limit(50)
-    membersError = error as any
+    membersError = error
     rows = Array.isArray(members) ? (members as unknown as MemberRow[]) : []
   }
   return (
