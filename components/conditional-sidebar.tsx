@@ -15,6 +15,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const pathname = usePathname();
   const isNewsfeedRoute = pathname === "/";
   const isMessagesRoute = pathname.startsWith("/messages");
+  const isAuthRoute = pathname.startsWith("/auth");
 
   if (isNewsfeedRoute || isMessagesRoute) {
     const gridClasses = isNewsfeedRoute
@@ -58,6 +59,16 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
             )}
           </aside>
         </div>
+      </div>
+    );
+  }
+
+  if (isAuthRoute) {
+    return (
+      <div className="min-h-screen w-full bg-background">
+        <main>
+          {children}
+        </main>
       </div>
     );
   }
