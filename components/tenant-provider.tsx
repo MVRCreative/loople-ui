@@ -31,3 +31,8 @@ export function useTenant(): Tenant {
   
   return context.tenant;
 }
+
+export function useTenantSafe(): Tenant | null {
+  const context = useContext(TenantContext);
+  return context?.tenant || null;
+}

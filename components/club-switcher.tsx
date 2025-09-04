@@ -3,7 +3,7 @@
 import * as React from "react";
 import { ChevronDown, Building2 } from "lucide-react";
 import { createClient } from "@/lib/client";
-import { useTenant } from "@/components/tenant-provider";
+import { useTenantSafe } from "@/components/tenant-provider";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,14 +28,8 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
   const [loading, setLoading] = React.useState(true);
   const [isOpen, setIsOpen] = React.useState(false);
   
-  // Try to get current tenant, but don't fail if not available
-  let currentTenant;
-  try {
-    currentTenant = useTenant();
-  } catch {
-    // TenantProvider not available, we'll use the first club as current
-    currentTenant = null;
-  }
+  // Get current tenant - will be null if TenantProvider is not available
+  const currentTenant = useTenantSafe();
 
   React.useEffect(() => {
     async function fetchUserClubs() {
@@ -92,9 +86,9 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
         }).filter(item => item.club); // Only include items where club was found
 
         const userClubs: Club[] = data.map(item => ({
-          id: item.club.id.toString(),
-          name: item.club.name,
-          subdomain: item.club.subdomain,
+          id: item.club!.id.toString(),
+          name: item.club!.name,
+          subdomain: item.club!.subdomain,
           member_type: item.member_type,
         }));
 
