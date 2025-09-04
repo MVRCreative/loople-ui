@@ -5,9 +5,10 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { AnimatedList, AnimatedListItem } from "@/components/ui/animated-list"
 import { ThemeSwitch } from "@/components/ui/theme-switch"
-import { SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { SidebarInset, SidebarTrigger, SidebarProvider } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { AppSidebar } from "@/components/app-sidebar"
 import { createClient } from "@/lib/server"
 import { headers } from "next/headers"
 import { Users, Calendar, BarChart3, Settings, Activity, TrendingUp } from "lucide-react"
@@ -58,19 +59,21 @@ export default async function AdminPage({
     rows = Array.isArray(members) ? (members as unknown as MemberRow[]) : []
   }
   return (
-    <SidebarInset>
-      <header className="flex h-16 shrink-0 items-center gap-2">
-        <div className="flex items-center gap-2 px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator
-            orientation="vertical"
-            className="mr-2 data-[orientation=vertical]:h-4"
-          />
-          <div className="flex items-center gap-4">
-            <ThemeSwitch />
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2">
+          <div className="flex items-center gap-2 px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator
+              orientation="vertical"
+              className="mr-2 data-[orientation=vertical]:h-4"
+            />
+            <div className="flex items-center gap-4">
+              <ThemeSwitch />
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
       
       <main className="flex flex-1 flex-col gap-4 p-7 pt-8">
         <div className="text-left space-y-4 mb-8">
@@ -295,6 +298,7 @@ export default async function AdminPage({
           </AnimatedListItem>
         </AnimatedList>
       </main>
-    </SidebarInset>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

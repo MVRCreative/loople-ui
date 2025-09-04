@@ -1,175 +1,149 @@
 "use client"
 
-import * as React from "react"
-import {
-  Command,
-  Frame,
-  LifeBuoy,
-  Send,
-  SquareTerminal,
-  Palette,
-  Play,
-} from "lucide-react"
 import Link from "next/link"
-
-import { NavMain } from "@/components/nav-main"
-import { NavProjects } from "@/components/nav-projects"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+import { usePathname } from "next/navigation"
+import { Users, Globe, DollarSign, Archive, Building } from "lucide-react"
+import { cn } from "@/lib/utils"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-const data = {
-  user: {
-    name: "Loople Admin",
-    email: "admin@loople.com",
-    avatar: "🏊‍♂️",
+const navigation = [
+  {
+    name: "Post",
+    href: "/post",
+    type: "button",
   },
-  navMain: [
-    {
-      title: "Newsfeed",
-      url: "/",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "Recent Posts",
-          url: "/",
-        },
-        {
-          title: "Events",
-          url: "/",
-        },
-        {
-          title: "Polls",
-          url: "/",
-        },
-      ],
-    },
-    {
-      title: "Admin Dashboard",
-      url: "/admin",
-      icon: Frame,
-      items: [
-        {
-          title: "Overview",
-          url: "/admin",
-        },
-        {
-          title: "Members",
-          url: "/admin",
-        },
-        {
-          title: "Events",
-          url: "/admin",
-        },
-        {
-          title: "Analytics",
-          url: "/admin",
-        },
-      ],
-    },
-    {
-      title: "Club Management",
-      url: "/admin",
-      icon: Palette,
-      items: [
-        {
-          title: "Members",
-          url: "/admin",
-        },
-        {
-          title: "Events",
-          url: "/admin",
-        },
-        {
-          title: "Settings",
-          url: "/admin",
-        },
-      ],
-    },
-    {
-      title: "Animations",
-      url: "/animations",
-      icon: Play,
-      items: [
-        {
-          title: "Page Transitions",
-          url: "/animations",
-        },
-        {
-          title: "Component Animations",
-          url: "/animations",
-        },
-      ],
-    },
-  ],
-  navSecondary: [
-    {
-      title: "Support",
-      url: "#",
-      icon: LifeBuoy,
-    },
-    {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
-    },
-  ],
-  projects: [
-    {
-      name: "Newsfeed",
-      url: "/",
-      icon: SquareTerminal,
-    },
-    {
-      name: "Admin Panel",
-      url: "/admin",
-      icon: Frame,
-    },
-    {
-      name: "Animations",
-      url: "/animations",
-      icon: Play,
-    },
-  ],
-}
+  {
+    name: "COMMUNITY",
+    type: "section",
+    icon: Users,
+    items: [
+      { name: "Messages", href: "/messages" },
+      { name: "Members", href: "/members" },
+      { name: "Waitlist", href: "/waitlist" },
+      { name: "Team", href: "/team" },
+    ],
+  },
+  {
+    name: "ACTIVITIES",
+    type: "section",
+    icon: Globe,
+    items: [
+      { name: "Events", href: "/events" },
+      { name: "Programs", href: "/programs" },
+    ],
+  },
+  {
+    name: "FINANCE",
+    type: "section",
+    icon: DollarSign,
+    items: [
+      { name: "Overview", href: "/finance/overview" },
+      { name: "Payments", href: "/finance/payments" },
+      { name: "Refunds", href: "/finance/refunds" },
+      { name: "Payouts", href: "/finance/payouts" },
+      { name: "Settings", href: "/finance/settings" },
+    ],
+  },
+  {
+    name: "ASSETS",
+    type: "section",
+    icon: Archive,
+    items: [
+      { name: "Documents", href: "/assets/documents" },
+      { name: "Policies", href: "/assets/policies" },
+      { name: "Audits", href: "/assets/audits" },
+    ],
+  },
+  {
+    name: "ORGANIZATION",
+    type: "section",
+    icon: Building,
+    items: [{ name: "Settings", href: "/organization/settings" }],
+  },
+]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname()
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
-              <Link href="/">
-                <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                  <Command className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">Loople</span>
-                  <span className="truncate text-xs">Swimming Club</span>
-                </div>
-              </Link>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {/* Logo */}
+        <div className="flex h-16 items-center px-6">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+              <div className="h-3 w-3 rounded-full bg-white" />
+            </div>
+            <span className="text-xl font-bold text-sidebar-foreground">LOOPLE</span>
+          </div>
+        </div>
       </SidebarHeader>
+      
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        {/* Navigation */}
+        <nav className="flex-1 space-y-1 px-3 py-4">
+          {navigation.map((item) => {
+            if (item.type === "button") {
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href!}
+                  className={cn(
+                    "flex w-full items-center justify-center rounded-lg px-3 py-2.5 text-sm transition-colors my-6 font-bold bg-blue-500 text-white",
+                    isActive
+                      ? "bg-gradient-to-r from-[#2B7AF7] to-[#253DA5] text-white"
+                      : "text-white hover:bg-blue-600",
+                  )}
+                >
+                  {item.name}
+                </Link>
+              )
+            }
+
+            if (item.type === "section") {
+              return (
+                <div key={item.name} className="space-y-1">
+                  {/* Section Header */}
+                  <div className="flex items-center gap-2 px-3 py-2">
+                    <item.icon className="h-4 w-4 text-sidebar-foreground" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground">
+                      {item.name}
+                    </span>
+                  </div>
+
+                  {/* Section Items */}
+                  <div className="space-y-0.5">
+                    {item.items?.map((subItem) => {
+                      const isActive = pathname === subItem.href
+                      return (
+                        <Link
+                          key={subItem.name}
+                          href={subItem.href}
+                          className={cn(
+                            "flex items-center rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
+                            isActive
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                              : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                          )}
+                        >
+                          {subItem.name}
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              )
+            }
+
+            return null
+          })}
+        </nav>
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
     </Sidebar>
   )
 }

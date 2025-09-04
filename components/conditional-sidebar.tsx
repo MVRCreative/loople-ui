@@ -17,6 +17,8 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const isMessagesRoute = pathname.startsWith("/messages");
   const isSettingsRoute = pathname.startsWith("/settings");
   const isAuthRoute = pathname.startsWith("/auth");
+  const isAdminRoute = pathname.startsWith("/admin");
+  const isAnimationsRoute = pathname.startsWith("/animations");
 
   if (isNewsfeedRoute || isMessagesRoute || isSettingsRoute) {
     const newsfeedGrid = `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
@@ -72,6 +74,11 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
         </main>
       </div>
     );
+  }
+
+  // For admin and animations routes, just return children as they handle their own sidebar
+  if (isAdminRoute || isAnimationsRoute) {
+    return <>{children}</>;
   }
 
   return (
