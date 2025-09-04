@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { PostForm } from "./post-form";
 import { PostCard } from "./post-card";
 import { Post, User } from "@/lib/types";
@@ -13,10 +13,11 @@ interface NewsfeedProps {
 
 export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const postIdCounter = useRef(0);
 
   const handleCreatePost = (content: string, type: "text" | "event" | "poll") => {
     const newPost: Post = {
-      id: Date.now().toString(),
+      id: `client-post-${Date.now()}-${++postIdCounter.current}`,
       user: currentUser,
       content: {
         type,
@@ -45,16 +46,21 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
 
   const handleShare = (postId: string) => {
     // TODO: Implement share functionality
-    if (navigator.share) {
-      navigator.share({
-        title: "Check out this post",
-        text: "Shared from Loople",
-        url: `${window.location.origin}/post/${postId}`,
-      });
-    } else {
-      // Fallback for browsers that don't support Web Share API
-      navigator.clipboard.writeText(`${window.location.origin}/post/${postId}`);
-      toast.success("Link copied to clipboard!");
+    if (typeof window !== 'undefined') {
+      if (navigator.share) {
+        navigator.share({
+          title: "Check out this post",
+          text: "Shared from Loople",
+          url: `${window.location.origin}/post/${postId}`,
+        }).catch(console.error);
+      } else if (navigator.clipboard) {
+        // Fallback for browsers that don't support Web Share API
+        navigator.clipboard.writeText(`${window.location.origin}/post/${postId}`)
+          .then(() => toast.success("Link copied to clipboard!"))
+          .catch(() => toast.error("Failed to copy link"));
+      } else {
+        toast.error("Sharing not supported in this browser");
+      }
     }
   };
 
