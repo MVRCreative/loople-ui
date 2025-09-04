@@ -85,7 +85,7 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
     const fullName = `${values.first_name ?? ""} ${values.last_name ?? ""}`.trim()
 
     const { error } = await supabase
-      .from("profiles")
+      .from("users")
       .update({
         full_name: fullName || undefined,
         avatar_url: values.avatar_url || null,

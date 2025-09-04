@@ -10,14 +10,14 @@ export default async function Page() {
     redirect("/auth/login")
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
+  const { data: userData } = await supabase
+    .from("users")
     .select("email, full_name, avatar_url")
     .eq("id", user.id)
     .single()
 
   // Split full_name into first_name and last_name
-  const fullName = profile?.full_name ?? ""
+  const fullName = userData?.full_name ?? ""
   const nameParts = fullName.trim().split(" ")
   const firstName = nameParts[0] ?? ""
   const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : ""
@@ -32,10 +32,10 @@ export default async function Page() {
           </div>
           <ProfileForm
             initialData={{
-              email: profile?.email ?? user.email ?? "",
+              email: userData?.email ?? user.email ?? "",
               first_name: firstName,
               last_name: lastName,
-              avatar_url: profile?.avatar_url ?? "",
+              avatar_url: userData?.avatar_url ?? "",
             }}
           />
         </div>

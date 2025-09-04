@@ -1,9 +1,46 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getEnv } from './env'
-import { resolveTenantFromHost } from './tenant'
+import { getTenantByHost } from './tenant'
 
 export async function updateSession(request: NextRequest) {
+  const host = request.headers.get('host')
+  const pathname = request.nextUrl.pathname
+
+  // Handle root domain - allow marketing routes to pass through
+  if (host === 'loople.app' || host === 'www.loople.app' || host === 'localhost:3000' || host === 'localhost') {
+    return NextResponse.next()
+  }
+
+  // Handle tenant subdomain routing
+  if (host && !host.startsWith('loople.app') && !host.startsWith('www.loople.app') && !host.includes('localhost')) {
+    try {
+      const tenant = await getTenantByHost(host)
+      
+      if (tenant) {
+        // Rewrite to tenant route with slug header
+        const url = request.nextUrl.clone()
+        url.pathname = `/tenant${pathname}`
+        
+        const response = NextResponse.rewrite(url)
+        response.headers.set('x-tenant-slug', tenant.slug)
+        return response
+      } else {
+        // Unknown tenant - rewrite to unknown tenant page
+        const url = request.nextUrl.clone()
+        url.pathname = '/unknown-tenant'
+        return NextResponse.rewrite(url)
+      }
+    } catch (error) {
+      console.error('Error resolving tenant:', error)
+      // Fallback to unknown tenant page
+      const url = request.nextUrl.clone()
+      url.pathname = '/unknown-tenant'
+      return NextResponse.rewrite(url)
+    }
+  }
+
+  // Default Supabase session handling for non-tenant routes
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -39,12 +76,6 @@ export async function updateSession(request: NextRequest) {
   // with the Supabase client, your users may be randomly logged out.
   const { data } = await supabase.auth.getClaims()
   const user = data?.claims
-
-  // Tenant resolution from host
-  const { clubSlug } = resolveTenantFromHost(request.headers.get('host'))
-  if (clubSlug) {
-    supabaseResponse.headers.set('x-tenant-club-slug', clubSlug)
-  }
 
   if (
     !user &&

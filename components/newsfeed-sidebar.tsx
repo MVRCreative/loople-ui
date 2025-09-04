@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ThemeSwitch } from "@/components/ui/theme-switch"
 import { createClient } from "@/lib/client"
+import { ClubSwitcher } from "@/components/club-switcher"
 
 const navigation = [
   { name: "Home", href: "/", icon: Home, current: true },
@@ -53,6 +54,11 @@ export function NewsfeedSidebar() {
           </div>
           <span className="font-bold text-lg">Loople</span>
         </Link>
+      </div>
+
+      {/* Club Switcher */}
+      <div className="px-4 pb-2">
+        <ClubSwitcher />
       </div>
 
       <Separator />

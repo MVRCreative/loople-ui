@@ -6,6 +6,7 @@ import { NewsfeedSidebar } from "@/components/newsfeed-sidebar";
 import { NewsfeedRightSidebar } from "@/components/newsfeed-right-sidebar";
 import { MessagesSidebar } from "@/components/MessagesSidebar";
 import { MessageThread } from "@/components/MessageThread";
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 interface ConditionalSidebarProps {
   children: React.ReactNode;
@@ -82,9 +83,9 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   }
 
   return (
-    <>
+    <SidebarProvider>
       <AppSidebar />
       {children}
-    </>
+    </SidebarProvider>
   );
 }

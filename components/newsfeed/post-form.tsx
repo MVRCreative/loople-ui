@@ -26,7 +26,7 @@ export function PostForm({ currentUser, onSubmit }: PostFormProps) {
 
   return (
     <div className="bg-card border border-border rounded-lg p-4 mb-6">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
         <div className="flex gap-3">
           <Avatar className="h-10 w-10">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-lg">

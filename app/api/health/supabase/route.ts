@@ -8,7 +8,7 @@ export async function GET() {
     const supabase = await createClient();
 
     const { count, error } = await supabase
-      .from("profiles")
+      .from("users")
       .select("*", { count: "exact", head: true });
 
     if (error) {

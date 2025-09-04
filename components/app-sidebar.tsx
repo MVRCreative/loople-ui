@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Users, Globe, DollarSign, Archive, Building } from "lucide-react"
@@ -9,6 +10,7 @@ import {
   SidebarContent,
   SidebarHeader,
 } from "@/components/ui/sidebar"
+import { ClubSwitcher } from "@/components/club-switcher"
 
 const navigation = [
   {
@@ -81,6 +83,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <span className="text-xl font-bold text-sidebar-foreground">LOOPLE</span>
           </div>
         </div>
+        
+        {/* Club Switcher */}
+        <div className="px-6 pb-4">
+          <ClubSwitcher />
+        </div>
       </SidebarHeader>
       
       <SidebarContent>
@@ -110,7 +117,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 <div key={item.name} className="space-y-1">
                   {/* Section Header */}
                   <div className="flex items-center gap-2 px-3 py-2">
-                    <item.icon className="h-4 w-4 text-sidebar-foreground" />
+                    {item.icon && React.createElement(item.icon, { className: "h-4 w-4 text-sidebar-foreground" })}
                     <span className="text-xs font-semibold uppercase tracking-wider text-sidebar-foreground">
                       {item.name}
                     </span>

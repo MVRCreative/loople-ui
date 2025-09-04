@@ -15,9 +15,9 @@ import { Users, Calendar, BarChart3, Settings, Activity, TrendingUp } from "luci
 
 type MemberRow = {
   id: string;
-  role: string | null;
+  member_type: string | null;
   created_at: string | null;
-  profile: {
+  user: {
     id: string;
     email: string | null;
     full_name: string | null;
@@ -40,7 +40,7 @@ export default async function AdminPage({
     const { data: clubBySlug } = await supabase
       .from('clubs')
       .select('id')
-      .eq('slug', clubSlugFromHeader)
+      .eq('subdomain', clubSlugFromHeader)
       .maybeSingle()
     resolvedClubId = clubBySlug?.id
   }
@@ -51,7 +51,7 @@ export default async function AdminPage({
   if (resolvedClubId) {
     const { data: members, error } = await supabase
       .from('members')
-      .select('id, role, created_at, profile:profiles ( id, email, full_name )')
+      .select('id, member_type, created_at, user:users!members_user_id_fkey ( id, email, full_name )')
       .eq('club_id', resolvedClubId)
       .order('created_at', { ascending: false })
       .limit(50)
@@ -283,9 +283,9 @@ export default async function AdminPage({
                       ) : (
                         rows.map((m) => (
                           <TableRow key={m.id}>
-                            <TableCell>{m.profile?.full_name ?? "—"}</TableCell>
-                            <TableCell>{m.profile?.email ?? "—"}</TableCell>
-                            <TableCell>{m.role ?? "Member"}</TableCell>
+                            <TableCell>{m.user?.full_name ?? m.user?.email ?? "—"}</TableCell>
+                            <TableCell>{m.user?.email ?? "—"}</TableCell>
+                            <TableCell>{m.member_type ?? "Member"}</TableCell>
                             <TableCell>{m.created_at ? new Date(m.created_at).toLocaleDateString() : "—"}</TableCell>
                           </TableRow>
                         ))
