@@ -23,7 +23,8 @@ interface ClubSwitcherProps {
   className?: string;
 }
 
-export function ClubSwitcher({ className }: ClubSwitcherProps) {
+// Inner component that uses the hook
+function ClubSwitcherInner({ className }: ClubSwitcherProps) {
   const [clubs, setClubs] = React.useState<Club[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [isOpen, setIsOpen] = React.useState(false);
@@ -176,4 +177,20 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
       </DropdownMenuContent>
     </DropdownMenu>
   );
+}
+
+// Main export with error boundary for TenantProvider availability
+export function ClubSwitcher({ className }: ClubSwitcherProps) {
+  try {
+    return <ClubSwitcherInner className={className} />;
+  } catch (error) {
+    // Fallback when TenantProvider is not available
+    console.warn('TenantProvider not available, showing fallback:', error);
+    return (
+      <div className={`flex items-center gap-2 ${className}`}>
+        <Building2 className="h-4 w-4" />
+        <span className="text-sm text-muted-foreground">No tenant context</span>
+      </div>
+    );
+  }
 }
