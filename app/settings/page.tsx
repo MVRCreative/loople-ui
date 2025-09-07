@@ -1,28 +1,16 @@
-import { redirect } from "next/navigation"
-import { createClient } from "@/lib/server"
 import ProfileForm from "@/components/settings/profile-form"
 import OrganizationsForm from "@/components/settings/organizations-form"
 
-export default async function Page() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
-  if (!user) {
-    redirect("/auth/login")
+export default function Page() {
+  // Mock user data for UI demonstration
+  const mockUserData = {
+    email: "admin@loople.com",
+    full_name: "Loople Admin",
+    avatar_url: "🏊‍♂️"
   }
 
-  const { data: userData } = await supabase
-    .from("users")
-    .select("email, full_name, avatar_url")
-    .eq("id", user.id)
-    .single()
-
-  // Note: We'll let the OrganizationsForm component fetch its own data client-side
-  // This avoids server-side RLS issues
-  const clubs: { id: number; name: string; subdomain: string; member_type: string }[] = []
-
   // Split full_name into first_name and last_name
-  const fullName = userData?.full_name ?? ""
+  const fullName = mockUserData.full_name ?? ""
   const nameParts = fullName.trim().split(" ")
   const firstName = nameParts[0] ?? ""
   const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : ""
@@ -40,17 +28,17 @@ export default async function Page() {
             {/* Profile Section */}
             <ProfileForm
               initialData={{
-                email: userData?.email ?? user.email ?? "",
+                email: mockUserData.email,
                 first_name: firstName,
                 last_name: lastName,
-                avatar_url: userData?.avatar_url ?? "",
+                avatar_url: mockUserData.avatar_url,
               }}
             />
             
             {/* Organizations Section */}
             <OrganizationsForm 
-              initialClubs={clubs}
-              defaultClubId={undefined} // We'll implement default club storage later
+              initialClubs={[]}
+              defaultClubId={undefined}
             />
             
             {/* Additional Settings Section */}

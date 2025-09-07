@@ -1,10 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Loople UI - Frontend Only
 
-<!-- Force deployment update -->
+This is a **UI-only** Next.js project showcasing the Loople application interface. All backend functionality has been removed and replaced with mock data for demonstration purposes.
+
+## Features
+
+- 🎨 **Modern UI Design** - Built with Tailwind CSS and Radix UI components
+- 📱 **Responsive Layout** - Works on desktop, tablet, and mobile
+- 🏊‍♂️ **Swimming Club Interface** - Complete dashboard for club management
+- 💬 **Messaging System** - Real-time messaging interface (UI only)
+- 📊 **Analytics Dashboard** - Charts and data visualization
+- 🔐 **Authentication UI** - Login/signup forms (mock authentication)
+- 🏢 **Multi-tenant UI** - Club switching interface
 
 ## Getting Started
 
-First, run the development server:
+First, install dependencies:
+
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+Then, run the development server:
 
 ```bash
 npm run dev
@@ -12,70 +32,74 @@ npm run dev
 yarn dev
 # or
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project Structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+├── app/                    # Next.js app directory
+│   ├── (dashboard)/       # Dashboard pages
+│   ├── auth/              # Authentication pages
+│   └── api/               # API routes (minimal)
+├── components/            # React components
+│   ├── ui/                # Base UI components
+│   └── newsfeed/          # Feature-specific components
+├── lib/                   # Utilities and mock data
+└── public/                # Static assets
+```
+
+## Mock Data
+
+The application uses mock data located in `lib/data.ts` and `lib/mock-auth.ts`:
+
+- **Users**: Mock user profiles and roles
+- **Events**: Sample swimming events and competitions
+- **Posts**: Newsfeed content and announcements
+- **Authentication**: Mock login/logout functionality
+
+## UI Components
+
+Built with modern React patterns:
+
+- **Radix UI** - Accessible component primitives
+- **Tailwind CSS** - Utility-first styling
+- **Lucide React** - Beautiful icons
+- **Framer Motion** - Smooth animations (via GSAP)
+
+## Development
+
+This is a **frontend-only** project. No backend services are required:
+
+- ✅ No database setup needed
+- ✅ No authentication service required
+- ✅ No API endpoints to configure
+- ✅ No environment variables needed
+
+Just run `npm run dev` and start exploring the UI!
+
+## Pages
+
+- **Dashboard** (`/`) - Main overview page
+- **Messages** (`/messages`) - Chat interface
+- **Events** (`/events`) - Event management
+- **Members** (`/members`) - Member directory
+- **Settings** (`/settings`) - User preferences
+- **Login** (`/auth/login`) - Authentication form
+- **Signup** (`/auth/signup`) - Registration form
+
+## Customization
+
+All mock data can be easily modified in:
+- `lib/data.ts` - Application data
+- `lib/mock-auth.ts` - Authentication state
+- `lib/types.ts` - TypeScript definitions
 
 ## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+To learn more about the technologies used:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Subdomain Multi-Tenancy
-
-This application supports subdomain-based multi-tenancy with Redis caching.
-
-### Local Development
-
-For local development with subdomains, add entries to your `/etc/hosts` file:
-
-```
-127.0.0.1 tenant1.localhost
-127.0.0.1 tenant2.localhost
-127.0.0.1 myclub.localhost
-```
-
-Then access your tenants at:
-- `http://tenant1.localhost:3000`
-- `http://tenant2.localhost:3000`
-- `http://myclub.localhost:3000`
-
-### Environment Setup
-
-Copy `.env.example` to `.env.local` and configure:
-
-```bash
-cp .env.example .env.local
-```
-
-Required environment variables:
-- `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous key
-- `UPSTASH_REDIS_REST_URL` - Redis endpoint URL
-- `UPSTASH_REDIS_REST_TOKEN` - Redis authentication token
-
-### Production Deployment
-
-For production, configure a wildcard DNS record:
-- `*.loople.app` → Your Vercel deployment
-- `loople.app` → Your Vercel deployment (for marketing site)
-
-### Testing Tenant Resolution
-
-Visit `/tenant/debug` on any subdomain to see the resolved tenant information.
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [React Hook Form](https://react-hook-form.com/)

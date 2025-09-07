@@ -1,25 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/client";
+import { isAuthenticated, getCurrentUser } from "@/lib/mock-auth";
 
 export default function AuthBadge() {
   const [state, setState] = useState<"unknown" | "live" | "none">("unknown");
 
   useEffect(() => {
-    const supabase = createClient();
-
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    // Mock auth state check
+    const checkAuth = () => {
+      const user = getCurrentUser();
       setState(user ? "live" : "none");
-    });
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setState(session?.user ? "live" : "none");
-    });
-
-    return () => {
-      sub.subscription.unsubscribe();
     };
+
+    checkAuth();
   }, []);
 
   const label =

@@ -1,8 +1,8 @@
 import { Newsfeed } from "@/components/newsfeed/newsfeed";
-import { mockPosts } from "@/lib/data"; // TODO(step1): replace mock with live Supabase query
+import { mockPosts } from "@/lib/data";
 import { Toaster } from "@/components/ui/sonner";
 
-export default async function Page() {
+export default function Page() {
   const currentUser = mockPosts[0].user;
 
   return (

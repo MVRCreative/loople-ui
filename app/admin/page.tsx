@@ -1,5 +1,3 @@
- 
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -9,8 +7,6 @@ import { SidebarInset, SidebarTrigger, SidebarProvider } from "@/components/ui/s
 import { Separator } from "@/components/ui/separator"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { AppSidebar } from "@/components/app-sidebar"
-import { createClient } from "@/lib/server"
-import { headers } from "next/headers"
 import { Users, Calendar, BarChart3, Settings, Activity, TrendingUp } from "lucide-react"
 
 type MemberRow = {
@@ -24,40 +20,67 @@ type MemberRow = {
   } | null;
 };
 
-export default async function AdminPage({
+export default function AdminPage({
   searchParams,
 }: {
   searchParams?: { [key: string]: string | string[] | undefined }
 }) {
-  const supabase = await createClient()
-  const h = await headers()
-  const clubSlugFromHeader = h.get('x-tenant-club-slug') || undefined
-  const clubIdFromQuery = typeof searchParams?.club_id === 'string' ? searchParams!.club_id : undefined
+  // Mock data for UI demonstration
+  const mockMembers: MemberRow[] = [
+    {
+      id: "1",
+      member_type: "admin",
+      created_at: "2024-01-15T10:30:00Z",
+      user: {
+        id: "user-1",
+        email: "admin@loople.com",
+        full_name: "Loople Admin"
+      }
+    },
+    {
+      id: "2", 
+      member_type: "coach",
+      created_at: "2024-01-20T14:15:00Z",
+      user: {
+        id: "user-2",
+        email: "coach@sarah.com",
+        full_name: "Coach Sarah"
+      }
+    },
+    {
+      id: "3",
+      member_type: "member", 
+      created_at: "2024-02-01T09:45:00Z",
+      user: {
+        id: "user-3",
+        email: "john@davis.com",
+        full_name: "John Davis"
+      }
+    },
+    {
+      id: "4",
+      member_type: "member",
+      created_at: "2024-02-05T16:20:00Z", 
+      user: {
+        id: "user-4",
+        email: "jane@smith.com",
+        full_name: "Jane Smith"
+      }
+    },
+    {
+      id: "5",
+      member_type: "coach",
+      created_at: "2024-02-10T11:30:00Z",
+      user: {
+        id: "user-5", 
+        email: "mike@coach.com",
+        full_name: "Mike Johnson"
+      }
+    }
+  ]
 
-  // Resolve club by slug if present, otherwise use explicit club_id query param
-  let resolvedClubId: string | undefined = clubIdFromQuery
-  if (!resolvedClubId && clubSlugFromHeader) {
-    const { data: clubBySlug } = await supabase
-      .from('clubs')
-      .select('id')
-      .eq('subdomain', clubSlugFromHeader)
-      .maybeSingle()
-    resolvedClubId = clubBySlug?.id
-  }
+  const rows = mockMembers
 
-  let rows: MemberRow[] = []
-  let membersError: { message?: string } | null = null
-
-  if (resolvedClubId) {
-    const { data: members, error } = await supabase
-      .from('members')
-      .select('id, member_type, created_at, user:users!members_user_id_fkey ( id, email, full_name )')
-      .eq('club_id', resolvedClubId)
-      .order('created_at', { ascending: false })
-      .limit(50)
-    membersError = error
-    rows = Array.isArray(members) ? (members as unknown as MemberRow[]) : []
-  }
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -74,230 +97,108 @@ export default async function AdminPage({
             </div>
           </div>
         </header>
-      
-      <main className="flex flex-1 flex-col gap-4 p-7 pt-8">
-        <div className="text-left space-y-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Admin Dashboard
-            </h1>
-            <p className="text-muted-foreground max-w-2xl">
-              Manage your swimming club operations and monitor performance
-            </p>
+        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
+          <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Total Members</CardDescription>
+                <CardTitle className="text-4xl">{rows.length}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xs text-muted-foreground">
+                  <TrendingUp className="h-4 w-4 inline mr-1" />
+                  +12% from last month
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>Active Coaches</CardDescription>
+                <CardTitle className="text-4xl">
+                  {rows.filter(r => r.member_type === 'coach').length}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xs text-muted-foreground">
+                  <Activity className="h-4 w-4 inline mr-1" />
+                  +2 new this week
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardDescription>New Members</CardDescription>
+                <CardTitle className="text-4xl">
+                  {rows.filter(r => {
+                    const date = new Date(r.created_at || '')
+                    const now = new Date()
+                    const diffTime = Math.abs(now.getTime() - date.getTime())
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+                    return diffDays <= 30
+                  }).length}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-xs text-muted-foreground">
+                  <Calendar className="h-4 w-4 inline mr-1" />
+                  This month
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </div>
-
-        <AnimatedList className="space-y-6" staggerDelay={0.1}>
-          {/* Stats Overview */}
-          <AnimatedListItem>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Members</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">1,247</div>
-                  <p className="text-xs text-muted-foreground">
-                    +12% from last month
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Events</CardTitle>
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">8</div>
-                  <p className="text-xs text-muted-foreground">
-                    3 upcoming this week
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Attendance Rate</CardTitle>
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">87%</div>
-                  <p className="text-xs text-muted-foreground">
-                    +2.1% from last week
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Revenue</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">$12,450</div>
-                  <p className="text-xs text-muted-foreground">
-                    +8.2% from last month
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </AnimatedListItem>
-
-          {/* Quick Actions */}
-          <AnimatedListItem>
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>
-                  Common administrative tasks and shortcuts
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-3">
-                  <Button variant="outline" size="sm">
-                    <Users className="mr-2 h-4 w-4" />
-                    Add Member
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Calendar className="mr-2 h-4 w-4" />
-                    Create Event
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <BarChart3 className="mr-2 h-4 w-4" />
-                    View Reports
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Club Settings
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </AnimatedListItem>
-
-          {/* Recent Activity */}
-          <AnimatedListItem>
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>
-                  Latest updates and member activities
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-4">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">New member registration</p>
-                      <p className="text-xs text-muted-foreground">Sarah Johnson joined the club</p>
-                    </div>
-                    <Badge variant="secondary">2 min ago</Badge>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Event created</p>
-                      <p className="text-xs text-muted-foreground">Summer Swim Meet scheduled for July 15</p>
-                    </div>
-                    <Badge variant="secondary">1 hour ago</Badge>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">Payment received</p>
-                      <p className="text-xs text-muted-foreground">Monthly membership fee from 23 members</p>
-                    </div>
-                    <Badge variant="secondary">3 hours ago</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </AnimatedListItem>
-
-          {/* Upcoming Events */}
-          <AnimatedListItem>
-            <Card>
-              <CardHeader>
-                <CardTitle>Upcoming Events</CardTitle>
-                <CardDescription>
-                  Events scheduled for the next 30 days
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">Swimming Lessons - Beginners</p>
-                      <p className="text-sm text-muted-foreground">Every Tuesday & Thursday</p>
-                    </div>
-                    <Badge>Ongoing</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">Competition Team Practice</p>
-                      <p className="text-sm text-muted-foreground">Every Monday, Wednesday, Friday</p>
-                    </div>
-                    <Badge variant="secondary">Ongoing</Badge>
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">Summer Swim Meet</p>
-                      <p className="text-sm text-muted-foreground">July 15, 2024</p>
-                    </div>
-                    <Badge variant="outline">Upcoming</Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </AnimatedListItem>
-
-          {/* Members Table */}
-          <AnimatedListItem>
-            <Card>
-              <CardHeader>
-                <CardTitle>Members</CardTitle>
-                <CardDescription>All registered users</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {!resolvedClubId ? (
-                  <div className="text-sm text-muted-foreground">
-                    No club selected. Use a subdomain or pass <code>club_id</code>.
-                  </div>
-                ) : membersError ? (
-                  <div className="text-sm text-destructive">Failed to load members.</div>
-                ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Role</TableHead>
-                        <TableHead>Joined</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rows.length === 0 ? (
+          <Card>
+            <CardHeader>
+              <CardTitle>Members</CardTitle>
+              <CardDescription>
+                Manage club members and their roles
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Role</TableHead>
+                    <TableHead>Joined</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <AnimatedList>
+                    {rows.map((row) => (
+                      <AnimatedListItem key={row.id}>
                         <TableRow>
-                          <TableCell colSpan={4} className="text-muted-foreground">No members found.</TableCell>
+                          <TableCell className="font-medium">
+                            {row.user?.full_name || 'Unknown'}
+                          </TableCell>
+                          <TableCell>{row.user?.email || 'No email'}</TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              row.member_type === 'admin' ? 'default' :
+                              row.member_type === 'coach' ? 'secondary' : 'outline'
+                            }>
+                              {row.member_type || 'member'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {row.created_at ? new Date(row.created_at).toLocaleDateString() : 'Unknown'}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="outline" size="sm">
+                              <Settings className="h-4 w-4 mr-1" />
+                              Manage
+                            </Button>
+                          </TableCell>
                         </TableRow>
-                      ) : (
-                        rows.map((m) => (
-                          <TableRow key={m.id}>
-                            <TableCell>{m.user?.full_name ?? m.user?.email ?? "—"}</TableCell>
-                            <TableCell>{m.user?.email ?? "—"}</TableCell>
-                            <TableCell>{m.member_type ?? "Member"}</TableCell>
-                            <TableCell>{m.created_at ? new Date(m.created_at).toLocaleDateString() : "—"}</TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                )}
-              </CardContent>
-            </Card>
-          </AnimatedListItem>
-        </AnimatedList>
-      </main>
+                      </AnimatedListItem>
+                    ))}
+                  </AnimatedList>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   )

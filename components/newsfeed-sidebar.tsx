@@ -6,7 +6,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ThemeSwitch } from "@/components/ui/theme-switch"
-import { createClient } from "@/lib/client"
 import { ClubSwitcher } from "@/components/club-switcher"
 
 const navigation = [
@@ -20,29 +19,8 @@ const navigation = [
 ]
 
 export function NewsfeedSidebar() {
-  const [email, setEmail] = React.useState<string | null>(null)
-
-  React.useEffect(() => {
-    const supabase = createClient()
-
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      const e = user?.email ?? null
-      setEmail(e)
-      // eslint-disable-next-line no-console
-      console.log("Logged in email:", e ?? "<none>")
-    })
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      const e = session?.user?.email ?? null
-      setEmail(e)
-      // eslint-disable-next-line no-console
-      console.log("Logged in email:", e ?? "<none>")
-    })
-
-    return () => {
-      sub.subscription.unsubscribe()
-    }
-  }, [])
+  // Mock user email for UI demonstration
+  const email = "admin@loople.com"
 
   return (
     <div className="flex h-screen w-[275px] flex-col bg-background border-r border-sidebar-border sticky top-0">

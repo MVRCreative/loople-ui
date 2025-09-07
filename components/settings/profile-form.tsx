@@ -4,7 +4,6 @@ import * as React from "react"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { createClient } from "@/lib/client"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
@@ -34,7 +33,6 @@ const schema = z.object({
 export type ProfileFormValues = z.infer<typeof schema>
 
 export default function ProfileForm({ initialData }: { initialData: ProfileFormValues }) {
-  const supabase = createClient()
   const [status, setStatus] = React.useState<"idle" | "saving" | "saved" | "error">("idle")
   const [message, setMessage] = React.useState<string | null>(null)
 
@@ -74,30 +72,10 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
   async function onSubmit(values: ProfileFormValues) {
     setStatus("saving")
     setMessage(null)
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) {
-      setStatus("error")
-      setMessage("You must be signed in.")
-      return
-    }
-
-    // Derive full name from first and last if provided
-    const fullName = `${values.first_name ?? ""} ${values.last_name ?? ""}`.trim()
-
-    const { error } = await supabase
-      .from("users")
-      .update({
-        full_name: fullName || undefined,
-        avatar_url: values.avatar_url || null,
-      })
-      .eq("id", user.id)
-
-    if (error) {
-      setStatus("error")
-      setMessage(error.message)
-      return
-    }
-
+    
+    // Mock save - simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    
     setStatus("saved")
     setMessage("Profile updated.")
   }

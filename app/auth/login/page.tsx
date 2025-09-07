@@ -1,51 +1,39 @@
-import { redirect } from "next/navigation";
-import { createClient } from "@/lib/server";
-import { z } from "zod";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { login } from "@/lib/mock-auth";
 
-const credentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-});
+export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
-export default async function LoginPage({
-  searchParams,
-}: {
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
-  async function login(formData: FormData) {
-    "use server";
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
-    const supabase = await createClient();
-    const parsed = credentialsSchema.safeParse({
-      email: String(formData.get("email") ?? ""),
-      password: String(formData.get("password") ?? ""),
-    });
-
-    if (!parsed.success) {
-      redirect(
-        `/auth/login?error=${encodeURIComponent("Invalid email or password format")}`
-      );
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        router.push("/");
+      } else {
+        setError(result.error || "Login failed");
+      }
+    } catch (err) {
+      setError("An error occurred during login");
+    } finally {
+      setIsLoading(false);
     }
-
-    const { error } = await supabase.auth.signInWithPassword(parsed.data);
-    if (error) {
-      redirect(`/auth/login?error=${encodeURIComponent(error.message)}`);
-    }
-
-    redirect("/");
-  }
-
-  const errorMessage = (async () => {
-    const params = await searchParams;
-    const raw = params?.error;
-    if (!raw) return undefined;
-    return Array.isArray(raw) ? raw[0] : raw;
-  })();
+  };
 
   return (
     <div className="flex min-h-[80vh] w-full flex-col items-center justify-center p-4">
@@ -56,21 +44,39 @@ export default async function LoginPage({
           <CardDescription>Use your email and password to continue.</CardDescription>
         </CardHeader>
         <CardContent>
-          {(await errorMessage) ? (
+          {error ? (
             <div className="mb-4 rounded border border-red-300 bg-red-50 p-2 text-sm text-red-800">
-              {await errorMessage}
+              {error}
             </div>
           ) : null}
-          <form action={login} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" required autoComplete="email" />
+              <Input 
+                id="email" 
+                name="email" 
+                type="email" 
+                required 
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" required autoComplete="current-password" />
+              <Input 
+                id="password" 
+                name="password" 
+                type="password" 
+                required 
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
             </div>
-            <Button type="submit" className="w-full">Sign in</Button>
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Signing in..." : "Sign in"}
+            </Button>
           </form>
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account? {" "}
