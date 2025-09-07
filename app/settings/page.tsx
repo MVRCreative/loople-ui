@@ -16,42 +16,32 @@ export default function Page() {
   const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : ""
 
   return (
-    <>
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="p-4 space-y-6">
-          <div className="space-y-1">
-            <h1 className="text-xl font-semibold">Settings</h1>
-            <p className="text-sm text-muted-foreground">Manage your profile and organization settings.</p>
-          </div>
-          
-          <div className="space-y-6">
-            {/* Profile Section */}
-            <ProfileForm
-              initialData={{
-                email: mockUserData.email,
-                first_name: firstName,
-                last_name: lastName,
-                avatar_url: mockUserData.avatar_url,
-              }}
-            />
-            
-            {/* Organizations Section */}
-            <OrganizationsForm 
-              initialClubs={[]}
-              defaultClubId={undefined}
-            />
-            
-            {/* Additional Settings Section */}
-            <div className="bg-card border border-border rounded-lg p-6 shadow-xs">
-              <h2 className="text-base font-semibold text-foreground">Additional Settings</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                More settings will be available here in the future.
-              </p>
-            </div>
-          </div>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold">Settings</h1>
+        <p className="text-sm text-muted-foreground">Manage your profile and organization settings.</p>
+      </div>
+      <div className="space-y-6">
+        <ProfileForm
+          initialData={{
+            email: mockUserData.email,
+            first_name: firstName,
+            last_name: lastName,
+            avatar_url: mockUserData.avatar_url,
+          }}
+        />
+        <OrganizationsForm 
+          initialClubs={[]}
+          defaultClubId={undefined}
+        />
+        <div className="bg-card border border-border rounded-lg p-6 shadow-xs">
+          <h2 className="text-base font-semibold text-foreground">Additional Settings</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            More settings will be available here in the future.
+          </p>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 

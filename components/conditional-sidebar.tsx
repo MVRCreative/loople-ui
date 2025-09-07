@@ -9,7 +9,9 @@ import { MessageThread } from "@/components/MessageThread";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Calendar, Users } from "lucide-react";
 
 interface ConditionalSidebarProps {
   children: React.ReactNode;
@@ -19,20 +21,36 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const pathname = usePathname();
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
+  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const isNewsfeedRoute = pathname === "/";
-  const isMessagesRoute = pathname.startsWith("/messages");
-  const isSettingsRoute = pathname.startsWith("/settings");
   const isAuthRoute = pathname.startsWith("/auth");
-  const isAdminRoute = pathname.startsWith("/admin");
-  const isAnimationsRoute = pathname.startsWith("/animations");
+  const isRootRoute = pathname === "/";
+  const isFeedPage = pathname === "/";
+  const isClubManagementPage = pathname.startsWith("/club-management");
 
   // Redirect to login if not authenticated and trying to access protected routes
   useEffect(() => {
-    if (!loading && !isAuthenticated && !isAuthRoute) {
+    if (!loading && !isAuthenticated && !isAuthRoute && !isRootRoute) {
       router.push("/auth/login");
     }
-  }, [isAuthenticated, loading, isAuthRoute, router]);
+  }, [isAuthenticated, loading, isAuthRoute, isRootRoute, router]);
+
+  // Set default sidebar state based on page
+  useEffect(() => {
+    if (isFeedPage) {
+      setIsRightSidebarCollapsed(false); // Expanded on feed page
+    } else {
+      setIsRightSidebarCollapsed(true); // Collapsed on other pages
+    }
+  }, [isFeedPage]);
+
+  const handleSidebarToggle = (collapsed: boolean) => {
+    setIsTransitioning(true);
+    setIsRightSidebarCollapsed(collapsed);
+    // Reset transition state after animation completes
+    setTimeout(() => setIsTransitioning(false), 500);
+  };
 
   // Show auth pages without sidebar (these pages manage their own loading/errors)
   if (isAuthRoute) {
@@ -45,80 +63,71 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
     );
   }
 
-  // Show loading state while checking authentication
-  if (loading) {
-    return (
-      <div className="min-h-screen w-full bg-background flex items-center justify-center">
-        <div className="animate-pulse text-center">
-          <div className="h-8 bg-gray-200 rounded w-32 mb-4 mx-auto"></div>
-          <div className="h-4 bg-gray-200 rounded w-48 mx-auto"></div>
-        </div>
-      </div>
-    );
-  }
+  // Dynamic grid layout based on sidebar state
+  const getGridLayout = () => {
+    if (isRightSidebarCollapsed) {
+      // Collapsed right sidebar - main content grows to fill space
+      return `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
+        [grid-template-columns:600px]
+        lg:[grid-template-columns:906px_60px]
+        xl:[grid-template-columns:275px_922px_60px]`;
+    } else {
+      // Expanded right sidebar - normal layout
+      return `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
+        [grid-template-columns:600px]
+        lg:[grid-template-columns:600px_350px]
+        xl:[grid-template-columns:275px_600px_350px]`;
+    }
+  };
 
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    return null; // Will redirect via useEffect
-  }
-
-  // Show newsfeed/messages/settings with custom layout
-  if (isNewsfeedRoute || isMessagesRoute || isSettingsRoute) {
-    const newsfeedGrid = `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
-         [grid-template-columns:600px]
-         lg:[grid-template-columns:600px_350px]
-         xl:[grid-template-columns:275px_600px_350px]`;
-    const messagesGrid = `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
-         [grid-template-columns:600px]
-         lg:[grid-template-columns:350px_600px]
-         xl:[grid-template-columns:275px_350px_600px]`;
-    const gridClasses = isMessagesRoute ? messagesGrid : newsfeedGrid;
-
-    // Extract thread id from /messages/[id]
-    const threadId = isMessagesRoute ? pathname.split("/")[2] : undefined;
-
-    return (
-      <div className="min-h-screen w-full bg-background">
-        <div className={`grid gap-x-0 mx-auto justify-center ${gridClasses}`}>
-          {/* Left nav (hidden < 1280px) */}
-          <aside className="hidden xl:block">
-            {isMessagesRoute ? <MessagesSidebar /> : <NewsfeedSidebar />}
-          </aside>
-
-          {/* Main column */}
-          <main>
-            {children}
-          </main>
-
-          {/* Right rail (hidden < 1024px) */}
-          <aside className="hidden lg:block">
-            {isMessagesRoute ? (
-              threadId ? (
-                <MessageThread id={threadId} />
-              ) : (
-                <div className="w-[600px] bg-background h-screen sticky top-0 border-l border-r border-border flex items-center justify-center">
-                  <p className="text-muted-foreground">Select a conversation</p>
-                </div>
-              )
-            ) : (
-              <NewsfeedRightSidebar />
-            )}
-          </aside>
-        </div>
-      </div>
-    );
-  }
-
-  // For admin and animations routes, just return children as they handle their own sidebar
-  if (isAdminRoute || isAnimationsRoute) {
-    return <>{children}</>;
-  }
-
-  // Default sidebar for other protected routes
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      {children}
-    </SidebarProvider>
+    <div className="min-h-screen w-full bg-background">
+      <div className={`grid gap-x-0 mx-auto justify-center transition-all duration-500 ease-in-out ${getGridLayout()}`}>
+        <aside className="hidden xl:block">
+          <NewsfeedSidebar />
+        </aside>
+        <main className={`relative transition-all duration-500 ease-in-out ${isTransitioning ? 'opacity-95' : 'opacity-100'}`}>
+          {children}
+        </main>
+        <aside className="hidden lg:block">
+          {isRightSidebarCollapsed ? (
+            <div className="w-[60px] border-l border-border bg-background sticky top-0 h-screen flex flex-col items-center py-6 transition-all duration-300">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSidebarToggle(false)}
+                className="mb-4 hover:bg-accent transition-all duration-200"
+                title="Expand sidebar"
+                disabled={isTransitioning}
+              >
+                <ChevronLeft className="h-4 w-4 transition-transform duration-200" />
+              </Button>
+              <div className="flex flex-col gap-4">
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-all duration-200 hover:scale-105" title="Upcoming Events">
+                  <Calendar className="h-4 w-4 text-muted-foreground transition-colors duration-200" />
+                </div>
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center hover:bg-muted/80 transition-all duration-200 hover:scale-105" title="Your Programs">
+                  <Users className="h-4 w-4 text-muted-foreground transition-colors duration-200" />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="relative transition-all duration-300">
+              <NewsfeedRightSidebar />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSidebarToggle(true)}
+                className="absolute top-4 right-4 z-10 hover:bg-accent transition-all duration-200"
+                title="Collapse sidebar"
+                disabled={isTransitioning}
+              >
+                <ChevronRight className="h-4 w-4 transition-transform duration-200" />
+              </Button>
+            </div>
+          )}
+        </aside>
+      </div>
+    </div>
   );
 }

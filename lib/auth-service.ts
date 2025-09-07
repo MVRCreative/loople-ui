@@ -137,7 +137,7 @@ class AuthService {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({} as any));
+        const errorData = await response.json().catch(() => ({} as Record<string, unknown>));
         // Try to preserve detailed server error messages
         const candidates = [
           errorData?.error_description,
@@ -340,7 +340,27 @@ class AuthService {
 
   // Listen to auth state changes
   onAuthStateChange(callback: (event: string, session: AuthSession | null) => void) {
-    return supabase.auth.onAuthStateChange(callback);
+    return supabase.auth.onAuthStateChange((event, session) => {
+      // Convert Supabase Session to AuthSession format
+      const authSession: AuthSession | null = session ? {
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+        expires_in: session.expires_in,
+        expires_at: session.expires_at,
+        token_type: session.token_type,
+        user: {
+          id: session.user.id,
+          email: session.user.email || '',
+          user_metadata: session.user.user_metadata,
+          app_metadata: session.user.app_metadata,
+          aud: session.user.aud,
+          created_at: session.user.created_at,
+          updated_at: session.user.updated_at,
+        }
+      } : null;
+      
+      callback(event, authSession);
+    });
   }
 }
 

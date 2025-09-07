@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { authService } from './auth-service';
-import { AuthUser, AuthSession, AuthError } from './auth-types';
+import { AuthUser, AuthSession, AuthError, SignUpFormData } from './auth-types';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -10,7 +10,7 @@ interface AuthContextType {
   loading: boolean;
   error: AuthError | null;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (data: any) => Promise<{ success: boolean; error?: string }>;
+  signUp: (data: SignUpFormData) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<{ success: boolean; error?: string }>;
   resendVerification: (email: string) => Promise<{ success: boolean; error?: string }>;
   isAuthenticated: boolean;
@@ -105,7 +105,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
-  const signUp = async (data: any) => {
+  const signUp = async (data: SignUpFormData) => {
     try {
       setLoading(true);
       setError(null);

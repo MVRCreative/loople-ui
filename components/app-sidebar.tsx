@@ -32,6 +32,14 @@ const navigation = [
     ],
   },
   {
+    name: "MANAGEMENT",
+    type: "section",
+    icon: Building,
+    items: [
+      { name: "Club Management", href: "/club-management" },
+    ],
+  },
+  {
     name: "ACTIVITIES",
     type: "section",
     icon: Globe,

@@ -95,8 +95,8 @@ export default function SignUpPage() {
             club_subdomain: formData.clubSubdomain || undefined,
           },
         });
-      } catch (zerr: any) {
-        const issues = zerr?.issues as Array<{ message: string; path?: Array<string | number> }>|undefined;
+      } catch (zerr: unknown) {
+        const issues = (zerr as { issues?: Array<{ message: string; path?: Array<string | number> }> })?.issues;
         if (issues && issues.length) {
           const fieldErrors: typeof errors = {};
           for (const issue of issues) {
@@ -135,7 +135,7 @@ export default function SignUpPage() {
           }
           setErrors(fieldErrors);
         } else {
-          setErrors({ form: zerr?.message || "Please check your inputs and try again." });
+          setErrors({ form: (zerr as { message?: string })?.message || "Please check your inputs and try again." });
         }
         setIsLoading(false);
         return;
@@ -153,9 +153,9 @@ export default function SignUpPage() {
         router.push("/auth/login");
       } else {
         // Normalize server error from either result.error or the top-level result
-        const rawErr: any = (result as any)?.error ?? (result as any);
-        const code = rawErr?.code;
-        const rawMessage = typeof rawErr === "string" ? rawErr : (rawErr?.message || rawErr?.details || rawErr?.error || rawErr?.hint);
+        const rawErr: unknown = (result as Record<string, unknown>)?.error ?? (result as Record<string, unknown>);
+        const code = (rawErr as Record<string, unknown>)?.code;
+        const rawMessage = typeof rawErr === "string" ? rawErr : ((rawErr as Record<string, unknown>)?.message || (rawErr as Record<string, unknown>)?.details || (rawErr as Record<string, unknown>)?.error || (rawErr as Record<string, unknown>)?.hint);
         let message = (typeof rawMessage === "string" && rawMessage.length)
           ? rawMessage
           : "Sign up failed";
@@ -178,19 +178,17 @@ export default function SignUpPage() {
         try {
           const parsed = JSON.parse(error.message);
           if (parsed && typeof parsed === "object") {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const p: any = parsed;
-            code = p?.error?.code ?? p?.code;
-            rawMessage = p?.error?.message || p?.error?.details || p?.message || rawMessage;
+            const p: Record<string, unknown> = parsed as Record<string, unknown>;
+            code = (p?.error as Record<string, unknown>)?.code ?? p?.code;
+            rawMessage = (p?.error as Record<string, unknown>)?.message || (p?.error as Record<string, unknown>)?.details || p?.message || rawMessage;
           }
         } catch {
           // ignore JSON parse failure
         }
       } else if (typeof error === "object" && error !== null) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const er: any = error;
-        code = er?.error?.code ?? er?.code;
-        rawMessage = er?.error?.message || er?.error?.details || er?.message || er?.details;
+        const er: Record<string, unknown> = error as Record<string, unknown>;
+        code = (er?.error as Record<string, unknown>)?.code ?? er?.code;
+        rawMessage = (er?.error as Record<string, unknown>)?.message || (er?.error as Record<string, unknown>)?.details || er?.message || er?.details;
       } else if (typeof error === "string") {
         rawMessage = error;
       }

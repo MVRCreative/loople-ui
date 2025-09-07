@@ -110,7 +110,7 @@ export interface Member {
 }
 
 // API Response types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data?: T;
   error?: AuthError;
   success: boolean;

@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Command, Home, Bell, User, Settings, LogOut, Moon, Users, MessageSquare } from "lucide-react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ThemeSwitch } from "@/components/ui/theme-switch"
@@ -10,17 +11,18 @@ import { ClubSwitcher } from "@/components/club-switcher"
 import { useAuth } from "@/lib/auth-context"
 
 const navigation = [
-  { name: "Home", href: "/", icon: Home, current: true },
-  { name: "Programs", href: "#", icon: Users, current: false },
-  { name: "Events", href: "#", icon: Bell, current: false },
-  { name: "Messages", href: "/messages", icon: MessageSquare, current: false, badge: "3" },
-  { name: "Notifications", href: "#", icon: Bell, current: false, badge: "5" },
-  { name: "Profile", href: "#", icon: User, current: false },
-  { name: "Settings", href: "/settings", icon: Settings, current: false },
+  { name: "Home", href: "/", icon: Home },
+  { name: "Programs", href: "#", icon: Users },
+  { name: "Events", href: "#", icon: Bell },
+  { name: "Messages", href: "/messages", icon: MessageSquare, badge: "3" },
+  { name: "Notifications", href: "#", icon: Bell, badge: "5" },
+  { name: "Profile", href: "#", icon: User },
+  { name: "Settings", href: "/settings", icon: Settings },
 ]
 
 export function NewsfeedSidebar() {
   const { user, isAuthenticated, signOut } = useAuth()
+  const pathname = usePathname()
   
   // Use real auth user data if available
   const displayEmail = user?.email || "Not signed in"
@@ -54,25 +56,42 @@ export function NewsfeedSidebar() {
       {/* Navigation */}
       <nav className="flex flex-1 flex-col px-3 py-4">
         <div className="space-y-1">
-          {navigation.map((item) => (
-            <div key={item.name} className="relative">
-              <Button
-                variant={item.current ? "secondary" : "ghost"}
-                className="w-full justify-start gap-3 h-10"
-                asChild
-              >
-                <Link href={item.href}>
-                  <item.icon className="h-5 w-5" />
-                  <span>{item.name}</span>
-                  {item.badge && (
-                    <div className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
-                      {item.badge}
-                    </div>
-                  )}
-                </Link>
-              </Button>
-            </div>
-          ))}
+          {navigation.map((item) => {
+            const isActive = item.href && item.href !== "#" && pathname === item.href
+            const content = (
+              <>
+                <item.icon className="h-5 w-5" />
+                <span>{item.name}</span>
+                {item.badge && (
+                  <div className="ml-auto flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+                    {item.badge}
+                  </div>
+                )}
+              </>
+            )
+
+            return (
+              <div key={item.name} className="relative">
+                {item.href && item.href !== "#" ? (
+                  <Button
+                    variant={isActive ? "secondary" : "ghost"}
+                    className="w-full justify-start gap-3 h-10"
+                    asChild
+                  >
+                    <Link href={item.href}>{content}</Link>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-start gap-3 h-10"
+                    onClick={(e) => e.preventDefault()}
+                  >
+                    {content}
+                  </Button>
+                )}
+              </div>
+            )
+          })}
         </div>
       </nav>
 
