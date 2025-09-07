@@ -7,6 +7,9 @@ import { NewsfeedRightSidebar } from "@/components/newsfeed-right-sidebar";
 import { MessagesSidebar } from "@/components/MessagesSidebar";
 import { MessageThread } from "@/components/MessageThread";
 import { SidebarProvider } from "@/components/ui/sidebar";
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 interface ConditionalSidebarProps {
   children: React.ReactNode;
@@ -14,6 +17,9 @@ interface ConditionalSidebarProps {
 
 export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const pathname = usePathname();
+  const { isAuthenticated, loading } = useAuth();
+  const router = useRouter();
+
   const isNewsfeedRoute = pathname === "/";
   const isMessagesRoute = pathname.startsWith("/messages");
   const isSettingsRoute = pathname.startsWith("/settings");
@@ -21,6 +27,42 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const isAdminRoute = pathname.startsWith("/admin");
   const isAnimationsRoute = pathname.startsWith("/animations");
 
+  // Redirect to login if not authenticated and trying to access protected routes
+  useEffect(() => {
+    if (!loading && !isAuthenticated && !isAuthRoute) {
+      router.push("/auth/login");
+    }
+  }, [isAuthenticated, loading, isAuthRoute, router]);
+
+  // Show auth pages without sidebar (these pages manage their own loading/errors)
+  if (isAuthRoute) {
+    return (
+      <div className="min-h-screen w-full bg-background">
+        <main>
+          {children}
+        </main>
+      </div>
+    );
+  }
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <div className="min-h-screen w-full bg-background flex items-center justify-center">
+        <div className="animate-pulse text-center">
+          <div className="h-8 bg-gray-200 rounded w-32 mb-4 mx-auto"></div>
+          <div className="h-4 bg-gray-200 rounded w-48 mx-auto"></div>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return null; // Will redirect via useEffect
+  }
+
+  // Show newsfeed/messages/settings with custom layout
   if (isNewsfeedRoute || isMessagesRoute || isSettingsRoute) {
     const newsfeedGrid = `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
          [grid-template-columns:600px]
@@ -67,21 +109,12 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
     );
   }
 
-  if (isAuthRoute) {
-    return (
-      <div className="min-h-screen w-full bg-background">
-        <main>
-          {children}
-        </main>
-      </div>
-    );
-  }
-
   // For admin and animations routes, just return children as they handle their own sidebar
   if (isAdminRoute || isAnimationsRoute) {
     return <>{children}</>;
   }
 
+  // Default sidebar for other protected routes
   return (
     <SidebarProvider>
       <AppSidebar />

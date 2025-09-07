@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ThemeSwitch } from "@/components/ui/theme-switch"
 import { ClubSwitcher } from "@/components/club-switcher"
+import { useAuth } from "@/lib/auth-context"
 
 const navigation = [
   { name: "Home", href: "/", icon: Home, current: true },
@@ -19,8 +20,17 @@ const navigation = [
 ]
 
 export function NewsfeedSidebar() {
-  // Mock user email for UI demonstration
-  const email = "admin@loople.com"
+  const { user, isAuthenticated, signOut } = useAuth()
+  
+  // Use real auth user data if available
+  const displayEmail = user?.email || "Not signed in"
+  const displayName = user?.user_metadata?.first_name && user?.user_metadata?.last_name 
+    ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
+    : user?.email || "Guest"
+
+  const handleLogout = async () => {
+    await signOut()
+  }
 
   return (
     <div className="flex h-screen w-[275px] flex-col bg-background border-r border-sidebar-border sticky top-0">
@@ -78,14 +88,25 @@ export function NewsfeedSidebar() {
           </div>
         </div>
         <div className="px-3 py-1 text-[11px] text-muted-foreground">
-          {email ? `Signed in as ${email}` : "Signed in as —"}
+          {isAuthenticated ? `Signed in as ${displayEmail}` : "Not signed in"}
         </div>
-        <Button variant="outline" className="w-full justify-start gap-3 h-10" asChild>
-          <Link href="/auth/logout">
+        {isAuthenticated ? (
+          <Button 
+            variant="outline" 
+            className="w-full justify-start gap-3 h-10" 
+            onClick={handleLogout}
+          >
             <LogOut className="h-5 w-5" />
             <span>Sign Out</span>
-          </Link>
-        </Button>
+          </Button>
+        ) : (
+          <Button variant="outline" className="w-full justify-start gap-3 h-10" asChild>
+            <Link href="/auth/login">
+              <User className="h-5 w-5" />
+              <span>Sign In</span>
+            </Link>
+          </Button>
+        )}
       </div>
     </div>
   )

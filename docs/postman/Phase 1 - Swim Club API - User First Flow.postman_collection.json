@@ -1,0 +1,1490 @@
+{
+	"info": {
+		"_postman_id": "1f394799-4f3d-42eb-98a8-1c24207eae79",
+		"name": "Phase 1 - Swim Club API - User First Flow",
+		"description": "Complete API collection with corrected user-first onboarding flow",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "45746755",
+		"_collection_link": "https://moverlabs.postman.co/workspace/Loople~adcd3ac1-65d3-4047-bfc9-9b11a612e83b/collection/39436561-1f394799-4f3d-42eb-98a8-1c24207eae79?action=share&source=collection_link&creator=45746755"
+	},
+	"item": [
+		{
+			"name": "1. Authentication",
+			"item": [
+				{
+					"name": "Sign Up User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('User signup successful', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.user && response.user.id) {",
+									"        pm.globals.set('user_id', response.user.id);",
+									"        console.log('User ID:', response.user.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{SUPABASE_ANON_KEY}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{user_email}}\",\n    \"password\": \"superpassword@123\",\n    \"data\": {\n        \"first_name\": \"{{user_first_name}}\",\n        \"last_name\": \"{{user_last_name}}\",\n        \"phone\": \"+639551991798\", // optional\n        \"birth_date\": \"2000-01-01\", // optional\n        \"club_name\": \"{{club_name}}\", // optional\n        \"club_subdomain\": \"{{club_subdomain}}\" // optional\n    }\n}"
+						},
+						"url": {
+							"raw": "{{FUNCTIONS_URL}}/signup",
+							"host": [
+								"{{FUNCTIONS_URL}}"
+							],
+							"path": [
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sign Up Resend Verification Email",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('User signup successful', function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.user && response.user.id) {",
+									"        pm.globals.set('user_id', response.user.id);",
+									"        console.log('User ID:', response.user.id);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{SUPABASE_ANON_KEY}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{user_email}}\"\n}"
+						},
+						"url": {
+							"raw": "{{FUNCTIONS_URL}}/signup-resend-verification",
+							"host": [
+								"{{FUNCTIONS_URL}}"
+							],
+							"path": [
+								"signup-resend-verification"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Sign In User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Sign in successful', function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    ",
+									"    // Set tokens",
+									"    pm.globals.set('access_token', response.access_token);",
+									"    pm.globals.set('refresh_token', response.refresh_token);",
+									"    pm.globals.set('token_expiry', Date.now() + 3600000);",
+									"    ",
+									"    // Set user data",
+									"    pm.globals.set('user_id', response.user.id);",
+									"    pm.globals.set('user_email', response.user.email);",
+									"    ",
+									"    // Set user metadata if available",
+									"    if (response.user.user_metadata) {",
+									"        pm.globals.set('user_first_name', response.user.user_metadata.first_name);",
+									"        pm.globals.set('user_last_name', response.user.user_metadata.last_name);",
+									"    }",
+									"    ",
+									"    console.log('✅ User signed in successfully!');",
+									"    console.log('User ID:', response.user.id);",
+									"    console.log('Email:', response.user.email);",
+									"    console.log('Access Token:', response.access_token.substring(0, 50) + '...');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"superpassword@123\"\n}"
+						},
+						"url": {
+							"raw": "{{AUTH_URL}}/token?grant_type=password",
+							"host": [
+								"{{AUTH_URL}}"
+							],
+							"path": [
+								"token"
+							],
+							"query": [
+								{
+									"key": "grant_type",
+									"value": "password"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Club Setup",
+			"item": [
+				{
+					"name": "Get Clubs",
+					"event": [
+						{
+							"listen": "pre-request",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Debug variables",
+									"console.log('=== CREATE CLUB DEBUG ===');",
+									"console.log('User ID:', pm.globals.get('user_id'));",
+									"console.log('User Email:', pm.globals.get('user_email'));",
+									"console.log('User First Name:', pm.globals.get('user_first_name'));",
+									"console.log('Access Token:', pm.globals.get('access_token') ? 'SET' : 'NOT SET');",
+									"",
+									"// Check required variables",
+									"if (!pm.globals.get('user_id')) {",
+									"    console.log('❌ user_id not set - run Sign In first');",
+									"}",
+									"if (!pm.globals.get('access_token')) {",
+									"    console.log('❌ access_token not set - run Sign In first');",
+									"}"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}",
+								"disabled": true
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"disabled": true
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"disabled": true
+							},
+							{
+								"key": "Prefer",
+								"value": "return=representation",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{FUNCTIONS_URL}}/clubs",
+							"host": [
+								"{{FUNCTIONS_URL}}"
+							],
+							"path": [
+								"clubs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Club",
+					"event": [
+						{
+							"listen": "pre-request",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Debug variables",
+									"console.log('=== CREATE CLUB DEBUG ===');",
+									"console.log('User ID:', pm.globals.get('user_id'));",
+									"console.log('User Email:', pm.globals.get('user_email'));",
+									"console.log('User First Name:', pm.globals.get('user_first_name'));",
+									"console.log('Access Token:', pm.globals.get('access_token') ? 'SET' : 'NOT SET');",
+									"",
+									"// Check required variables",
+									"if (!pm.globals.get('user_id')) {",
+									"    console.log('❌ user_id not set - run Sign In first');",
+									"}",
+									"if (!pm.globals.get('access_token')) {",
+									"    console.log('❌ access_token not set - run Sign In first');",
+									"}"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Club creation successful', function () {",
+									"    pm.expect(pm.response.code).to.equal(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    try {",
+									"        const response = pm.response.json();",
+									"        if (response && response.length > 0) {",
+									"            pm.globals.set('club_id', response[0].id);",
+									"            console.log('✅ Club created successfully!');",
+									"            console.log('Club ID:', response[0].id);",
+									"            console.log('Club Name:', response[0].name);",
+									"            console.log('Owner ID:', response[0].owner_id);",
+									"        }",
+									"    } catch (error) {",
+									"        console.log('❌ Error parsing response:', error.message);",
+									"    }",
+									"} else {",
+									"    console.log('❌ Club creation failed');",
+									"    console.log('Status:', pm.response.code);",
+									"    console.log('Response:', pm.response.text());",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Prefer",
+								"value": "return=representation"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"{{user_first_name}}'s Swim Club\",\n  \"subdomain\": \"{{user_first_name}}-swim-club-3\",\n  \"description\": \"Competitive swimming for all ages\",\n  \"contact_email\": \"{{user_email}}\",\n  \"contact_phone\": \"(555) 123-4567\",\n  \"address\": \"123 Pool Lane\",\n  \"city\": \"Swimtown\",\n  \"state\": \"CA\",\n  \"zip_code\": \"90210\"\n}"
+						},
+						"url": {
+							"raw": "{{FUNCTIONS_URL}}/clubs",
+							"host": [
+								"{{FUNCTIONS_URL}}"
+							],
+							"path": [
+								"clubs"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Admin Role",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Admin role found', function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    if (response.length > 0) {",
+									"        pm.globals.set('admin_role_id', response[0].id);",
+									"        console.log('✅ Admin Role found');",
+									"        console.log('Admin Role ID:', response[0].id);",
+									"    } else {",
+									"        console.log('❌ Admin role not found - check if roles table has data');",
+									"    }",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/roles?name=eq.admin",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"roles"
+							],
+							"query": [
+								{
+									"key": "name",
+									"value": "eq.admin"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create User Record",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('User record created', function () {",
+									"    pm.expect(pm.response.code).to.equal(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    console.log('✅ User record created successfully!');",
+									"} else {",
+									"    console.log('❌ User record creation failed');",
+									"    console.log('Status:', pm.response.code);",
+									"    console.log('Response:', pm.response.text());",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Prefer",
+								"value": "return=representation"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"id\": \"{{user_id}}\",\n  \"club_id\": \"{{club_id}}\",\n  \"role_id\": \"{{admin_role_id}}\",\n  \"email\": \"{{user_email}}\",\n  \"first_name\": \"{{user_first_name}}\",\n  \"last_name\": \"{{user_last_name}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/users",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"users"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Member Management",
+			"item": [
+				{
+					"name": "5. Create Admin Member",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Admin member created', function () {",
+									"    pm.expect(pm.response.code).to.equal(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.globals.set('admin_member_id', response[0].id);",
+									"    console.log('✅ Admin member created successfully!');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Prefer",
+								"value": "return=representation"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"club_id\": \"{{club_id}}\",\n  \"user_id\": \"{{user_id}}\",\n  \"first_name\": \"{{user_first_name}}\",\n  \"last_name\": \"{{user_last_name}}\",\n  \"email\": \"{{user_email}}\",\n  \"member_type\": \"individual\",\n  \"membership_start_date\": \"2024-06-09\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/members",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"members"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Club Member",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Member created', function () {",
+									"    pm.expect(pm.response.code).to.equal(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.globals.set('member_id', response[0].id);",
+									"    console.log('✅ Member created successfully!');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Prefer",
+								"value": "return=representation"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"club_id\": \"{{club_id}}\",\n  \"first_name\": \"Emma\",\n  \"last_name\": \"Wilson\",\n  \"email\": \"emma@example.com\",\n  \"phone\": \"(555) 111-2222\",\n  \"date_of_birth\": \"2010-05-15\",\n  \"member_type\": \"individual\",\n  \"emergency_contact_name\": \"Sarah Wilson\",\n  \"emergency_contact_phone\": \"(555) 111-3333\",\n  \"membership_start_date\": \"2024-01-01\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/members",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"members"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Join Club",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Prefer",
+								"value": "return=representation"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"club_id\": \"{{club_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{FUNCTIONS_URL}}/clubs-join",
+							"host": [
+								"{{FUNCTIONS_URL}}"
+							],
+							"path": [
+								"clubs-join"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Invite to Join Club",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Prefer",
+								"value": "return=representation"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"club_id\": {{club_id}},\n    \"email\": \"rowell@movercreative.com\",\n    \"first_name\": \"Rowell\",\n    \"last_name\": \"Camero\",\n    \"member_type\": \"adult\"  // or other valid member type\n}"
+						},
+						"url": {
+							"raw": "{{FUNCTIONS_URL}}/clubs-invite",
+							"host": [
+								"{{FUNCTIONS_URL}}"
+							],
+							"path": [
+								"clubs-invite"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm Invitation to Join Club",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Member created', function () {",
+									"    pm.expect(pm.response.code).to.equal(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.globals.set('member_id', response[0].id);",
+									"    console.log('✅ Member created successfully!');",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Prefer",
+								"value": "return=representation"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"invite-token-from-email\"\n}"
+						},
+						"url": {
+							"raw": "{{FUNCTIONS_URL}}/clubs-confirm-invite",
+							"host": [
+								"{{FUNCTIONS_URL}}"
+							],
+							"path": [
+								"clubs-confirm-invite"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Members",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Members retrieved', function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    const members = pm.response.json();",
+									"    console.log('✅ Found', members.length, 'members');",
+									"    members.forEach(member => {",
+									"        console.log('-', member.first_name, member.last_name);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{FUNCTIONS_URL}}/members?clubId={{club_id}}",
+							"host": [
+								"{{FUNCTIONS_URL}}"
+							],
+							"path": [
+								"members"
+							],
+							"query": [
+								{
+									"key": "clubId",
+									"value": "{{club_id}}",
+									"description": "optional param"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Event Management",
+			"item": [
+				{
+					"name": "Create Event",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Prefer",
+								"value": "return=representation"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"club_id\": \"{{club_id}}\",\n  \"title\": \"Summer Championship\",\n  \"description\": \"Annual summer swimming championship\",\n  \"event_type\": \"meeting\",\n  \"start_date\": \"2024-07-15T09:00:00Z\",\n  \"end_date\": \"2024-07-15T17:00:00Z\",\n  \"location\": \"Main Pool\",\n  \"max_capacity\": 50,\n  \"registration_deadline\": \"2024-07-10T23:59:59Z\",\n  \"price_member\": 25.00,\n  \"price_non_member\": 35.00\n}"
+						},
+						"url": {
+							"raw": "{{FUNCTIONS_URL}}/events",
+							"host": [
+								"{{FUNCTIONS_URL}}"
+							],
+							"path": [
+								"events"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Events",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{FUNCTIONS_URL}}/events?club_id=1&event_type=meeting&start_date=2024-01-01&search=championship&page=1&limit=10&sort_by=start_date&sort_order=desc",
+							"host": [
+								"{{FUNCTIONS_URL}}"
+							],
+							"path": [
+								"events"
+							],
+							"query": [
+								{
+									"key": "club_id",
+									"value": "1"
+								},
+								{
+									"key": "event_type",
+									"value": "meeting"
+								},
+								{
+									"key": "start_date",
+									"value": "2024-01-01"
+								},
+								{
+									"key": "search",
+									"value": "championship"
+								},
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								},
+								{
+									"key": "sort_by",
+									"value": "start_date"
+								},
+								{
+									"key": "sort_order",
+									"value": "desc"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. Registration & Payments",
+			"item": [
+				{
+					"name": "Create Registration",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Registration created', function () {",
+									"    pm.expect(pm.response.code).to.equal(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.globals.set('registration_id', response[0].id);",
+									"    console.log('✅ Registration created successfully!');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Prefer",
+								"value": "return=representation"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"club_id\": \"{{club_id}}\",\n  \"event_id\": \"{{event_id}}\",\n  \"member_id\": \"{{member_id}}\",\n  \"notes\": \"First time participant\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/registrations",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"registrations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Stripe Payment Intent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Payment intent created', function () {",
+									"    pm.expect(pm.response.code).to.equal(200);",
+									"});",
+									"",
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.globals.set('payment_intent_id', response.id);",
+									"    pm.globals.set('client_secret', response.client_secret);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{STRIPE_SECRET_KEY}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "amount",
+									"value": "2500"
+								},
+								{
+									"key": "currency",
+									"value": "usd"
+								},
+								{
+									"key": "application_fee_amount",
+									"value": "125"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{STRIPE_API_URL}}/payment_intents",
+							"host": [
+								"{{STRIPE_API_URL}}"
+							],
+							"path": [
+								"payment_intents"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Record Payment in Database",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Prefer",
+								"value": "return=representation"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"club_id\": \"{{club_id}}\",\n  \"registration_id\": \"{{registration_id}}\",\n  \"stripe_payment_intent_id\": \"{{payment_intent_id}}\",\n  \"amount\": 25.00,\n  \"fee_amount\": 1.25,\n  \"payment_method\": \"card\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/payments",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"payments"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "6. Messaging",
+			"item": [
+				{
+					"name": "Create Conversation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Conversation created', function () {",
+									"    pm.expect(pm.response.code).to.equal(201);",
+									"});",
+									"",
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.globals.set('conversation_id', response[0].id);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Prefer",
+								"value": "return=representation"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"club_id\": \"{{club_id}}\",\n  \"type\": \"announcement\",\n  \"title\": \"Welcome to Dolphins Swim Club!\",\n  \"created_by\": \"{{user_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/conversations",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"conversations"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Send Message",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Prefer",
+								"value": "return=representation"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"conversation_id\": \"{{conversation_id}}\",\n  \"sender_id\": \"{{user_id}}\",\n  \"content\": \"Welcome to Dolphins Swim Club! We are excited to have you join our swimming community.\",\n  \"message_type\": \"text\"\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/messages",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"messages"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "7. Reports & Analytics",
+			"item": [
+				{
+					"name": "Registration Report",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/registrations?select=*,events(title,start_date),members(first_name,last_name)&order=registration_date.desc",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"registrations"
+							],
+							"query": [
+								{
+									"key": "select",
+									"value": "*,events(title,start_date),members(first_name,last_name)"
+								},
+								{
+									"key": "order",
+									"value": "registration_date.desc"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Payment Report",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/payments?select=*,registrations(events(title),members(first_name,last_name))&order=created_at.desc",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"payments"
+							],
+							"query": [
+								{
+									"key": "select",
+									"value": "*,registrations(events(title),members(first_name,last_name))"
+								},
+								{
+									"key": "order",
+									"value": "created_at.desc"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Club Overview",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{BASE_URL}}/clubs?id=eq.{{club_id}}&select=*",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"clubs"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "eq.{{club_id}}"
+								},
+								{
+									"key": "select",
+									"value": "*"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "8. Complete Onboarding",
+			"item": [
+				{
+					"name": "Mark Onboarding Complete",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Onboarding completed', function () {",
+									"    pm.expect(pm.response.code).to.equal(204);",
+									"});",
+									"",
+									"if (pm.response.code === 204) {",
+									"    console.log('🎉 Club onboarding complete!');",
+									"    console.log('🏊‍♀️ Ready to manage your swim club!');",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "apikey",
+								"value": "{{SUPABASE_ANON_KEY}}"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"onboarding_completed\": true\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/clubs?id=eq.{{club_id}}",
+							"host": [
+								"{{BASE_URL}}"
+							],
+							"path": [
+								"clubs"
+							],
+							"query": [
+								{
+									"key": "id",
+									"value": "eq.{{club_id}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Set Authorization header if token exists",
+					"const token = pm.globals.get('access_token');",
+					"if (token) {",
+					"    pm.request.headers.add({",
+					"        key: 'Authorization',",
+					"        value: 'Bearer ' + token",
+					"    });",
+					"}"
+				]
+			}
+		}
+	]
+}

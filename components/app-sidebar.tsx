@@ -9,8 +9,10 @@ import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
+  SidebarFooter,
 } from "@/components/ui/sidebar"
 import { ClubSwitcher } from "@/components/club-switcher"
+import { NavUser } from "@/components/nav-user"
 
 const navigation = [
   {
@@ -151,6 +153,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           })}
         </nav>
       </SidebarContent>
+
+      <SidebarFooter>
+        <NavUser 
+          user={{
+            name: "User",
+            email: "user@example.com",
+            avatar: "👤"
+          }}
+        />
+      </SidebarFooter>
     </Sidebar>
   )
 }

@@ -8,7 +8,8 @@ import {
   LogOut,
   Sparkles,
 } from "lucide-react"
-import { getCurrentUser } from "@/lib/mock-auth"
+import { useAuth } from "@/lib/auth-context"
+import { useRouter } from "next/navigation"
 
 import {
   Avatar,
@@ -41,12 +42,22 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
+  const { user: authUser, signOut } = useAuth()
+  const router = useRouter()
   
-  // Use mock auth for user data
-  const currentUser = getCurrentUser()
-  const displayName = currentUser?.name || user.name
-  const displayEmail = currentUser?.email || user.email
-  const displayAvatar = currentUser?.avatar || user.avatar
+  // Use real auth user data if available, fallback to prop user
+  const displayName = authUser?.user_metadata?.first_name && authUser?.user_metadata?.last_name 
+    ? `${authUser.user_metadata.first_name} ${authUser.user_metadata.last_name}`
+    : authUser?.email || user.name
+  const displayEmail = authUser?.email || user.email
+  const displayAvatar = user.avatar // Keep using the prop avatar for now
+
+  const handleLogout = async () => {
+    const result = await signOut()
+    if (result.success) {
+      router.push('/auth/login')
+    }
+  }
 
   return (
     <SidebarMenu>
@@ -59,7 +70,9 @@ export function NavUser({
             >
               <Avatar className="h-8 w-8 rounded-lg">
                 <AvatarImage src={displayAvatar} alt={displayName} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                <AvatarFallback className="rounded-lg">
+                  {displayName.split(' ').map(n => n[0]).join('').toUpperCase()}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{displayName}</span>
@@ -78,7 +91,9 @@ export function NavUser({
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={displayAvatar} alt={displayName} />
-                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                  <AvatarFallback className="rounded-lg">
+                    {displayName.split(' ').map(n => n[0]).join('').toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{displayName}</span>
@@ -112,7 +127,7 @@ export function NavUser({
             <DropdownMenuLabel className="text-xs text-muted-foreground">
               Signed in as {displayEmail || "—"}
             </DropdownMenuLabel>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut />
               Log out
             </DropdownMenuItem>

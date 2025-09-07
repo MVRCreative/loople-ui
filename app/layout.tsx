@@ -5,7 +5,9 @@ import { GeistMono } from "geist/font/mono"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ConditionalSidebar } from "@/components/conditional-sidebar"
+import { AuthProvider } from "@/lib/auth-context"
 import { Suspense } from "react"
+import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
 export const metadata: Metadata = {
@@ -24,12 +26,15 @@ export default function RootLayout({
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
         <Suspense fallback={null}>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-            <ConditionalSidebar>
-              {children}
-            </ConditionalSidebar>
+            <AuthProvider>
+              <ConditionalSidebar>
+                {children}
+              </ConditionalSidebar>
+            </AuthProvider>
           </ThemeProvider>
         </Suspense>
         <Analytics />
+        <Toaster richColors closeButton />
       </body>
     </html>
   )
