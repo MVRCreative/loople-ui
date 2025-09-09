@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ConditionalSidebar } from "@/components/conditional-sidebar"
 import { AuthProvider } from "@/lib/auth-context"
+import { ClubProvider } from "@/lib/club-context"
 import { Suspense } from "react"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
@@ -27,9 +28,11 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
             <AuthProvider>
-              <ConditionalSidebar>
-                {children}
-              </ConditionalSidebar>
+              <ClubProvider>
+                <ConditionalSidebar>
+                  {children}
+                </ConditionalSidebar>
+              </ClubProvider>
             </AuthProvider>
           </ThemeProvider>
         </Suspense>

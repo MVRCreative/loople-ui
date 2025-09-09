@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { useClub, useRequireClub } from "@/lib/club-context";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,9 @@ import {
   UserPlus,
   CalendarPlus,
   CreditCard,
-  FileText
+  FileText,
+  AlertCircle,
+  Building2
 } from "lucide-react";
 import { MembersTable } from "@/components/club-management/members-table";
 import { EventsTable } from "@/components/club-management/events-table";
@@ -26,20 +28,25 @@ import { RegistrationsTable } from "@/components/club-management/registrations-t
 import { PaymentsTable } from "@/components/club-management/payments-table";
 import { ClubAnalytics } from "@/components/club-management/club-analytics";
 import { ClubSettings } from "@/components/club-management/club-settings";
+import { ClubOverview } from "@/components/club-management/club-overview";
+import { CreateClubForm } from "@/components/club-management/create-club-form";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { mockClubData, mockMembers, mockEvents, mockRegistrations, mockPayments } from "@/lib/club-mock-data";
 
 export default function ClubManagementPage() {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { selectedClub, clubs, loading: clubLoading, isOwner, isAdmin, error: clubError, refreshClubs } = useClub();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   useEffect(() => {
-    if (!loading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       router.push("/auth/login");
     }
-  }, [isAuthenticated, loading, router]);
+  }, [isAuthenticated, authLoading, router]);
 
-  if (loading) {
+  if (authLoading || clubLoading) {
     return (
       <div className="p-8">
         <div className="animate-pulse">
@@ -54,9 +61,104 @@ export default function ClubManagementPage() {
     return null; // Will redirect via useEffect
   }
 
+  if (!selectedClub) {
+    // Check if user has no clubs at all
+    const hasNoClubs = !Array.isArray(clubs) || clubs.length === 0;
+    
+    if (hasNoClubs) {
+      return (
+        <div className="p-8">
+          <div className="max-w-2xl mx-auto space-y-6">
+            <div className="text-center">
+              <h1 className="text-3xl font-bold mb-2">Welcome to Club Management</h1>
+              <p className="text-muted-foreground mb-8">
+                You don't have any clubs yet. Create your first club to get started with managing members, events, and more.
+              </p>
+            </div>
+            
+            {showCreateForm ? (
+              <CreateClubForm 
+                onSuccess={() => {
+                  setShowCreateForm(false);
+                  refreshClubs();
+                }}
+                onCancel={() => setShowCreateForm(false)}
+              />
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Building2 className="h-16 w-16 text-muted-foreground mb-4" />
+                  <h2 className="text-xl font-semibold mb-2">Create Your First Club</h2>
+                  <p className="text-muted-foreground text-center mb-6">
+                    Start by creating a club to manage your swimming community.
+                  </p>
+                  <div className="flex gap-3">
+                    <Button onClick={() => setShowCreateForm(true)} size="lg">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create New Club
+                    </Button>
+                    <Button variant="outline" onClick={() => router.push("/")}>
+                      Go to Dashboard
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      );
+    }
+    
+    // User has clubs but none selected
+    return (
+      <div className="p-8">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+            <h2 className="text-xl font-semibold mb-2">No Club Selected</h2>
+            <p className="text-muted-foreground text-center mb-4">
+              Please select a club from the club switcher to manage.
+            </p>
+            <div className="flex gap-3">
+              <Button onClick={() => router.push("/")}>
+                Go to Dashboard
+              </Button>
+              <Button variant="outline" onClick={() => setShowCreateForm(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Club
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (clubError) {
+    return (
+      <div className="p-8">
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
+            <h2 className="text-xl font-semibold mb-2">Error Loading Club</h2>
+            <p className="text-muted-foreground text-center mb-4">
+              {clubError}
+            </p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const displayName = user?.user_metadata?.first_name && user?.user_metadata?.last_name 
     ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
     : user?.email || "User";
+
+  // Check if user has permission to manage this club
+  const canManage = isOwner || isAdmin;
 
   return (
     <div className="p-4 lg:p-6 space-y-6 w-full max-w-none">
@@ -70,68 +172,30 @@ export default function ClubManagementPage() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Badge variant="outline" className="text-xs lg:text-sm">
-            {mockClubData.name}
+            {selectedClub.name}
           </Badge>
           <Badge variant="secondary" className="text-xs lg:text-sm">
             {mockClubData.memberCount} Members
           </Badge>
+          {!canManage && (
+            <Badge variant="destructive" className="text-xs lg:text-sm">
+              Read Only
+            </Badge>
+          )}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowCreateForm(true)}
+            className="text-xs lg:text-sm"
+          >
+            <Plus className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
+            Create New Club
+          </Button>
         </div>
       </div>
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs lg:text-sm font-medium">Total Members</CardTitle>
-            <Users className="h-3 w-3 lg:h-4 lg:w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl lg:text-2xl font-bold">{mockClubData.memberCount}</div>
-            <p className="text-xs text-muted-foreground">
-              +2 from last month
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs lg:text-sm font-medium">Upcoming Events</CardTitle>
-            <Calendar className="h-3 w-3 lg:h-4 lg:w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl lg:text-2xl font-bold">{mockClubData.upcomingEvents}</div>
-            <p className="text-xs text-muted-foreground">
-              Next: Summer Championship
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs lg:text-sm font-medium">Monthly Revenue</CardTitle>
-            <DollarSign className="h-3 w-3 lg:h-4 lg:w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl lg:text-2xl font-bold">${mockClubData.monthlyRevenue}</div>
-            <p className="text-xs text-muted-foreground">
-              +12% from last month
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-xs lg:text-sm font-medium">Active Programs</CardTitle>
-            <BarChart3 className="h-3 w-3 lg:h-4 lg:w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl lg:text-2xl font-bold">{mockClubData.activePrograms}</div>
-            <p className="text-xs text-muted-foreground">
-              3 competitive, 2 recreational
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <ClubOverview />
 
       {/* Main Content */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -254,9 +318,48 @@ export default function ClubManagementPage() {
             <h2 className="text-xl lg:text-2xl font-bold">Club Settings</h2>
             <p className="text-muted-foreground text-sm lg:text-base">Configure club information and preferences</p>
           </div>
-          <ClubSettings clubData={mockClubData} />
+          {canManage ? (
+            <ClubSettings clubData={{
+              ...mockClubData,
+              name: selectedClub.name,
+              subdomain: selectedClub.subdomain,
+              description: selectedClub.description || '',
+              contactEmail: selectedClub.contact_email || '',
+              contactPhone: selectedClub.contact_phone || '',
+              address: selectedClub.address || '',
+              city: selectedClub.city || '',
+              state: selectedClub.state || '',
+              zipCode: selectedClub.zip_code || '',
+            }} />
+          ) : (
+            <Card>
+              <CardContent className="flex flex-col items-center justify-center py-12">
+                <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
+                <p className="text-muted-foreground text-center">
+                  You don't have permission to modify club settings. Only club owners and admins can access this section.
+                </p>
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
+
+      {/* Create Club Dialog */}
+      <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Club</DialogTitle>
+          </DialogHeader>
+          <CreateClubForm 
+            onSuccess={() => {
+              setShowCreateForm(false);
+              refreshClubs();
+            }}
+            onCancel={() => setShowCreateForm(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
