@@ -57,7 +57,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     // Listen to auth state changes
     const { data: { subscription } } = authService.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session);
         
         if (session) {
           setSession(session);

@@ -55,7 +55,7 @@ export class ClubsService {
         method: 'GET'
       });
       
-      console.log('Supabase response:', { data, error });
+      
       
       if (error) {
         console.error('Error fetching user clubs:', error);
@@ -90,7 +90,6 @@ export class ClubsService {
         updated_at: club.updated_at ?? ''
       }));
 
-      console.log('Returning normalized clubs:', normalizedClubs);
       return normalizedClubs;
     } catch (error) {
       console.error('Error in getUserClubs:', error);
@@ -108,7 +107,7 @@ export class ClubsService {
         body: clubData
       });
       
-      console.log('Create club response:', { data, error });
+      
       
       // Check if the response indicates an error (even with 200 status)
       if (data && typeof data === 'object' && 'success' in data && !data.success) {

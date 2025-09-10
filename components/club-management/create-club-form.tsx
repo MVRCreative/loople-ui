@@ -137,7 +137,7 @@ export function CreateClubForm({ onSuccess, onCancel }: CreateClubFormProps) {
   };
 
   return (
-    <Card>
+    <Card className="shadow-none border-0">
       <CardHeader>
         <CardTitle className="flex items-center">
           <Building2 className="h-5 w-5 mr-2" />

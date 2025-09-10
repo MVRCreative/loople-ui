@@ -55,7 +55,7 @@ export function ClubSettings({ clubData }: ClubSettingsProps) {
 
   const handleSave = () => {
     // TODO: Implement save functionality
-    console.log("Saving settings:", settings);
+    
   };
 
   return (

@@ -31,7 +31,11 @@ import { ClubSettings } from "@/components/club-management/club-settings";
 import { ClubOverview } from "@/components/club-management/club-overview";
 import { CreateClubForm } from "@/components/club-management/create-club-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { mockClubData, mockMembers, mockEvents, mockRegistrations, mockPayments } from "@/lib/club-mock-data";
+import { mockClubData, mockEvents, mockRegistrations, mockPayments } from "@/lib/club-mock-data";
+import { MembersService, Member } from "@/lib/services/members.service";
+import { CreateMemberForm } from "@/components/club-management/create-member-form";
+import { InviteMemberForm } from "@/components/club-management/invite-member-form";
+import { EditMemberForm } from "@/components/club-management/edit-member-form";
 
 export default function ClubManagementPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -39,12 +43,36 @@ export default function ClubManagementPage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [members, setMembers] = useState<Member[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [membersError, setMembersError] = useState<string | null>(null);
+  const [showInviteMember, setShowInviteMember] = useState(false);
+  const [showCreateMember, setShowCreateMember] = useState(false);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push("/auth/login");
     }
   }, [isAuthenticated, authLoading, router]);
+
+  // Load members for selected club
+  useEffect(() => {
+    const loadMembers = async () => {
+      if (!selectedClub) return;
+      try {
+        setMembersLoading(true);
+        setMembersError(null);
+        const data = await MembersService.getClubMembers(selectedClub.id);
+        setMembers(Array.isArray(data) ? data : []);
+      } catch (err: any) {
+        setMembersError(err?.message || 'Failed to load members');
+      } finally {
+        setMembersLoading(false);
+      }
+    };
+    loadMembers();
+  }, [selectedClub]);
 
   if (authLoading || clubLoading) {
     return (
@@ -252,17 +280,35 @@ export default function ClubManagementPage() {
               <p className="text-muted-foreground text-sm lg:text-base">Manage club members and their information</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <Button variant="outline" size="sm" className="text-xs lg:text-sm">
+              <Button variant="outline" size="sm" className="text-xs lg:text-sm" onClick={() => setShowInviteMember(true)}>
                 <UserPlus className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
                 Invite Member
               </Button>
-              <Button size="sm" className="text-xs lg:text-sm">
+              <Button size="sm" className="text-xs lg:text-sm" onClick={() => setShowCreateMember(true)}>
                 <Plus className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
                 Add Member
               </Button>
             </div>
           </div>
-          <MembersTable members={mockMembers} />
+          {membersError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{membersError}</p>
+            </div>
+          )}
+          <MembersTable 
+            members={members} 
+            onInviteClick={() => setShowInviteMember(true)}
+            onEditMember={(m) => setEditingMember(m)}
+            onDeleteMember={async (m) => {
+              try {
+                await MembersService.deleteMember(m.id);
+                setMembers(prev => prev.filter(x => x.id !== m.id));
+              } catch (err) {
+                // no-op; could surface toast
+              }
+            }}
+            hideActions
+          />
         </TabsContent>
 
         <TabsContent value="events" className="space-y-4">
@@ -345,7 +391,8 @@ export default function ClubManagementPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Create Club Dialog */}
+      {/* Create Club Dialog */
+      }
       <Dialog open={showCreateForm} onOpenChange={setShowCreateForm}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -358,6 +405,43 @@ export default function ClubManagementPage() {
             }}
             onCancel={() => setShowCreateForm(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Member Dialog */}
+      <Dialog open={showInviteMember} onOpenChange={setShowInviteMember}>
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+          <InviteMemberForm onSuccess={async () => {
+            setShowInviteMember(false);
+          }} onCancel={() => setShowInviteMember(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Member Dialog */}
+      <Dialog open={showCreateMember} onOpenChange={setShowCreateMember}>
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+          <CreateMemberForm onSuccess={async () => {
+            setShowCreateMember(false);
+            if (selectedClub) {
+              const refreshed = await MembersService.getClubMembers(selectedClub.id);
+              setMembers(Array.isArray(refreshed) ? refreshed : []);
+            }
+          }} onCancel={() => setShowCreateMember(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Member Dialog */}
+      <Dialog open={!!editingMember} onOpenChange={(open) => { if (!open) setEditingMember(null); }}>
+        <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+          {editingMember && (
+            <EditMemberForm member={editingMember} onSuccess={async () => {
+              setEditingMember(null);
+              if (selectedClub) {
+                const refreshed = await MembersService.getClubMembers(selectedClub.id);
+                setMembers(Array.isArray(refreshed) ? refreshed : []);
+              }
+            }} onCancel={() => setEditingMember(null)} />
+          )}
         </DialogContent>
       </Dialog>
     </div>

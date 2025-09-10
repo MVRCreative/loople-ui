@@ -1,4 +1,4 @@
-import { supabase } from '../supabase';
+import { supabase, getFunctionsUrl } from '../supabase';
 
 export interface Event {
   id: string;
@@ -50,17 +50,39 @@ export class EventsService {
    */
   static async getEvents(filters: EventFilters = {}): Promise<Event[]> {
     try {
-      const { data, error } = await supabase.functions.invoke('events', {
+      // Use edge function via GET to match Postman collection usage
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+
+      const params = new URLSearchParams();
+      if (filters.club_id) params.set('club_id', String(filters.club_id));
+      if (filters.event_type) params.set('event_type', String(filters.event_type));
+      if (filters.start_date) params.set('start_date', String(filters.start_date));
+      if (filters.search) params.set('search', String(filters.search));
+      if (filters.page != null) params.set('page', String(filters.page));
+      if (filters.limit != null) params.set('limit', String(filters.limit));
+      if (filters.sort_by) params.set('sort_by', String(filters.sort_by));
+      if (filters.sort_order) params.set('sort_order', String(filters.sort_order));
+
+      const url = `${getFunctionsUrl()}/events${params.toString() ? `?${params.toString()}` : ''}`;
+      const response = await fetch(url, {
         method: 'GET',
-        query: filters
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+          'Content-Type': 'application/json'
+        }
       });
-      
-      if (error) {
-        console.error('Error fetching events:', error);
-        throw error;
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        throw new Error(errorText || `Failed to fetch events: ${response.status}`);
       }
-      
-      return data || [];
+
+      const json = await response.json().catch(() => ([]));
+      if (Array.isArray(json)) return json as Event[];
+      if (json && Array.isArray(json.data)) return json.data as Event[];
+      return [];
     } catch (error) {
       console.error('Error in getEvents:', error);
       throw error;

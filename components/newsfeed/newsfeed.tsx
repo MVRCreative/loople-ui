@@ -34,13 +34,13 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
 
   const handleReaction = (postId: string) => {
     // TODO: Implement server-side reaction handling
-    console.log("Reaction toggled for post:", postId);
+    
   };
 
   const handleComment = (postId: string) => {
     // TODO: Implement comment functionality
     toast.info("Comment functionality coming soon!");
-    console.log("Comment on post:", postId);
+    
   };
 
   const handleShare = (postId: string) => {

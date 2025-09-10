@@ -49,7 +49,7 @@ export function ClubOverview() {
       ]);
 
       // Calculate stats
-      const activeMembers = members.filter(m => m.status === 'active').length;
+      const activeMembers = members.filter(m => (m as any).membership_status === 'active' || (m as any).status === 'active').length;
       const upcomingEventsCount = events.filter(e => e.status === 'upcoming').length;
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();

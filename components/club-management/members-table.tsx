@@ -27,17 +27,22 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Member } from "@/lib/club-mock-data";
+import { Member } from "@/lib/services/members.service";
 
 interface MembersTableProps {
   members: Member[];
+  onInviteClick?: () => void;
+  onExportClick?: () => void;
+  onEditMember?: (member: Member) => void;
+  onDeleteMember?: (member: Member) => void;
+  hideActions?: boolean;
 }
 
-export function MembersTable({ members }: MembersTableProps) {
+export function MembersTable({ members, onInviteClick, onExportClick, onEditMember, onDeleteMember, hideActions }: MembersTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredMembers = members.filter(member =>
-    `${member.firstName} ${member.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    `${member.first_name} ${member.last_name}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
     member.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -58,8 +63,8 @@ export function MembersTable({ members }: MembersTableProps) {
     switch (memberType) {
       case "adult":
         return <Badge variant="outline">Adult</Badge>;
-      case "youth":
-        return <Badge variant="outline">Youth</Badge>;
+      case "child":
+        return <Badge variant="outline">Child</Badge>;
       case "family":
         return <Badge variant="outline">Family</Badge>;
       default:
@@ -80,15 +85,17 @@ export function MembersTable({ members }: MembersTableProps) {
             className="pl-8 lg:pl-10 text-sm"
           />
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" size="sm" className="text-xs lg:text-sm">
-            <UserPlus className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
-            Invite Member
-          </Button>
-          <Button size="sm" className="text-xs lg:text-sm">
-            Export
-          </Button>
-        </div>
+        {!hideActions && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button variant="outline" size="sm" className="text-xs lg:text-sm" onClick={onInviteClick}>
+              <UserPlus className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
+              Invite Member
+            </Button>
+            <Button size="sm" className="text-xs lg:text-sm" onClick={onExportClick}>
+              Export
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Members Table */}
@@ -112,15 +119,15 @@ export function MembersTable({ members }: MembersTableProps) {
                   <div className="flex items-center space-x-2 lg:space-x-3">
                     <div className="h-6 w-6 lg:h-8 lg:w-8 rounded-full bg-blue-100 flex items-center justify-center">
                       <span className="text-xs lg:text-sm font-medium text-blue-600">
-                        {member.firstName[0]}{member.lastName[0]}
+                        {member.first_name?.[0]}{member.last_name?.[0]}
                       </span>
                     </div>
                     <div className="min-w-0">
                       <div className="font-medium text-sm lg:text-base truncate">
-                        {member.firstName} {member.lastName}
+                        {member.first_name} {member.last_name}
                       </div>
                       <div className="text-xs lg:text-sm text-muted-foreground">
-                        {member.dateOfBirth ? new Date(member.dateOfBirth).toLocaleDateString() : 'N/A'}
+                        {member.date_of_birth ? new Date(member.date_of_birth).toLocaleDateString() : 'N/A'}
                       </div>
                     </div>
                   </div>
@@ -141,17 +148,17 @@ export function MembersTable({ members }: MembersTableProps) {
                 </TableCell>
                 <TableCell>
                   <div className="text-xs lg:text-sm">
-                    {getMemberTypeBadge(member.memberType)}
+                    {getMemberTypeBadge(member.member_type)}
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="text-xs lg:text-sm">
-                    {getStatusBadge(member.status)}
+                    {getStatusBadge((member as any).membership_status ?? (member as any).status)}
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="text-xs lg:text-sm">
-                    {new Date(member.membershipStartDate).toLocaleDateString()}
+                    {new Date(member.membership_start_date).toLocaleDateString()}
                   </div>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
@@ -171,15 +178,12 @@ export function MembersTable({ members }: MembersTableProps) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onEditMember?.(member)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Member
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Mail className="h-4 w-4 mr-2" />
-                        Send Email
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
+                      
+                      <DropdownMenuItem className="text-destructive" onClick={() => onDeleteMember?.(member)}>
                         <Trash2 className="h-4 w-4 mr-2" />
                         Remove Member
                       </DropdownMenuItem>

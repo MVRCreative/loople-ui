@@ -38,7 +38,6 @@ export function ClubProvider({ children }: ClubProviderProps) {
       setError(null);
       
       const userClubs = await ClubsService.getUserClubs();
-      console.log('API Response:', userClubs, 'Type:', typeof userClubs, 'Is Array:', Array.isArray(userClubs));
       // Ensure we always have an array
       setClubs(Array.isArray(userClubs) ? userClubs : []);
       

@@ -9,12 +9,12 @@ interface EventCardProps {
 export function EventCard({ event }: EventCardProps) {
   const handleAddToCalendar = () => {
     // TODO: Implement calendar integration
-    console.log("Add to calendar:", event);
+    
   };
 
   const handleRSVP = () => {
     // TODO: Implement RSVP functionality
-    console.log("RSVP for event:", event);
+    
   };
 
   return (
