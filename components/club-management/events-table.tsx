@@ -32,9 +32,14 @@ import { Event } from "@/lib/club-mock-data";
 
 interface EventsTableProps {
   events: Event[];
+  onEditEvent?: (event: Event) => void;
+  onDeleteEvent?: (event: Event) => Promise<void> | void;
+  onViewRegistrations?: (event: Event) => void;
+  onCreateEvent?: () => void;
+  readOnly?: boolean;
 }
 
-export function EventsTable({ events }: EventsTableProps) {
+export function EventsTable({ events, onEditEvent, onDeleteEvent, onViewRegistrations, onCreateEvent, readOnly }: EventsTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredEvents = events.filter(event =>
@@ -98,12 +103,44 @@ export function EventsTable({ events }: EventsTableProps) {
           />
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" size="sm" className="text-xs lg:text-sm">
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-xs lg:text-sm"
+            onClick={() => {
+              // Simple CSV export
+              const headers = [
+                'Title','Type','Start Date','End Date','Location','Capacity','Price Member','Price Non-Member','Status','Registered'
+              ];
+              const rows = filteredEvents.map(e => [
+                e.title,
+                e.eventType,
+                e.startDate,
+                e.endDate,
+                e.location,
+                e.maxCapacity ?? '',
+                e.priceMember ?? 0,
+                e.priceNonMember ?? '',
+                e.status,
+                e.registeredCount
+              ]);
+              const csv = [headers, ...rows].map(r => r.map(v => `${String(v).replace(/"/g, '""')}`).join(',')).join('\n');
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = 'events.csv';
+              a.click();
+              URL.revokeObjectURL(url);
+            }}
+          >
             Export
           </Button>
-          <Button size="sm" className="text-xs lg:text-sm">
-            Create Event
-          </Button>
+          {!readOnly && (
+            <Button size="sm" className="text-xs lg:text-sm" onClick={onCreateEvent}>
+              Create Event
+            </Button>
+          )}
         </div>
       </div>
 
@@ -185,18 +222,22 @@ export function EventsTable({ events }: EventsTableProps) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit Event
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onViewRegistrations && onViewRegistrations(event)}>
                         <Users className="h-4 w-4 mr-2" />
                         View Registrations
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Event
-                      </DropdownMenuItem>
+                      {!readOnly && (
+                        <>
+                          <DropdownMenuItem onClick={() => onEditEvent && onEditEvent(event)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Event
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive" onClick={() => onDeleteEvent && onDeleteEvent(event)}>
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Event
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>

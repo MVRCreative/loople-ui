@@ -31,11 +31,14 @@ import { ClubSettings } from "@/components/club-management/club-settings";
 import { ClubOverview } from "@/components/club-management/club-overview";
 import { CreateClubForm } from "@/components/club-management/create-club-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { mockClubData, mockEvents, mockRegistrations, mockPayments } from "@/lib/club-mock-data";
+import { mockClubData, mockRegistrations, mockPayments, Event as UiEvent } from "@/lib/club-mock-data";
 import { MembersService, Member } from "@/lib/services/members.service";
 import { CreateMemberForm } from "@/components/club-management/create-member-form";
 import { InviteMemberForm } from "@/components/club-management/invite-member-form";
 import { EditMemberForm } from "@/components/club-management/edit-member-form";
+import { EventsService, Event as ApiEvent } from "@/lib/services/events.service";
+import { CreateEventForm } from "@/components/club-management/create-event-form";
+import { EditEventForm } from "@/components/club-management/edit-event-form";
 
 export default function ClubManagementPage() {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
@@ -49,6 +52,28 @@ export default function ClubManagementPage() {
   const [showInviteMember, setShowInviteMember] = useState(false);
   const [showCreateMember, setShowCreateMember] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [events, setEvents] = useState<UiEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
+  const [eventsError, setEventsError] = useState<string | null>(null);
+  const [showCreateEvent, setShowCreateEvent] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<ApiEvent | null>(null);
+
+  const mapApiEventToUiEvent = (e: ApiEvent): UiEvent => ({
+    id: String(e.id),
+    clubId: String(e.club_id),
+    title: e.title,
+    description: e.description || "",
+    eventType: e.event_type as UiEvent["eventType"],
+    startDate: e.start_date,
+    endDate: e.end_date,
+    location: e.location || "",
+    maxCapacity: e.max_capacity,
+    registrationDeadline: e.registration_deadline,
+    priceMember: e.price_member,
+    priceNonMember: e.price_non_member,
+    status: e.status as UiEvent["status"],
+    registeredCount: e.registered_count ?? 0,
+  });
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -73,6 +98,37 @@ export default function ClubManagementPage() {
     };
     loadMembers();
   }, [selectedClub]);
+
+  // Load events for selected club
+  useEffect(() => {
+    const loadEvents = async () => {
+      if (!selectedClub) return;
+      try {
+        setEventsLoading(true);
+        setEventsError(null);
+        const apiEvents = await EventsService.getEvents({ club_id: selectedClub.id });
+        const mapped = (apiEvents || []).map(mapApiEventToUiEvent);
+        setEvents(mapped);
+      } catch (err: any) {
+        setEventsError(err?.message || 'Failed to load events');
+        setEvents([]);
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+    loadEvents();
+  }, [selectedClub]);
+
+  const refreshEvents = async () => {
+    if (!selectedClub) return;
+    try {
+      setEventsLoading(true);
+      const apiEvents = await EventsService.getEvents({ club_id: selectedClub.id });
+      setEvents((apiEvents || []).map(mapApiEventToUiEvent));
+    } finally {
+      setEventsLoading(false);
+    }
+  };
 
   if (authLoading || clubLoading) {
     return (
@@ -317,12 +373,55 @@ export default function ClubManagementPage() {
               <h2 className="text-xl lg:text-2xl font-bold">Events</h2>
               <p className="text-muted-foreground text-sm lg:text-base">Manage club events and competitions</p>
             </div>
-            <Button size="sm" className="text-xs lg:text-sm">
+            <Button size="sm" className="text-xs lg:text-sm" onClick={() => setShowCreateEvent(true)}>
               <CalendarPlus className="h-3 w-3 lg:h-4 lg:w-4 mr-1 lg:mr-2" />
               Create Event
             </Button>
           </div>
-          <EventsTable events={mockEvents} />
+          {eventsError && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{eventsError}</p>
+            </div>
+          )}
+          {eventsLoading ? (
+            <div className="text-sm text-muted-foreground">Loading events...</div>
+          ) : (
+            <EventsTable 
+              events={events} 
+              onEditEvent={(uiEvent) => {
+                // Find matching api event by id in latest list
+                // Map back: we only need id to fetch fresh single if desired; use existing fields
+                const apiLike: ApiEvent = {
+                  id: uiEvent.id,
+                  club_id: uiEvent.clubId,
+                  title: uiEvent.title,
+                  description: uiEvent.description,
+                  event_type: uiEvent.eventType as ApiEvent["event_type"],
+                  start_date: uiEvent.startDate,
+                  end_date: uiEvent.endDate,
+                  location: uiEvent.location,
+                  max_capacity: uiEvent.maxCapacity,
+                  registration_deadline: uiEvent.registrationDeadline,
+                  price_member: uiEvent.priceMember,
+                  price_non_member: uiEvent.priceNonMember,
+                  status: uiEvent.status as ApiEvent["status"],
+                  registered_count: uiEvent.registeredCount,
+                  created_at: "",
+                  updated_at: "",
+                };
+                setEditingEvent(apiLike);
+              }}
+              onDeleteEvent={async (uiEvent) => {
+                try {
+                  await EventsService.deleteEvent(uiEvent.id);
+                  await refreshEvents();
+                } catch {}
+              }}
+              onViewRegistrations={() => setActiveTab("registrations")}
+              onCreateEvent={() => setShowCreateEvent(true)}
+              readOnly={!canManage}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="registrations" className="space-y-4">
@@ -405,6 +504,29 @@ export default function ClubManagementPage() {
             }}
             onCancel={() => setShowCreateForm(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Event Dialog */}
+      <Dialog open={showCreateEvent} onOpenChange={setShowCreateEvent}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Event</DialogTitle>
+          </DialogHeader>
+          <CreateEventForm onSuccess={async () => { setShowCreateEvent(false); await refreshEvents(); }} onCancel={() => setShowCreateEvent(false)} />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Event Dialog */}
+      <Dialog open={!!editingEvent} onOpenChange={(open) => { if (!open) setEditingEvent(null); }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {editingEvent && (
+            <EditEventForm 
+              event={editingEvent} 
+              onSuccess={async () => { setEditingEvent(null); await refreshEvents(); }} 
+              onCancel={() => setEditingEvent(null)} 
+            />
+          )}
         </DialogContent>
       </Dialog>
 
