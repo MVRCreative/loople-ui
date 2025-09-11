@@ -21,7 +21,7 @@ const mockPosts: Post[] = [
     },
     content: {
       type: "text",
-      text: "Just shipped a new feature for our React components library! The new animated list component is looking great. Can't wait to see how the team uses it in their projects. #React #TypeScript #Frontend"
+      text: "Just shipped a new feature for our React components library! The new animated list component is looking great. Can&apos;t wait to see how the team uses it in their projects. #React #TypeScript #Frontend"
     },
     timestamp: "2h",
     reactions: 16, // 12 + 3 + 1
@@ -75,7 +75,7 @@ const mockPosts: Post[] = [
     },
     content: {
       type: "text",
-      text: "Just finished reading 'Clean Code' by Robert Martin. Some really great insights on writing maintainable code. Highly recommend it to any developer looking to improve their craft."
+      text: "Just finished reading &apos;Clean Code&apos; by Robert Martin. Some really great insights on writing maintainable code. Highly recommend it to any developer looking to improve their craft."
     },
     timestamp: "2d",
     reactions: 19, // 15 + 4 + 0
@@ -102,7 +102,7 @@ const mockPosts: Post[] = [
   }
 ]
 
-export function ProfilePosts({ userId }: ProfilePostsProps) {
+export function ProfilePosts({ userId: _userId }: ProfilePostsProps) {
   const [posts] = useState<Post[]>(mockPosts)
 
   const handleReaction = (postId: string) => {
@@ -149,7 +149,7 @@ export function ProfilePosts({ userId }: ProfilePostsProps) {
           <div className="p-8 text-center">
             <div className="text-muted-foreground">
               <p className="text-lg font-medium mb-2">No posts yet</p>
-              <p className="text-sm">This user hasn't shared any posts yet.</p>
+              <p className="text-sm">This user hasn&apos;t shared any posts yet.</p>
             </div>
           </div>
         )}

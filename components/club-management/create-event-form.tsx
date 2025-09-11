@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { CalendarDays, Save, X } from "lucide-react";
+import { Save, X } from "lucide-react";
 import { CreateEventData, EventsService } from "@/lib/services/events.service";
 import { useClub } from "@/lib/club-context";
 
@@ -34,7 +34,7 @@ export function CreateEventForm({ onSuccess, onCancel }: CreateEventFormProps) {
     price_non_member: undefined,
   });
 
-  const handleInput = (field: keyof CreateEventData, value: any) => {
+  const handleInput = (field: keyof CreateEventData, value: string | number | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -51,7 +51,7 @@ export function CreateEventForm({ onSuccess, onCancel }: CreateEventFormProps) {
       ["location", "Location"],
     ];
     for (const [key, label] of required) {
-      const v = formData[key] as any;
+      const v = formData[key] as unknown;
       if (v == null || String(v).trim() === "") {
         setError(`${label} is required`);
         return;
@@ -62,8 +62,9 @@ export function CreateEventForm({ onSuccess, onCancel }: CreateEventFormProps) {
       setLoading(true);
       await EventsService.createEvent({ ...formData, club_id: selectedClub.id });
       onSuccess();
-    } catch (err: any) {
-      setError(err?.message || "Failed to create event");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to create event";
+      setError(message);
     } finally {
       setLoading(false);
     }

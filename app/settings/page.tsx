@@ -3,11 +3,15 @@ import OrganizationsForm from "@/components/settings/organizations-form"
 import UserInfoLogger from "@/components/user-info-logger"
 import { UsersService, ClubsService } from "@/lib/services"
 import { authService } from "@/lib/auth-service"
+import { redirect } from "next/navigation"
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function Page() {
   const user = await authService.getCurrentUser()
   if (!user) {
-    throw new Error("Not authenticated")
+    redirect("/auth/login")
   }
 
   const userRecord = await UsersService.getUserById(user.id)
@@ -23,12 +27,19 @@ export default async function Page() {
   const clubsData = await ClubsService.getUserClubs()
 
   // Transform clubs data to match expected format
-  const clubs = (clubsData || []).map((club: any) => ({
-    id: Number(club.id),
-    name: club.name,
-    subdomain: club.subdomain,
-    member_type: "member",
-  })).filter((club: any) => club.id && club.name)
+  type ClubsServiceClub = {
+    id: string;
+    name: string;
+    subdomain: string;
+  };
+  const clubs = (clubsData || [])
+    .map((club: ClubsServiceClub) => ({
+      id: Number(club.id),
+      name: club.name,
+      subdomain: club.subdomain,
+      member_type: "member",
+    }))
+    .filter((club) => Boolean(club.id) && Boolean(club.name))
   // Split full_name into first_name and last_name
   const fullName = userData?.full_name ?? ""
   const nameParts = fullName.trim().split(" ")

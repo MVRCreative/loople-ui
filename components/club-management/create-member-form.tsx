@@ -61,8 +61,9 @@ export function CreateMemberForm({ onSuccess, onCancel }: CreateMemberFormProps)
       setLoading(true);
       await MembersService.createMember({ ...formData, club_id: selectedClub.id });
       onSuccess();
-    } catch (err: any) {
-      setError(err?.message || "Failed to create member");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to create member";
+      setError(message);
     } finally {
       setLoading(false);
     }

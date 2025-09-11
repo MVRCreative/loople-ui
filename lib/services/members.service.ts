@@ -65,24 +65,29 @@ export class MembersService {
       // Case 3: API returns { success, data: { ..., members: [] } }
       if (json && json.data && Array.isArray(json.data.members)) {
         const clubIdFromPayload = json.data.id != null ? String(json.data.id) : (clubId ?? "");
-        const mapped: Member[] = json.data.members.map((m: any) => ({
-          id: String(m.id),
-          club_id: clubIdFromPayload,
-          user_id: m.user_id ?? undefined,
-          first_name: m.first_name ?? "",
-          last_name: m.last_name ?? "",
-          email: m.email ?? "",
-          phone: m.phone ?? undefined,
-          date_of_birth: m.date_of_birth ?? undefined,
-          member_type: m.member_type ?? 'adult',
-          emergency_contact_name: m.emergency_contact_name ?? undefined,
-          emergency_contact_phone: m.emergency_contact_phone ?? undefined,
-          membership_start_date: (m.membership_start_date || m.created_at || new Date().toISOString()),
-          status: (m.membership_status || m.status || 'active'),
-          role: m.role ?? undefined,
-          created_at: m.created_at || new Date().toISOString(),
-          updated_at: m.updated_at || m.created_at || new Date().toISOString(),
-        }));
+        type ApiMember = Partial<Record<keyof Member |
+          'membership_status' | 'created_at' | 'updated_at', unknown>> & { id?: unknown };
+        const mapped: Member[] = (json.data.members as unknown[]).map((m) => {
+          const am = m as ApiMember;
+          return {
+            id: String(am.id ?? ''),
+            club_id: clubIdFromPayload,
+            user_id: (am.user_id as string | undefined) ?? undefined,
+            first_name: (am.first_name as string) ?? "",
+            last_name: (am.last_name as string) ?? "",
+            email: (am.email as string) ?? "",
+            phone: (am.phone as string | undefined) ?? undefined,
+            date_of_birth: (am.date_of_birth as string | undefined) ?? undefined,
+            member_type: (am.member_type as Member['member_type']) ?? 'adult',
+            emergency_contact_name: (am.emergency_contact_name as string | undefined) ?? undefined,
+            emergency_contact_phone: (am.emergency_contact_phone as string | undefined) ?? undefined,
+            membership_start_date: ((am.membership_start_date as string | undefined) || (am.created_at as string | undefined) || new Date().toISOString()),
+            status: ((am as unknown as { membership_status?: Member['status']; status?: Member['status'] }).membership_status || (am as unknown as { status?: Member['status'] }).status || 'active'),
+            role: (am.role as string | undefined) ?? undefined,
+            created_at: (am.created_at as string | undefined) || new Date().toISOString(),
+            updated_at: (am.updated_at as string | undefined) || (am.created_at as string | undefined) || new Date().toISOString(),
+          };
+        });
         return mapped;
       }
       return [];
@@ -98,7 +103,7 @@ export class MembersService {
   static async createMember(memberData: CreateMemberData): Promise<Member[]> {
     try {
       // Align with Postman: ensure numeric club_id when applicable and drop empty optional fields
-      const sanitized: any = { ...memberData };
+      const sanitized: Record<string, unknown> = { ...memberData };
       // Coerce club_id to number if it looks numeric
       if (sanitized.club_id != null && /^\d+$/.test(String(sanitized.club_id))) {
         sanitized.club_id = Number(sanitized.club_id);
@@ -156,15 +161,15 @@ export class MembersService {
         'membership_start_date',
         'membership_status',
       ]);
-      const payload: Record<string, any> = {};
+      const payload: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(updates)) {
         if (k === 'status') {
           // Map UI field to DB column name
-          if (v !== '') payload['membership_status'] = v;
+          if (v !== '') payload['membership_status'] = v as Member['status'];
           continue;
         }
         if (allowedKeys.has(k)) {
-          if (v !== '') payload[k] = v;
+          if (v !== '') payload[k] = v as unknown;
         }
       }
 

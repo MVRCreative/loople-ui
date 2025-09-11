@@ -32,7 +32,7 @@ export function EditEventForm({ event, onSuccess, onCancel }: EditEventFormProps
     price_non_member: event.price_non_member,
   });
 
-  const handleInput = (field: keyof CreateEventData, value: any) => {
+  const handleInput = (field: keyof CreateEventData, value: string | number | undefined) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -43,8 +43,9 @@ export function EditEventForm({ event, onSuccess, onCancel }: EditEventFormProps
       setLoading(true);
       await EventsService.updateEvent(event.id, formData);
       onSuccess();
-    } catch (err: any) {
-      setError(err?.message || "Failed to update event");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to update event";
+      setError(message);
     } finally {
       setLoading(false);
     }

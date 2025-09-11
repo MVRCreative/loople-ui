@@ -45,6 +45,23 @@ export interface ConfirmInviteData {
   token: string;
 }
 
+type ClubLike = {
+  id?: unknown;
+  name?: unknown;
+  subdomain?: unknown;
+  description?: unknown;
+  contact_email?: unknown;
+  contact_phone?: unknown;
+  address?: unknown;
+  city?: unknown;
+  state?: unknown;
+  zip_code?: unknown;
+  owner_id?: unknown;
+  onboarding_completed?: unknown;
+  created_at?: unknown;
+  updated_at?: unknown;
+};
+
 export class ClubsService {
   /**
    * Get all clubs where the user is a member or owner
@@ -63,32 +80,35 @@ export class ClubsService {
       }
 
       // The edge function may return either an array directly or an object { success, data }
-      let clubsRaw: any[] = [];
+      let clubsRaw: unknown[] = [];
       if (Array.isArray(data)) {
-        clubsRaw = data;
-      } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as any).data)) {
-        clubsRaw = (data as any).data;
+        clubsRaw = data as unknown[];
+      } else if (data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data: unknown[] }).data)) {
+        clubsRaw = (data as { data: unknown[] }).data;
       } else {
         clubsRaw = [];
       }
 
       // Normalize to our Club shape and ensure string ids
-      const normalizedClubs: Club[] = clubsRaw.map((club: any) => ({
-        id: String(club.id),
-        name: club.name ?? '',
-        subdomain: club.subdomain ?? '',
-        description: club.description ?? undefined,
-        contact_email: club.contact_email ?? undefined,
-        contact_phone: club.contact_phone ?? undefined,
-        address: club.address ?? undefined,
-        city: club.city ?? undefined,
-        state: club.state ?? undefined,
-        zip_code: club.zip_code ?? undefined,
-        owner_id: String(club.owner_id),
-        onboarding_completed: Boolean(club.onboarding_completed ?? false),
-        created_at: club.created_at ?? '',
-        updated_at: club.updated_at ?? ''
-      }));
+      const normalizedClubs: Club[] = clubsRaw.map((club: unknown) => {
+        const c = club as ClubLike;
+        return {
+          id: String(c.id ?? ''),
+          name: (c.name as string) ?? '',
+          subdomain: (c.subdomain as string) ?? '',
+          description: (c.description as string | undefined) ?? undefined,
+          contact_email: (c.contact_email as string | undefined) ?? undefined,
+          contact_phone: (c.contact_phone as string | undefined) ?? undefined,
+          address: (c.address as string | undefined) ?? undefined,
+          city: (c.city as string | undefined) ?? undefined,
+          state: (c.state as string | undefined) ?? undefined,
+          zip_code: (c.zip_code as string | undefined) ?? undefined,
+          owner_id: String(c.owner_id ?? ''),
+          onboarding_completed: Boolean((c.onboarding_completed as boolean | undefined) ?? false),
+          created_at: (c.created_at as string) ?? '',
+          updated_at: (c.updated_at as string) ?? ''
+        };
+      });
 
       return normalizedClubs;
     } catch (error) {
@@ -130,7 +150,7 @@ export class ClubsService {
       }
       
       return data || [];
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error in createClub:', error);
       
       // If it's already a properly formatted error, re-throw it
@@ -139,8 +159,9 @@ export class ClubsService {
       }
       
       // Handle Supabase function errors
-      if (error?.error) {
-        const errorMessage = error.error.error || error.error.message || 'Unknown error occurred';
+      if (typeof error === 'object' && error !== null && 'error' in error) {
+        const errObj = (error as { error: { error?: string; message?: string } }).error;
+        const errorMessage = errObj.error || errObj.message || 'Unknown error occurred';
         throw new Error(errorMessage);
       }
       
@@ -152,7 +173,7 @@ export class ClubsService {
   /**
    * Join a club
    */
-  static async joinClub(joinData: JoinClubData): Promise<any> {
+  static async joinClub(joinData: JoinClubData): Promise<unknown> {
     try {
       const { data, error } = await supabase.functions.invoke('clubs-join', {
         method: 'POST',
@@ -164,7 +185,7 @@ export class ClubsService {
         throw error;
       }
       
-      return data;
+      return data as unknown;
     } catch (error) {
       console.error('Error in joinClub:', error);
       throw error;
@@ -174,7 +195,7 @@ export class ClubsService {
   /**
    * Invite someone to join a club
    */
-  static async inviteToClub(inviteData: InviteToClubData): Promise<any> {
+  static async inviteToClub(inviteData: InviteToClubData): Promise<unknown> {
     try {
       const { data, error } = await supabase.functions.invoke('clubs-invite', {
         method: 'POST',
@@ -186,7 +207,7 @@ export class ClubsService {
         throw error;
       }
       
-      return data;
+      return data as unknown;
     } catch (error) {
       console.error('Error in inviteToClub:', error);
       throw error;
@@ -196,7 +217,7 @@ export class ClubsService {
   /**
    * Confirm invitation to join club
    */
-  static async confirmInvite(confirmData: ConfirmInviteData): Promise<any> {
+  static async confirmInvite(confirmData: ConfirmInviteData): Promise<unknown> {
     try {
       const { data, error } = await supabase.functions.invoke('clubs-confirm-invite', {
         method: 'POST',
@@ -208,7 +229,7 @@ export class ClubsService {
         throw error;
       }
       
-      return data;
+      return data as unknown;
     } catch (error) {
       console.error('Error in confirmInvite:', error);
       throw error;
