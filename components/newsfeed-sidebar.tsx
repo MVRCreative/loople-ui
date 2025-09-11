@@ -47,7 +47,7 @@ export function NewsfeedSidebar() {
       </div>
 
       {/* Club Switcher */}
-      <div className="px-4 pb-2">
+      <div className="px-4 pb-2 w-full">
         <ClubSwitcher />
       </div>
 
@@ -89,6 +89,7 @@ export function NewsfeedSidebar() {
                     {content}
                   </Button>
                 )}
+                
               </div>
             )
           })}

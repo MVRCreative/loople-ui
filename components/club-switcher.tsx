@@ -31,10 +31,12 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
     setIsClient(true);
   }, []);
 
-  // Show consistent loading state during SSR and initial client render
-  if (!isClient || !isAuthenticated || loading) {
+  // Avoid SSR hydration issues and do not show loading if not authenticated
+  if (!isClient) return null;
+  if (!isAuthenticated) return null;
+  if (loading) {
     return (
-      <div className={`h-auto p-2 ${className}`}>
+      <div className={`h-auto w-full p-2 ${className}`}>
         <div className="flex items-center gap-2">
           <Building2 className="h-4 w-4 text-muted-foreground" />
           <div className="flex flex-col items-start">
@@ -69,7 +71,7 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
-            className={`h-auto p-2 justify-start gap-2 ${className}`}
+            className={`h-auto w-full p-2 justify-start gap-2 ${className}`}
           >
             <Building2 className="h-4 w-4" />
             <div className="flex flex-col items-start">
@@ -119,7 +121,7 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className={`h-auto p-2 justify-start gap-2 ${className}`}
+          className={`h-auto w-full p-2 justify-start gap-2 ${className}`}
         >
           <Building2 className="h-4 w-4" />
           <div className="flex flex-col items-start">

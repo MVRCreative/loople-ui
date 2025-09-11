@@ -1,40 +1,45 @@
 import ProfileForm from "@/components/settings/profile-form"
 import OrganizationsForm from "@/components/settings/organizations-form"
 import UserInfoLogger from "@/components/user-info-logger"
-import { createClient } from "@/lib/supabase"
-import { getUser } from "@/lib/auth"
+import { UsersService, ClubsService } from "@/lib/services"
+import { authService } from "@/lib/auth-service"
+import { redirect } from "next/navigation"
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function Page() {
-  const supabase = createClient()
-  const user = await getUser()
+  const user = await authService.getCurrentUser()
+  if (!user) {
+    redirect("/auth/login")
+  }
 
-  const { data: userData } = await supabase
-    .from("users")
-    .select("email, full_name, avatar_url")
-    .eq("id", user.id)
-    .single()
+  const userRecord = await UsersService.getUserById(user.id)
+  const userData = userRecord
+    ? {
+      email: userRecord.email,
+      full_name: `${userRecord.first_name ?? ""} ${userRecord.last_name ?? ""}`.trim(),
+      avatar_url: "",
+    }
+    : null
 
   // Load clubs that the user is a member of
-  const { data: clubsData } = await supabase
-    .from("members")
-    .select(`
-      club_id,
-      role,
-      clubs (
-        id,
-        name,
-        slug
-      )
-    `)
-    .eq("user_id", user.id)
+  const clubsData = await ClubsService.getUserClubs()
 
   // Transform clubs data to match expected format
-  const clubs = clubsData?.map((member: any) => ({
-    id: member.clubs?.id,
-    name: member.clubs?.name,
-    subdomain: member.clubs?.slug,
-    member_type: member.role
-  })).filter((club: any) => club.id && club.name) || []
+  type ClubsServiceClub = {
+    id: string;
+    name: string;
+    subdomain: string;
+  };
+  const clubs = (clubsData || [])
+    .map((club: ClubsServiceClub) => ({
+      id: Number(club.id),
+      name: club.name,
+      subdomain: club.subdomain,
+      member_type: "member",
+    }))
+    .filter((club) => Boolean(club.id) && Boolean(club.name))
   // Split full_name into first_name and last_name
   const fullName = userData?.full_name ?? ""
   const nameParts = fullName.trim().split(" ")

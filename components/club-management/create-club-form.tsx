@@ -121,15 +121,15 @@ export function CreateClubForm({ onSuccess, onCancel }: CreateClubFormProps) {
       setLoading(true);
       setError(null);
 
-      const newClub = await ClubsService.createClub(formData);
+      await ClubsService.createClub(formData);
       // Refresh clubs to get the updated list
       await refreshClubs();
       onSuccess();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error creating club:', err);
 
       // The service layer now provides properly formatted error messages
-      const errorMessage = err?.message || 'Failed to create club. Please try again.';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create club. Please try again.';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -184,7 +184,7 @@ export function CreateClubForm({ onSuccess, onCancel }: CreateClubFormProps) {
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  This will be used in your club's URL
+                  This will be used in your club&apos;s URL
                 </p>
               </div>
             </div>

@@ -149,7 +149,7 @@ export class PaymentsService {
   /**
    * Create Stripe payment intent
    */
-  static async createStripePaymentIntent(amount: number, currency: string = 'usd', applicationFeeAmount?: number): Promise<any> {
+  static async createStripePaymentIntent(amount: number, currency: string = 'usd', applicationFeeAmount?: number): Promise<unknown> {
     try {
       const { data, error } = await supabase.functions.invoke('create-payment-intent', {
         method: 'POST',
@@ -165,7 +165,7 @@ export class PaymentsService {
         throw error;
       }
       
-      return data;
+      return data as unknown;
     } catch (error) {
       console.error('Error in createStripePaymentIntent:', error);
       throw error;

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
   Users, 
@@ -23,7 +23,7 @@ interface ClubStats {
 }
 
 export function ClubOverview() {
-  const { selectedClub, refreshClubs } = useClub();
+  const { selectedClub } = useClub();
   const [stats, setStats] = useState<ClubStats>({
     memberCount: 0,
     upcomingEvents: 0,
@@ -41,7 +41,7 @@ export function ClubOverview() {
       setError(null);
 
       // Load data from API services
-      const [members, events, registrations, payments] = await Promise.all([
+      const [members, events, , payments] = await Promise.all([
         MembersService.getClubMembers(selectedClub.id),
         EventsService.getEvents({ club_id: selectedClub.id }),
         RegistrationsService.getRegistrations({ club_id: selectedClub.id }),
@@ -49,7 +49,10 @@ export function ClubOverview() {
       ]);
 
       // Calculate stats
-      const activeMembers = members.filter(m => (m as any).membership_status === 'active' || (m as any).status === 'active').length;
+      const activeMembers = members.filter((m) => {
+        const status = (m as unknown as { membership_status?: string; status?: string }).membership_status || (m as unknown as { status?: string }).status;
+        return status === 'active';
+      }).length;
       const upcomingEventsCount = events.filter(e => e.status === 'upcoming').length;
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();

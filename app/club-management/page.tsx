@@ -2,19 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { useClub, useRequireClub } from "@/lib/club-context";
+import { useClub } from "@/lib/club-context";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Users, 
-  Calendar, 
-  DollarSign, 
-  BarChart3, 
   Plus,
-  Settings,
   UserPlus,
   CalendarPlus,
   CreditCard,
@@ -41,7 +36,7 @@ import { CreateEventForm } from "@/components/club-management/create-event-form"
 import { EditEventForm } from "@/components/club-management/edit-event-form";
 
 export default function ClubManagementPage() {
-  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const { user: _user, isAuthenticated, loading: authLoading } = useAuth();
   const { selectedClub, clubs, loading: clubLoading, isOwner, isAdmin, error: clubError, refreshClubs } = useClub();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
@@ -90,8 +85,9 @@ export default function ClubManagementPage() {
         setMembersError(null);
         const data = await MembersService.getClubMembers(selectedClub.id);
         setMembers(Array.isArray(data) ? data : []);
-      } catch (err: any) {
-        setMembersError(err?.message || 'Failed to load members');
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to load members';
+        setMembersError(message);
       } finally {
         setMembersLoading(false);
       }
@@ -109,8 +105,9 @@ export default function ClubManagementPage() {
         const apiEvents = await EventsService.getEvents({ club_id: selectedClub.id });
         const mapped = (apiEvents || []).map(mapApiEventToUiEvent);
         setEvents(mapped);
-      } catch (err: any) {
-        setEventsError(err?.message || 'Failed to load events');
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Failed to load events';
+        setEventsError(message);
         setEvents([]);
       } finally {
         setEventsLoading(false);
@@ -156,7 +153,7 @@ export default function ClubManagementPage() {
             <div className="text-center">
               <h1 className="text-3xl font-bold mb-2">Welcome to Club Management</h1>
               <p className="text-muted-foreground mb-8">
-                You don't have any clubs yet. Create your first club to get started with managing members, events, and more.
+                You don&apos;t have any clubs yet. Create your first club to get started with managing members, events, and more.
               </p>
             </div>
             
@@ -237,9 +234,9 @@ export default function ClubManagementPage() {
     );
   }
 
-  const displayName = user?.user_metadata?.first_name && user?.user_metadata?.last_name 
-    ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
-    : user?.email || "User";
+  // const displayName = user?.user_metadata?.first_name && user?.user_metadata?.last_name 
+  //   ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
+  //   : user?.email || "User";
 
   // Check if user has permission to manage this club
   const canManage = isOwner || isAdmin;
@@ -482,7 +479,7 @@ export default function ClubManagementPage() {
                 <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Access Restricted</h3>
                 <p className="text-muted-foreground text-center">
-                  You don't have permission to modify club settings. Only club owners and admins can access this section.
+                  You don&apos;t have permission to modify club settings. Only club owners and admins can access this section.
                 </p>
               </CardContent>
             </Card>

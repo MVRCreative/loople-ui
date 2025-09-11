@@ -40,8 +40,9 @@ export function InviteMemberForm({ onSuccess, onCancel }: InviteMemberFormProps)
       setLoading(true);
       await ClubsService.inviteToClub({ ...formData, club_id: selectedClub.id });
       onSuccess();
-    } catch (err: any) {
-      setError(err?.message || "Failed to send invite");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to send invite";
+      setError(message);
     } finally {
       setLoading(false);
     }

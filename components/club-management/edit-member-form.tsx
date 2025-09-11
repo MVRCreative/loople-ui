@@ -40,11 +40,12 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
         emergency_contact_name: formData.emergency_contact_name,
         emergency_contact_phone: formData.emergency_contact_phone,
         membership_start_date: formData.membership_start_date,
-        membership_status: (formData as any).membership_status ?? (formData as any).status,
+        membership_status: (formData as unknown as { membership_status?: Member['status']; status?: Member['status'] }).membership_status ?? (formData as unknown as { status?: Member['status'] }).status,
       });
       onSuccess();
-    } catch (err: any) {
-      setError(err?.message || "Failed to update member");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to update member";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -84,8 +85,8 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
             <div className="space-y-2">
               <Label>Membership Status</Label>
               <select
-                value={(formData as any).membership_status ?? (formData as any).status}
-                onChange={(e) => setFormData(prev => ({ ...(prev as any), membership_status: e.target.value as any }))}
+                value={(formData as unknown as { membership_status?: Member['status']; status?: Member['status'] }).membership_status ?? (formData as unknown as { status?: Member['status'] }).status}
+                onChange={(e) => setFormData(prev => ({ ...(prev as unknown as Member & { membership_status?: Member['status'] }), membership_status: e.target.value as Member['status'] }))}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="active">Active</option>
@@ -97,7 +98,7 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
               <Label>Member Type</Label>
               <select
                 value={formData.member_type}
-                onChange={(e) => handleInput("member_type", e.target.value as any)}
+                onChange={(e) => handleInput("member_type", e.target.value as Member['member_type'])}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="adult">Adult</option>

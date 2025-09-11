@@ -153,7 +153,7 @@ export function MembersTable({ members, onInviteClick, onExportClick, onEditMemb
                 </TableCell>
                 <TableCell>
                   <div className="text-xs lg:text-sm">
-                    {getStatusBadge((member as any).membership_status ?? (member as any).status)}
+                    {getStatusBadge((member as unknown as { membership_status?: string; status?: string }).membership_status ?? (member as unknown as { status?: string }).status ?? "")}
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
