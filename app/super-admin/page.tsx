@@ -3,81 +3,34 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { AnimatedList, AnimatedListItem } from "@/components/ui/animated-list"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { createClient } from "@/lib/server"
 import { Users, Building2, UserCheck, Database } from "lucide-react"
+import { AdminService, AdminProfile, AdminClub, AdminMembership } from "@/lib/services"
 
-type User = {
-  id: string;
-  email: string | null;
-  full_name: string | null;
-  role: string | null;
-  is_admin: boolean | null;
-  created_at: string | null;
-  updated_at: string | null;
-};
-
-type Club = {
-  id: string;
-  slug: string;
-  name: string;
-  created_at: string | null;
-  updated_at: string | null;
-};
-
-type UserClubRelationship = {
-  id: string;
-  club_id: string;
-  user_id: string;
-  role: string;
-  created_at: string | null;
-  user: {
-    id: string;
-    email: string | null;
-    full_name: string | null;
-  } | null;
-  club: {
-    id: string;
-    name: string;
-    slug: string;
-  } | null;
-};
+type User = AdminProfile;
+type Club = AdminClub;
+type UserClubRelationship = AdminMembership;
 
 export default async function SuperAdminPage() {
-  const supabase = await createClient()
+  // Fetch all data via services with error capture
+  const [usersRes, clubsRes, relationshipsRes] = await Promise.allSettled([
+    AdminService.getAllProfiles(),
+    AdminService.getAllClubs(),
+    AdminService.getAllMemberships(),
+  ])
 
-  // Fetch all users
-  const { data: users, error: usersError } = await supabase
-    .from('profiles')
-    .select('*')
-    .order('created_at', { ascending: false })
+  const users = usersRes.status === 'fulfilled' ? usersRes.value : []
+  const clubs = clubsRes.status === 'fulfilled' ? clubsRes.value : []
+  const relationships = relationshipsRes.status === 'fulfilled' ? relationshipsRes.value : []
 
-  // Fetch all clubs
-  const { data: clubs, error: clubsError } = await supabase
-    .from('clubs')
-    .select('*')
-    .order('created_at', { ascending: false })
-
-  // Fetch all user-club relationships
-  const { data: relationships, error: relationshipsError } = await supabase
-    .from('members')
-    .select(`
-      id,
-      club_id,
-      user_id,
-      role,
-      created_at,
-      user:profiles!members_user_id_fkey (
-        id,
-        email,
-        full_name
-      ),
-      club:clubs!members_club_id_fkey (
-        id,
-        name,
-        slug
-      )
-    `)
-    .order('created_at', { ascending: false })
+  const usersError = usersRes.status === 'rejected' 
+    ? (usersRes.reason instanceof Error ? usersRes.reason.message : 'Failed to load users') 
+    : null
+  const clubsError = clubsRes.status === 'rejected' 
+    ? (clubsRes.reason instanceof Error ? clubsRes.reason.message : 'Failed to load clubs') 
+    : null
+  const relationshipsError = relationshipsRes.status === 'rejected' 
+    ? (relationshipsRes.reason instanceof Error ? relationshipsRes.reason.message : 'Failed to load relationships') 
+    : null
 
   return (
     <div className="min-h-screen bg-background">
@@ -168,7 +121,7 @@ export default async function SuperAdminPage() {
                 </CardHeader>
                 <CardContent>
                   {usersError ? (
-                    <div className="text-sm text-destructive">Failed to load users: {usersError.message}</div>
+                    <div className="text-sm text-destructive">Failed to load users: {usersError}</div>
                   ) : (
                     <Table>
                       <TableHeader>
@@ -226,7 +179,7 @@ export default async function SuperAdminPage() {
                 </CardHeader>
                 <CardContent>
                   {clubsError ? (
-                    <div className="text-sm text-destructive">Failed to load clubs: {clubsError.message}</div>
+                    <div className="text-sm text-destructive">Failed to load clubs: {clubsError}</div>
                   ) : (
                     <Table>
                       <TableHeader>
@@ -276,7 +229,7 @@ export default async function SuperAdminPage() {
                 </CardHeader>
                 <CardContent>
                   {relationshipsError ? (
-                    <div className="text-sm text-destructive">Failed to load relationships: {relationshipsError.message}</div>
+                    <div className="text-sm text-destructive">Failed to load relationships: {relationshipsError}</div>
                   ) : (
                     <Table>
                       <TableHeader>
