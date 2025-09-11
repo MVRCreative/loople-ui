@@ -24,6 +24,10 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
+  const isNewsfeedRoute = pathname === "/";
+  const isMessagesRoute = pathname.startsWith("/messages");
+  const isSettingsRoute = pathname.startsWith("/settings");
+  const isProfileRoute = pathname.startsWith("/profile");
   const isAuthRoute = pathname.startsWith("/auth");
   const isRootRoute = pathname === "/";
   const isFeedPage = pathname === "/";
