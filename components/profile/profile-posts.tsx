@@ -13,9 +13,11 @@ const mockPosts: Post[] = [
   {
     id: "1",
     user: {
+      id: "rc",
       name: "Ricardo Cooper",
       avatar: "RC",
-      role: "Developer"
+      role: "Developer",
+      isAdmin: false
     },
     content: {
       type: "text",
@@ -29,9 +31,11 @@ const mockPosts: Post[] = [
   {
     id: "2", 
     user: {
+      id: "rc",
       name: "Ricardo Cooper",
       avatar: "RC",
-      role: "Developer"
+      role: "Developer",
+      isAdmin: false
     },
     content: {
       type: "text",
@@ -45,9 +49,11 @@ const mockPosts: Post[] = [
   {
     id: "3",
     user: {
+      id: "rc",
       name: "Ricardo Cooper", 
       avatar: "RC",
-      role: "Developer"
+      role: "Developer",
+      isAdmin: false
     },
     content: {
       type: "text",
@@ -61,9 +67,11 @@ const mockPosts: Post[] = [
   {
     id: "4",
     user: {
+      id: "rc",
       name: "Ricardo Cooper",
       avatar: "RC", 
-      role: "Developer"
+      role: "Developer",
+      isAdmin: false
     },
     content: {
       type: "text",
@@ -77,9 +85,11 @@ const mockPosts: Post[] = [
   {
     id: "5",
     user: {
+      id: "rc",
       name: "Ricardo Cooper",
       avatar: "RC",
-      role: "Developer"
+      role: "Developer",
+      isAdmin: false
     },
     content: {
       type: "text", 

@@ -77,6 +77,7 @@ export class AdminService {
           slug
         )
       `)
+      .returns<AdminMembership[]>()
       .order('created_at', { ascending: false });
 
     if (error) throw error;
