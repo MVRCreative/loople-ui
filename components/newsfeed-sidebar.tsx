@@ -89,6 +89,7 @@ export function NewsfeedSidebar() {
                     {content}
                   </Button>
                 )}
+                
               </div>
             )
           })}
