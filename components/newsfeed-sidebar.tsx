@@ -15,7 +15,7 @@ const navigation = [
   { name: "Events", href: "#", icon: Bell, current: false },
   { name: "Messages", href: "/messages", icon: MessageSquare, current: false, badge: "3" },
   { name: "Notifications", href: "#", icon: Bell, current: false, badge: "5" },
-  { name: "Profile", href: "#", icon: User, current: false },
+  { name: "Profile", href: "/profile/ricardo-cooper", icon: User, current: false },
   { name: "Settings", href: "/settings", icon: Settings, current: false },
 ]
 

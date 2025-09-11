@@ -17,11 +17,12 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const isNewsfeedRoute = pathname === "/";
   const isMessagesRoute = pathname.startsWith("/messages");
   const isSettingsRoute = pathname.startsWith("/settings");
+  const isProfileRoute = pathname.startsWith("/profile");
   const isAuthRoute = pathname.startsWith("/auth");
   const isAdminRoute = pathname.startsWith("/admin");
   const isAnimationsRoute = pathname.startsWith("/animations");
 
-  if (isNewsfeedRoute || isMessagesRoute || isSettingsRoute) {
+  if (isNewsfeedRoute || isMessagesRoute || isSettingsRoute || isProfileRoute) {
     const newsfeedGrid = `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
          [grid-template-columns:600px]
          lg:[grid-template-columns:600px_350px]
