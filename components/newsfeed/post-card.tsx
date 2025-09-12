@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Post } from "@/lib/types";
 import { EventCard } from "./event-card";
 import { PostActions } from "./post-actions";
+import { PollVoting } from "./poll-voting";
 
 interface PostCardProps {
   post: Post;
@@ -50,16 +51,14 @@ export function PostCard({ post, onReaction, onComment, onShare }: PostCardProps
           <EventCard event={post.content.event} />
         )}
         
-        {/* Poll Card - TODO: Implement poll display */}
+        {/* Poll Card */}
         {post.content.type === "poll" && post.content.poll && (
-          <div className="bg-muted/50 border border-border rounded-lg p-4 mt-3">
-            <p className="font-medium text-card-foreground mb-2">
-              {post.content.poll.question}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Poll functionality coming soon...
-            </p>
-          </div>
+          <PollVoting
+            postId={post.id}
+            pollQuestion={post.content.poll.question}
+            pollOptions={post.content.poll.options}
+            pollVotes={post.content.poll.votes}
+          />
         )}
       </div>
       

@@ -31,7 +31,51 @@ export const postContentSchema = z.object({
   }).optional(),
 });
 
-// Post schema
+// API User schema (from Supabase)
+export const apiUserSchema = z.object({
+  id: z.string(),
+  email: z.string(),
+  raw_user_meta_data: z.object({
+    first_name: z.string().optional(),
+    last_name: z.string().optional(),
+  }).optional(),
+});
+
+// API Post schema (from database)
+export const apiPostSchema = z.object({
+  id: z.number(),
+  club_id: z.number(),
+  user_id: z.string(), // UUID as string
+  content_type: z.enum(["text", "event", "poll"]),
+  content_text: z.string(),
+  event_id: z.number().optional(),
+  poll_question: z.string().optional(),
+  poll_options: z.string().optional(), // JSON string
+  poll_votes: z.string().optional(), // JSON string
+  is_active: z.boolean(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  events: eventSchema.optional(),
+  users: apiUserSchema.optional(),
+  reaction_count: z.number().optional(),
+  comment_count: z.number().optional(),
+  reactions_by_type: z.record(z.string(), z.number()).optional(),
+});
+
+// API Comment schema (from database)
+export const apiCommentSchema = z.object({
+  id: z.number(),
+  post_id: z.number(),
+  user_id: z.string(), // UUID as string
+  parent_comment_id: z.number().optional(),
+  content: z.string(),
+  is_active: z.boolean(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  users: apiUserSchema.optional(),
+});
+
+// Frontend Post schema (for UI components)
 export const postSchema = z.object({
   id: z.string(),
   user: userSchema,
@@ -42,7 +86,7 @@ export const postSchema = z.object({
   isLiked: z.boolean().default(false),
 });
 
-// Comment schema
+// Frontend Comment schema (for UI components)
 export const commentSchema = z.object({
   id: z.string(),
   postId: z.string(),
@@ -58,3 +102,8 @@ export type Event = z.infer<typeof eventSchema>;
 export type PostContent = z.infer<typeof postContentSchema>;
 export type Post = z.infer<typeof postSchema>;
 export type Comment = z.infer<typeof commentSchema>;
+
+// API types
+export type ApiUser = z.infer<typeof apiUserSchema>;
+export type ApiPost = z.infer<typeof apiPostSchema>;
+export type ApiComment = z.infer<typeof apiCommentSchema>;

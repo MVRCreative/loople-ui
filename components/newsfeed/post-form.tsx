@@ -14,14 +14,43 @@ interface PostFormProps {
 export function PostForm({ currentUser, onSubmit }: PostFormProps) {
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState<"text" | "event" | "poll">("text");
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (content.trim()) {
-      onSubmit(content.trim(), postType);
+      if (postType === "poll") {
+        // For poll posts, we'll pass the poll data through the content
+        const pollData = {
+          question: pollQuestion,
+          options: pollOptions.filter(option => option.trim())
+        };
+        onSubmit(JSON.stringify({ text: content.trim(), poll: pollData }), postType);
+      } else {
+        onSubmit(content.trim(), postType);
+      }
       setContent("");
       setPostType("text");
+      setPollQuestion("");
+      setPollOptions(["", ""]);
     }
+  };
+
+  const addPollOption = () => {
+    setPollOptions([...pollOptions, ""]);
+  };
+
+  const removePollOption = (index: number) => {
+    if (pollOptions.length > 2) {
+      setPollOptions(pollOptions.filter((_, i) => i !== index));
+    }
+  };
+
+  const updatePollOption = (index: number, value: string) => {
+    const newOptions = [...pollOptions];
+    newOptions[index] = value;
+    setPollOptions(newOptions);
   };
 
   return (
@@ -44,6 +73,56 @@ export function PostForm({ currentUser, onSubmit }: PostFormProps) {
               suppressHydrationWarning
             />
             
+            {/* Poll form fields */}
+            {postType === "poll" && (
+              <div className="space-y-3 mt-3">
+                <input
+                  type="text"
+                  value={pollQuestion}
+                  onChange={(e) => setPollQuestion(e.target.value)}
+                  placeholder="Poll question..."
+                  className="w-full p-2 border border-input rounded-md bg-background text-sm"
+                  suppressHydrationWarning
+                />
+                <div className="space-y-2">
+                  {pollOptions.map((option, index) => (
+                    <div key={index} className="flex gap-2">
+                      <input
+                        type="text"
+                        value={option}
+                        onChange={(e) => updatePollOption(index, e.target.value)}
+                        placeholder={`Option ${index + 1}`}
+                        className="flex-1 p-2 border border-input rounded-md bg-background text-sm"
+                        suppressHydrationWarning
+                      />
+                      {pollOptions.length > 2 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => removePollOption(index)}
+                          className="h-8 px-2"
+                          suppressHydrationWarning
+                        >
+                          ×
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addPollOption}
+                    className="h-8 px-3"
+                    suppressHydrationWarning
+                  >
+                    Add Option
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between mt-3">
               <div className="flex gap-2">
                 <Button
@@ -72,7 +151,7 @@ export function PostForm({ currentUser, onSubmit }: PostFormProps) {
               
               <Button
                 type="submit"
-                disabled={!content.trim()}
+                disabled={!content.trim() || (postType === "poll" && (!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2))}
                 className="h-8 px-4"
                 suppressHydrationWarning
               >
