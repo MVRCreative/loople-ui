@@ -2,10 +2,11 @@
 
 import { useState } from "react"
 import { PostCard } from "@/components/newsfeed/post-card"
-import { Post } from "@/lib/types"
+import { Post, User } from "@/lib/types"
 
 interface ProfilePostsProps {
   userId: string
+  currentUser: User
 }
 
 // Mock data for user posts - in real app this would come from API
@@ -102,7 +103,7 @@ const mockPosts: Post[] = [
   }
 ]
 
-export function ProfilePosts({ userId: _userId }: ProfilePostsProps) {
+export function ProfilePosts({ userId: _userId, currentUser }: ProfilePostsProps) {
   const [posts] = useState<Post[]>(mockPosts)
 
   const handleReaction = (postId: string) => {
@@ -139,6 +140,7 @@ export function ProfilePosts({ userId: _userId }: ProfilePostsProps) {
             <div key={post.id} className="p-4">
               <PostCard
                 post={post}
+                currentUser={currentUser}
                 onReaction={handleReaction}
                 onComment={handleComment}
                 onShare={handleShare}

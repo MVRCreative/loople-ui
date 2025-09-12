@@ -24,15 +24,15 @@ export function getRelativeTime(dateString: string): string {
 
 // Helper function to create user object from API data
 export function createUserFromApi(apiUser: any): User {
-  const firstName = apiUser.raw_user_meta_data?.first_name || ''
-  const lastName = apiUser.raw_user_meta_data?.last_name || ''
+  const firstName = apiUser.first_name || apiUser.raw_user_meta_data?.first_name || ''
+  const lastName = apiUser.last_name || apiUser.raw_user_meta_data?.last_name || ''
   const name = firstName && lastName ? `${firstName} ${lastName}` : apiUser.email
   
   return {
     id: apiUser.id,
     name: name,
     role: 'Member', // Default role, could be enhanced with actual role data
-    avatar: name.charAt(0).toUpperCase(),
+    avatar: firstName ? firstName.charAt(0).toUpperCase() : apiUser.email.charAt(0).toUpperCase(),
     isAdmin: false, // Default, could be enhanced with actual admin status
   }
 }
@@ -67,12 +67,22 @@ export function transformApiPostToPost(apiPost: ApiPost): Post {
   // Add poll data if it's a poll post
   if (apiPost.content_type === 'poll' && apiPost.poll_question && apiPost.poll_options) {
     const pollOptions = JSON.parse(apiPost.poll_options)
-    const pollVotes = JSON.parse(apiPost.poll_votes || '{}')
+    const pollVotesRaw = JSON.parse(apiPost.poll_votes || '{}')
+    
+    // Clean up poll votes - remove user vote tracking keys and keep only vote counts
+    const pollVotes: Record<string, number> = {}
+    Object.keys(pollVotesRaw).forEach(key => {
+      // Only include numeric keys (vote counts), skip user vote tracking keys
+      if (!key.startsWith('user_') && !isNaN(Number(key))) {
+        pollVotes[key] = pollVotesRaw[key]
+      }
+    })
     
     content.poll = {
       question: apiPost.poll_question,
       options: pollOptions,
       votes: pollVotes,
+      userVote: apiPost.user_vote !== undefined ? apiPost.user_vote : null,
     }
   }
 

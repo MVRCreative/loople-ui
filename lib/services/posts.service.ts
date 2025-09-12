@@ -36,6 +36,9 @@ export interface PostsQueryParams {
   search?: string
   sort_by?: string
   sort_order?: 'asc' | 'desc'
+  date_from?: string
+  date_to?: string
+  has_media?: boolean
 }
 
 export interface ApiResponse<T> {
@@ -97,6 +100,13 @@ class PostsService {
   async createPost(postData: CreatePostRequest): Promise<ApiResponse<Post>> {
     return this.makeRequest<Post>('posts', {
       method: 'POST',
+      body: JSON.stringify(postData),
+    })
+  }
+
+  async updatePost(postId: number, postData: CreatePostRequest): Promise<ApiResponse<Post>> {
+    return this.makeRequest<Post>(`posts/${postId}`, {
+      method: 'PUT',
       body: JSON.stringify(postData),
     })
   }
@@ -234,6 +244,91 @@ class PostsService {
         callback
       )
       .subscribe()
+  }
+
+  // Media Attachments
+  async uploadMedia(postId: number, file: File): Promise<ApiResponse<{
+    id: number
+    file_name: string
+    file_path: string
+    file_size: number
+    mime_type: string
+    file_type: string
+  }>> {
+    try {
+      // Upload file to Supabase Storage
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${postId}/${Date.now()}.${fileExt}`
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('post-media')
+        .upload(fileName, file)
+
+      if (uploadError) {
+        throw new Error(uploadError.message)
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('post-media')
+        .getPublicUrl(fileName)
+
+      // Create media attachment record
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session?.access_token) {
+        throw new Error('No authentication token found')
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/media`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          post_id: postId,
+          file_name: file.name,
+          file_path: fileName,
+          file_size: file.size,
+          mime_type: file.type,
+          file_type: file.type.startsWith('image/') ? 'image' : 
+                     file.type.startsWith('video/') ? 'video' : 'document'
+        }),
+      })
+
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create media attachment')
+      }
+
+      return result
+    } catch (error) {
+      console.error('Media upload error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
+  async getMediaAttachments(postId: number): Promise<ApiResponse<{
+    id: number
+    file_name: string
+    file_path: string
+    file_size: number
+    mime_type: string
+    file_type: string
+    created_at: string
+  }[]>> {
+    return this.makeRequest(`media?post_id=${postId}`)
+  }
+
+  async deleteMediaAttachment(attachmentId: number): Promise<ApiResponse<{ success: boolean }>> {
+    return this.makeRequest<{ success: boolean }>(`media/${attachmentId}`, {
+      method: 'DELETE',
+    })
   }
 }
 

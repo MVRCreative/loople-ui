@@ -28,6 +28,7 @@ export const postContentSchema = z.object({
     question: z.string(),
     options: z.array(z.string()),
     votes: z.record(z.string(), z.number()),
+    userVote: z.number().nullable().optional(),
   }).optional(),
 });
 
@@ -60,6 +61,7 @@ export const apiPostSchema = z.object({
   reaction_count: z.number().optional(),
   comment_count: z.number().optional(),
   reactions_by_type: z.record(z.string(), z.number()).optional(),
+  user_vote: z.number().nullable().optional(), // User's vote for poll posts
 });
 
 // API Comment schema (from database)

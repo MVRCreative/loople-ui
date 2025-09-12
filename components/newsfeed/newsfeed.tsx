@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { PostForm } from "./post-form";
 import { PostCard } from "./post-card";
+import { SearchFilter } from "./search-filter";
 import { Post, User, ApiPost } from "@/lib/types";
 import { postsService } from "@/lib/services/posts.service";
 import { transformApiPostsToPosts } from "@/lib/utils/posts.utils";
@@ -17,20 +18,21 @@ interface NewsfeedProps {
 export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [loading, setLoading] = useState(false);
-  const { currentClub } = useClub();
+  const [searchFilters, setSearchFilters] = useState<any>({});
+  const { selectedClub } = useClub();
 
   // Load posts from API on component mount
   useEffect(() => {
-    if (currentClub?.id) {
+    if (selectedClub?.id) {
       loadPosts();
     }
-  }, [currentClub?.id]);
+  }, [selectedClub?.id]);
 
   // Set up real-time subscriptions
   useEffect(() => {
-    if (!currentClub?.id) return;
+    if (!selectedClub?.id) return;
 
-    const subscription = postsService.subscribeToPosts(currentClub.id, (payload) => {
+    const subscription = postsService.subscribeToPosts(parseInt(selectedClub.id), (payload) => {
       console.log('Real-time post update:', payload);
       
       if (payload.eventType === 'INSERT') {
@@ -48,22 +50,23 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [currentClub?.id]);
+  }, [selectedClub?.id]);
 
-  const loadPosts = async () => {
-    if (!currentClub?.id) return;
+  const loadPosts = async (filters: any = {}) => {
+    if (!selectedClub?.id) return;
     
     setLoading(true);
     try {
       const response = await postsService.getPosts({
-        club_id: currentClub.id,
+        club_id: parseInt(selectedClub.id),
         limit: 20,
         sort_by: 'created_at',
-        sort_order: 'desc'
+        sort_order: 'desc',
+        ...filters
       });
 
       if (response.success && response.data) {
-        const transformedPosts = transformApiPostsToPosts(response.data);
+        const transformedPosts = transformApiPostsToPosts(response.data as any);
         setPosts(transformedPosts);
       } else {
         toast.error(response.error || 'Failed to load posts');
@@ -76,15 +79,15 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
     }
   };
 
-  const handleCreatePost = async (content: string, type: "text" | "event" | "poll") => {
-    if (!currentClub?.id) {
+  const handleCreatePost = async (content: string, type: "text" | "event" | "poll", attachments?: File[]) => {
+    if (!selectedClub?.id) {
       toast.error('No club selected');
       return;
     }
 
     try {
       let postData: any = {
-        club_id: currentClub.id,
+        club_id: parseInt(selectedClub.id),
         content_type: type,
         content_text: content,
       };
@@ -105,8 +108,21 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
       const response = await postsService.createPost(postData);
 
       if (response.success && response.data) {
+        // Upload media attachments if any
+        if (attachments && attachments.length > 0) {
+          const postId = parseInt(response.data.id);
+          for (const file of attachments) {
+            try {
+              await postsService.uploadMedia(postId, file);
+            } catch (error) {
+              console.error('Error uploading media:', error);
+              toast.error(`Failed to upload ${file.name}`);
+            }
+          }
+        }
+
         // Add the new post to the beginning of the list
-        const newPost = transformApiPostsToPosts([response.data])[0];
+        const newPost = transformApiPostsToPosts([response.data as any])[0];
         setPosts(prev => [newPost, ...prev]);
         toast.success("Post created successfully!");
       } else {
@@ -143,8 +159,8 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
   };
 
   const handleComment = (postId: string) => {
-    // TODO: Implement comment functionality
-    toast.info("Comment functionality coming soon!");
+    // Comment functionality is handled by PostCard component
+    // This function is called when comment button is clicked
   };
 
   const handleShare = (postId: string) => {
@@ -162,9 +178,34 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
     }
   };
 
+  const handlePostUpdate = (updatedPost: Post) => {
+    setPosts(prev => prev.map(post => 
+      post.id === updatedPost.id ? updatedPost : post
+    ));
+  };
+
+  const handlePostDelete = (postId: string) => {
+    setPosts(prev => prev.filter(post => post.id !== postId));
+  };
+
+  const handleSearch = (filters: any) => {
+    setSearchFilters(filters);
+    loadPosts(filters);
+  };
+
+  const handleClearSearch = () => {
+    setSearchFilters({});
+    loadPosts();
+  };
+
   return (
     <div className="w-full">
       <PostForm currentUser={currentUser} onSubmit={handleCreatePost} />
+      
+      <SearchFilter 
+        onSearch={handleSearch}
+        onClear={handleClearSearch}
+      />
       
       {loading ? (
         <div className="text-center py-12 text-muted-foreground">
@@ -176,9 +217,12 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
             <PostCard
               key={post.id}
               post={post}
+              currentUser={currentUser}
               onReaction={handleReaction}
               onComment={handleComment}
               onShare={handleShare}
+              onPostUpdate={handlePostUpdate}
+              onPostDelete={handlePostDelete}
             />
           ))}
         </div>
