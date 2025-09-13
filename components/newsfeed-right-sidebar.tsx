@@ -60,7 +60,7 @@ export function NewsfeedRightSidebar() {
       </div>
 
       {/* Upcoming Events */}
-      <div className="mb-8">
+      <div className="mb-8 rounded-lg border border-border bg-background p-4">
         <h3 className="font-semibold text-lg mb-4 text-foreground">Upcoming Events</h3>
         <div className="space-y-3">
           {upcomingEvents.map((event, index) => (
@@ -87,7 +87,7 @@ export function NewsfeedRightSidebar() {
       <Separator className="my-6" />
 
       {/* Your Programs */}
-      <div>
+      <div className="rounded-lg border border-border bg-background p-4">
         <h3 className="font-semibold text-lg mb-4 text-foreground">Your Programs</h3>
         <div className="space-y-3">
           {userPrograms.map((program, index) => (

@@ -103,12 +103,12 @@ export function MembersTable({ members, onInviteClick, onExportClick, onEditMemb
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-xs lg:text-sm">Member</TableHead>
-              <TableHead className="text-xs lg:text-sm hidden lg:table-cell">Contact</TableHead>
-              <TableHead className="text-xs lg:text-sm">Type</TableHead>
-              <TableHead className="text-xs lg:text-sm">Status</TableHead>
-              <TableHead className="text-xs lg:text-sm hidden md:table-cell">Member Since</TableHead>
-              <TableHead className="text-xs lg:text-sm hidden lg:table-cell">Role</TableHead>
+              <TableHead className="text-xs lg:text-sm min-w-[200px]">Member</TableHead>
+              <TableHead className="text-xs lg:text-sm min-w-[180px]">Contact</TableHead>
+              <TableHead className="text-xs lg:text-sm min-w-[100px]">Type</TableHead>
+              <TableHead className="text-xs lg:text-sm min-w-[100px]">Status</TableHead>
+              <TableHead className="text-xs lg:text-sm min-w-[120px]">Member Since</TableHead>
+              <TableHead className="text-xs lg:text-sm min-w-[100px]">Role</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -132,7 +132,7 @@ export function MembersTable({ members, onInviteClick, onExportClick, onEditMemb
                     </div>
                   </div>
                 </TableCell>
-                <TableCell className="hidden lg:table-cell">
+                <TableCell>
                   <div className="space-y-1">
                     <div className="flex items-center text-xs lg:text-sm">
                       <Mail className="h-3 w-3 mr-1 text-muted-foreground" />
@@ -156,12 +156,12 @@ export function MembersTable({ members, onInviteClick, onExportClick, onEditMemb
                     {getStatusBadge((member as unknown as { membership_status?: string; status?: string }).membership_status ?? (member as unknown as { status?: string }).status ?? "")}
                   </div>
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
+                <TableCell>
                   <div className="text-xs lg:text-sm">
                     {new Date(member.membership_start_date).toLocaleDateString()}
                   </div>
                 </TableCell>
-                <TableCell className="hidden lg:table-cell">
+                <TableCell>
                   <div className="text-xs lg:text-sm">
                     {member.role ? (
                       <Badge variant="outline" className="text-xs">{member.role}</Badge>

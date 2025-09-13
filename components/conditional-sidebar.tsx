@@ -107,6 +107,22 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
     }
   };
 
+  // For club management pages, use a simpler layout without right sidebar
+  if (isClubManagementPage) {
+    return (
+      <div className="min-h-screen w-full bg-background">
+        <div className="grid gap-x-0 mx-auto justify-center max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px] [grid-template-columns:600px] lg:[grid-template-columns:906px] xl:[grid-template-columns:275px_922px]">
+          <aside className="hidden xl:block">
+            <NewsfeedSidebar />
+          </aside>
+          <main className="relative">
+            {children}
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen w-full bg-background overflow-x-hidden">
       <div className="w-full max-w-[1200px] mx-auto">

@@ -92,12 +92,12 @@ export function RegistrationsTable({ registrations }: RegistrationsTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Member</TableHead>
-              <TableHead>Event</TableHead>
-              <TableHead>Registration Date</TableHead>
-              <TableHead>Event Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Notes</TableHead>
+              <TableHead className="min-w-[200px]">Member</TableHead>
+              <TableHead className="min-w-[180px]">Event</TableHead>
+              <TableHead className="min-w-[140px]">Registration Date</TableHead>
+              <TableHead className="min-w-[140px]">Event Date</TableHead>
+              <TableHead className="min-w-[100px]">Status</TableHead>
+              <TableHead className="min-w-[150px]">Notes</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -146,7 +146,7 @@ export function RegistrationsTable({ registrations }: RegistrationsTableProps) {
                 </TableCell>
                 <TableCell>
                   {registration.notes ? (
-                    <div className="text-sm text-muted-foreground max-w-[200px] truncate">
+                    <div className="text-sm text-muted-foreground max-w-[300px] truncate">
                       {registration.notes}
                     </div>
                   ) : (

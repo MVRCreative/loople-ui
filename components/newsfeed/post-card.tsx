@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { postsService } from "@/lib/services/posts.service";
 import { toast } from "sonner";
 import { useClub } from "@/lib/club-context";
+import { useState } from "react";
 
 interface PostCardProps {
   post: Post;
@@ -21,11 +21,12 @@ interface PostCardProps {
   onReaction: (postId: string) => void;
   onComment: (postId: string) => void;
   onShare: (postId: string) => void;
-  onPostUpdate?: (updatedPost: Post) => void;
+  onPostUpdate?: (post: Post) => void;
   onPostDelete?: (postId: string) => void;
+  isFirst?: boolean;
 }
 
-export function PostCard({ post, currentUser, onReaction, onComment, onShare, onPostUpdate, onPostDelete }: PostCardProps) {
+export function PostCard({ post, currentUser, onReaction, onComment, onShare, onPostUpdate, onPostDelete, isFirst = false }: PostCardProps) {
   const [showComments, setShowComments] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -132,45 +133,9 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
                 {post.user.role}
               </Badge>
             </div>
-            
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
-                {post.timestamp}
-              </span>
-              
-              {(canEdit || canDelete) && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 hover:bg-muted"
-                      disabled={isDeleting}
-                    >
-                      <MoreHorizontal className="h-3 w-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {canEdit && (
-                      <DropdownMenuItem onClick={handleEdit}>
-                        <Edit className="h-3 w-3 mr-2" />
-                        Edit Post
-                      </DropdownMenuItem>
-                    )}
-                    {canDelete && (
-                      <DropdownMenuItem
-                        onClick={handleDelete}
-                        className="text-destructive focus:text-destructive"
-                        disabled={isDeleting}
-                      >
-                        <Trash2 className="h-3 w-3 mr-2" />
-                        {isDeleting ? 'Deleting...' : 'Delete Post'}
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
+            <span className="text-sm text-muted-foreground">
+              {post.timestamp}
+            </span>
           </div>
         </div>
       </div>
@@ -186,15 +151,16 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
           <EventCard event={post.content.event} />
         )}
         
-        {/* Poll Card */}
+        {/* Poll Card - TODO: Implement poll display */}
         {post.content.type === "poll" && post.content.poll && (
-          <PollVoting
-            postId={post.id}
-            pollQuestion={post.content.poll.question}
-            pollOptions={post.content.poll.options}
-            pollVotes={post.content.poll.votes}
-            userVote={post.content.poll.userVote}
-          />
+          <div className="bg-muted/50 border border-border rounded-lg p-4 mt-3">
+            <p className="font-medium text-card-foreground mb-2">
+              {post.content.poll.question}
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Poll functionality coming soon...
+            </p>
+          </div>
         )}
       </div>
       
@@ -205,17 +171,9 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
         comments={post.comments}
         isLiked={post.isLiked}
         onReaction={onReaction}
-        onComment={handleCommentClick}
+        onComment={onComment}
         onShare={onShare}
       />
-
-      {/* Comments Section */}
-      {showComments && (
-        <CommentsSection
-          postId={post.id}
-          currentUser={currentUser}
-        />
-      )}
     </div>
   );
 }

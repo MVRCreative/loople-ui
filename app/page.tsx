@@ -1,6 +1,7 @@
 "use client";
 
 import { Newsfeed } from "@/components/newsfeed/newsfeed";
+import { mockPosts } from "@/lib/data";
 import { Toaster } from "@/components/ui/sonner";
 import { User } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";
@@ -17,7 +18,7 @@ export default function Page() {
   return (
     <>
       <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="p-4 space-y-6">
+        <div className="p-0">
           <Newsfeed 
             initialPosts={[]} 
             currentUser={currentUser}

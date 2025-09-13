@@ -6,8 +6,8 @@ import { PostCard } from "./post-card";
 import { Post, User, ApiPost } from "@/lib/types";
 import { postsService, CreatePostRequest } from "@/lib/services/posts.service";
 import { transformApiPostsToPosts } from "@/lib/utils/posts.utils";
-import { toast } from "sonner";
 import { useClub } from "@/lib/club-context";
+import { toast } from "sonner";
 
 interface NewsfeedProps {
   initialPosts: Post[];
@@ -143,31 +143,12 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     }
   };
 
-  const handleReaction = async (postId: string) => {
-    try {
-      const response = await postsService.createReaction(parseInt(postId), {
-        post_id: parseInt(postId),
-        reaction_type: 'like'
-      });
-
-      if (response.success) {
-        // Update the post's reaction count locally
-        setPosts(prev => prev.map(post => 
-          post.id === postId 
-            ? { ...post, reactions: post.reactions + 1, isLiked: true }
-            : post
-        ));
-        toast.success("Reaction added!");
-      } else {
-        toast.error(response.error || 'Failed to add reaction');
-      }
-    } catch (error) {
-      console.error('Error adding reaction:', error);
-      toast.error('Failed to add reaction');
-    }
+  const handleReaction = (postId: string) => {
+    // TODO: Implement server-side reaction handling
+    
   };
 
-  const handleComment = () => {
+  const handleComment = (postId: string) => {
     // Comment functionality is handled by PostCard component
     // This function is called when comment button is clicked
   };
@@ -197,11 +178,9 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     setPosts(prev => prev.filter(post => post.id !== postId));
   };
 
-
   return (
     <div className="w-full py-2 sm:py-4 md:py-6 overflow-x-hidden">
       <PostForm currentUser={currentUser} onSubmit={handleCreatePost} isAuthenticated={isAuthenticated} />
-      
       
       {loading ? (
         <div className="text-center py-12 text-muted-foreground">
@@ -225,7 +204,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
         </div>
       )}
       
-      {!loading && posts.length === 0 && (
+      {posts.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
