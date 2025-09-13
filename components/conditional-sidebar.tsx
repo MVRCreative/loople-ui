@@ -132,7 +132,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
               </div>
             </div>
           ) : (
-            <div className="relative transition-all duration-300">
+            <div className="relative transition-all duration-300" suppressHydrationWarning>
               <NewsfeedRightSidebar />
               <Button
                 variant="ghost"
