@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PostForm } from "./post-form";
 import { PostCard } from "./post-card";
-import { Post, User } from "@/lib/types";
+import { SearchFilter } from "./search-filter";
+import { Post, User, ApiPost } from "@/lib/types";
+import { postsService } from "@/lib/services/posts.service";
+import { transformApiPostsToPosts } from "@/lib/utils/posts.utils";
 import { toast } from "sonner";
+import { useClub } from "@/lib/club-context";
 
 interface NewsfeedProps {
   initialPosts: Post[];
@@ -13,34 +17,150 @@ interface NewsfeedProps {
 
 export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [loading, setLoading] = useState(false);
+  const [searchFilters, setSearchFilters] = useState<any>({});
+  const { selectedClub } = useClub();
 
-  const handleCreatePost = (content: string, type: "text" | "event" | "poll") => {
-    const newPost: Post = {
-      id: Date.now().toString(),
-      user: currentUser,
-      content: {
-        type,
-        text: content,
-      },
-      timestamp: "Just now",
-      reactions: 0,
-      comments: 0,
-      isLiked: false,
+  // Load posts from API on component mount
+  useEffect(() => {
+    if (selectedClub?.id) {
+      loadPosts();
+    }
+  }, [selectedClub?.id]);
+
+  // Set up real-time subscriptions
+  useEffect(() => {
+    if (!selectedClub?.id) return;
+
+    const subscription = postsService.subscribeToPosts(parseInt(selectedClub.id), (payload) => {
+      console.log('Real-time post update:', payload);
+      
+      if (payload.eventType === 'INSERT') {
+        // New post added
+        loadPosts(); // Reload all posts to get the latest data
+      } else if (payload.eventType === 'UPDATE') {
+        // Post updated (e.g., reaction count changed)
+        loadPosts(); // Reload to get updated counts
+      } else if (payload.eventType === 'DELETE') {
+        // Post deleted
+        setPosts(prev => prev.filter(post => post.id !== payload.old.id.toString()));
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
     };
+  }, [selectedClub?.id]);
 
-    setPosts(prev => [newPost, ...prev]);
-    toast.success("Post created successfully!");
+  const loadPosts = async (filters: any = {}) => {
+    if (!selectedClub?.id) return;
+    
+    setLoading(true);
+    try {
+      const response = await postsService.getPosts({
+        club_id: parseInt(selectedClub.id),
+        limit: 20,
+        sort_by: 'created_at',
+        sort_order: 'desc',
+        ...filters
+      });
+
+      if (response.success && response.data) {
+        const transformedPosts = transformApiPostsToPosts(response.data as any);
+        setPosts(transformedPosts);
+      } else {
+        toast.error(response.error || 'Failed to load posts');
+      }
+    } catch (error) {
+      console.error('Error loading posts:', error);
+      toast.error('Failed to load posts');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReaction = (postId: string) => {
-    // TODO: Implement server-side reaction handling
-    
+  const handleCreatePost = async (content: string, type: "text" | "event" | "poll", attachments?: File[]) => {
+    if (!selectedClub?.id) {
+      toast.error('No club selected');
+      return;
+    }
+
+    try {
+      let postData: any = {
+        club_id: parseInt(selectedClub.id),
+        content_type: type,
+        content_text: content,
+      };
+
+      // Handle poll data
+      if (type === "poll") {
+        try {
+          const parsedContent = JSON.parse(content);
+          postData.content_text = parsedContent.text;
+          postData.poll_question = parsedContent.poll.question;
+          postData.poll_options = parsedContent.poll.options;
+        } catch (e) {
+          // If parsing fails, treat as regular text
+          console.warn('Failed to parse poll data, treating as text');
+        }
+      }
+
+      const response = await postsService.createPost(postData);
+
+      if (response.success && response.data) {
+        // Upload media attachments if any
+        if (attachments && attachments.length > 0) {
+          const postId = parseInt(response.data.id);
+          for (const file of attachments) {
+            try {
+              await postsService.uploadMedia(postId, file);
+            } catch (error) {
+              console.error('Error uploading media:', error);
+              toast.error(`Failed to upload ${file.name}`);
+            }
+          }
+        }
+
+        // Add the new post to the beginning of the list
+        const newPost = transformApiPostsToPosts([response.data as any])[0];
+        setPosts(prev => [newPost, ...prev]);
+        toast.success("Post created successfully!");
+      } else {
+        toast.error(response.error || 'Failed to create post');
+      }
+    } catch (error) {
+      console.error('Error creating post:', error);
+      toast.error('Failed to create post');
+    }
+  };
+
+  const handleReaction = async (postId: string) => {
+    try {
+      const response = await postsService.createReaction(parseInt(postId), {
+        post_id: parseInt(postId),
+        reaction_type: 'like'
+      });
+
+      if (response.success) {
+        // Update the post's reaction count locally
+        setPosts(prev => prev.map(post => 
+          post.id === postId 
+            ? { ...post, reactions: post.reactions + 1, isLiked: true }
+            : post
+        ));
+        toast.success("Reaction added!");
+      } else {
+        toast.error(response.error || 'Failed to add reaction');
+      }
+    } catch (error) {
+      console.error('Error adding reaction:', error);
+      toast.error('Failed to add reaction');
+    }
   };
 
   const handleComment = (postId: string) => {
-    // TODO: Implement comment functionality
-    toast.info("Comment functionality coming soon!");
-    
+    // Comment functionality is handled by PostCard component
+    // This function is called when comment button is clicked
   };
 
   const handleShare = (postId: string) => {
@@ -58,23 +178,57 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
     }
   };
 
+  const handlePostUpdate = (updatedPost: Post) => {
+    setPosts(prev => prev.map(post => 
+      post.id === updatedPost.id ? updatedPost : post
+    ));
+  };
+
+  const handlePostDelete = (postId: string) => {
+    setPosts(prev => prev.filter(post => post.id !== postId));
+  };
+
+  const handleSearch = (filters: any) => {
+    setSearchFilters(filters);
+    loadPosts(filters);
+  };
+
+  const handleClearSearch = () => {
+    setSearchFilters({});
+    loadPosts();
+  };
+
   return (
     <div className="w-full">
       <PostForm currentUser={currentUser} onSubmit={handleCreatePost} />
       
-      <div className="space-y-4 mt-6">
-        {posts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            onReaction={handleReaction}
-            onComment={handleComment}
-            onShare={handleShare}
-          />
-        ))}
-      </div>
+      <SearchFilter 
+        onSearch={handleSearch}
+        onClear={handleClearSearch}
+      />
       
-      {posts.length === 0 && (
+      {loading ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <p className="text-lg">Loading posts...</p>
+        </div>
+      ) : (
+        <div className="space-y-4 mt-6">
+          {posts.map((post) => (
+            <PostCard
+              key={post.id}
+              post={post}
+              currentUser={currentUser}
+              onReaction={handleReaction}
+              onComment={handleComment}
+              onShare={handleShare}
+              onPostUpdate={handlePostUpdate}
+              onPostDelete={handlePostDelete}
+            />
+          ))}
+        </div>
+      )}
+      
+      {!loading && posts.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <p className="text-lg">No posts yet</p>
           <p className="text-sm">Be the first to share an update!</p>
