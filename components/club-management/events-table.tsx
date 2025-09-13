@@ -149,13 +149,13 @@ export function EventsTable({ events, onEditEvent, onDeleteEvent, onViewRegistra
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-xs lg:text-sm">Event</TableHead>
-              <TableHead className="text-xs lg:text-sm">Type</TableHead>
-              <TableHead className="text-xs lg:text-sm hidden md:table-cell">Date & Time</TableHead>
-              <TableHead className="text-xs lg:text-sm hidden lg:table-cell">Location</TableHead>
-              <TableHead className="text-xs lg:text-sm hidden lg:table-cell">Capacity</TableHead>
-              <TableHead className="text-xs lg:text-sm">Price</TableHead>
-              <TableHead className="text-xs lg:text-sm">Status</TableHead>
+              <TableHead className="text-xs lg:text-sm min-w-[200px]">Event</TableHead>
+              <TableHead className="text-xs lg:text-sm min-w-[100px]">Type</TableHead>
+              <TableHead className="text-xs lg:text-sm min-w-[140px]">Date & Time</TableHead>
+              <TableHead className="text-xs lg:text-sm min-w-[150px]">Location</TableHead>
+              <TableHead className="text-xs lg:text-sm min-w-[100px]">Capacity</TableHead>
+              <TableHead className="text-xs lg:text-sm min-w-[120px]">Price</TableHead>
+              <TableHead className="text-xs lg:text-sm min-w-[100px]">Status</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -175,19 +175,19 @@ export function EventsTable({ events, onEditEvent, onDeleteEvent, onViewRegistra
                     {getEventTypeBadge(event.eventType)}
                   </div>
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
+                <TableCell>
                   <div className="flex items-center text-xs lg:text-sm">
                     <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
                     <span className="truncate">{formatDate(event.startDate)}</span>
                   </div>
                 </TableCell>
-                <TableCell className="hidden lg:table-cell">
+                <TableCell>
                   <div className="flex items-center text-xs lg:text-sm">
                     <MapPin className="h-3 w-3 mr-1 text-muted-foreground" />
                     <span className="truncate">{event.location}</span>
                   </div>
                 </TableCell>
-                <TableCell className="hidden lg:table-cell">
+                <TableCell>
                   <div className="flex items-center text-xs lg:text-sm">
                     <Users className="h-3 w-3 mr-1 text-muted-foreground" />
                     <span className="truncate">

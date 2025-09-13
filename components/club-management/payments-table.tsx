@@ -124,13 +124,13 @@ export function PaymentsTable({ payments }: PaymentsTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Member</TableHead>
-              <TableHead>Event</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Method</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Payment Date</TableHead>
-              <TableHead>Transaction ID</TableHead>
+              <TableHead className="min-w-[180px]">Member</TableHead>
+              <TableHead className="min-w-[160px]">Event</TableHead>
+              <TableHead className="min-w-[120px]">Amount</TableHead>
+              <TableHead className="min-w-[100px]">Method</TableHead>
+              <TableHead className="min-w-[100px]">Status</TableHead>
+              <TableHead className="min-w-[140px]">Payment Date</TableHead>
+              <TableHead className="min-w-[180px]">Transaction ID</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
