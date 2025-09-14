@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { isAuthenticated, getCurrentUser } from "@/lib/mock-auth";
+import { getCurrentUser } from "@/lib/mock-auth";
 
 export default function AuthBadge() {
   const [state, setState] = useState<"unknown" | "live" | "none">("unknown");

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Calendar, MessageCircle, Paperclip, X } from "lucide-react";
 import { User } from "@/lib/types";
-import { postsService } from "@/lib/services/posts.service";
 import { toast } from "sonner";
 
 interface PostFormProps {
@@ -19,7 +18,6 @@ export function PostForm({ currentUser, onSubmit }: PostFormProps) {
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {

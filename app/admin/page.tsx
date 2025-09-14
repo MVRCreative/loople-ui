@@ -16,11 +16,7 @@ type MemberRow = {
   } | null;
 };
 
-export default function AdminPage({
-  searchParams,
-}: {
-  searchParams?: { [key: string]: string | string[] | undefined }
-}) {
+export default function AdminPage() {
   // Mock data for UI demonstration
   const mockMembers: MemberRow[] = [
     {

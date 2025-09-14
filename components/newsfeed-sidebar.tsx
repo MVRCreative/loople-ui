@@ -26,9 +26,9 @@ export function NewsfeedSidebar() {
   
   // Use real auth user data if available
   const displayEmail = user?.email || "Not signed in"
-  const displayName = user?.user_metadata?.first_name && user?.user_metadata?.last_name 
-    ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
-    : user?.email || "Guest"
+  // const _displayName = user?.user_metadata?.first_name && user?.user_metadata?.last_name 
+  //   ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
+  //   : user?.email || "Guest"
 
   const handleLogout = async () => {
     await signOut()

@@ -17,7 +17,7 @@ interface OrganizationsFormProps {
   defaultClubId?: number
 }
 
-export default function OrganizationsForm({ initialClubs = [], defaultClubId }: OrganizationsFormProps) {
+export default function OrganizationsForm({ defaultClubId }: OrganizationsFormProps) {
   // Mock clubs data
   const mockClubs: Club[] = [
     { id: 1, name: "Loople Swimming Club", subdomain: "loople", member_type: "admin" },
@@ -25,7 +25,7 @@ export default function OrganizationsForm({ initialClubs = [], defaultClubId }: 
     { id: 3, name: "Elite Swim Team", subdomain: "elite", member_type: "coach" },
   ]
   
-  const [clubs, setClubs] = React.useState<Club[]>(mockClubs)
+  const [clubs] = React.useState<Club[]>(mockClubs)
   const [defaultClub, setDefaultClub] = React.useState<number | null>(defaultClubId || 1)
   const [status, setStatus] = React.useState<"idle" | "loading" | "saving" | "saved" | "error">("idle")
   const [message, setMessage] = React.useState<string | null>(null)

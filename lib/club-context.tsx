@@ -63,7 +63,7 @@ export function ClubProvider({ children }: ClubProviderProps) {
       setClubs([]);
       setSelectedClub(null);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user, loadUserClubs]);
 
   // Select a club
   const selectClub = (club: Club) => {
@@ -73,7 +73,7 @@ export function ClubProvider({ children }: ClubProviderProps) {
   };
 
   // Auto-select newly created club
-  const selectNewClub = (newClub: Club) => {
+  const _selectNewClub = (newClub: Club) => {
     setClubs(prev => [...prev, newClub]);
     selectClub(newClub);
   };
@@ -100,7 +100,7 @@ export function ClubProvider({ children }: ClubProviderProps) {
         setSelectedClub(clubs[0]);
       }
     }
-  }, [clubs]);
+  }, [clubs, selectedClub]);
 
   // Check user's role/permissions for selected club
   const isOwner = selectedClub ? selectedClub.owner_id === user?.id : false;

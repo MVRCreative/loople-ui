@@ -2,7 +2,8 @@ import { useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Post, User } from "@/lib/types";
+import { Post, User, ApiPost } from "@/lib/types";
+import { CreatePostRequest } from "@/lib/services/posts.service";
 import { EventCard } from "./event-card";
 import { PostActions } from "./post-actions";
 import { PollVoting } from "./poll-voting";
@@ -12,6 +13,7 @@ import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { postsService } from "@/lib/services/posts.service";
 import { toast } from "sonner";
+import { useClub } from "@/lib/club-context";
 
 interface PostCardProps {
   post: Post;
@@ -27,6 +29,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   const [showComments, setShowComments] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const { selectedClub } = useClub();
 
   const handleCommentClick = () => {
     setShowComments(!showComments);
@@ -59,7 +62,8 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
 
   const handlePostUpdate = async (postId: string, content: string, type: "text" | "event" | "poll") => {
     try {
-      let postData: any = {
+      const postData: CreatePostRequest = {
+        club_id: parseInt(selectedClub?.id || '0'),
         content_type: type,
         content_text: content,
       };
@@ -71,7 +75,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
           postData.content_text = parsedContent.text;
           postData.poll_question = parsedContent.poll.question;
           postData.poll_options = parsedContent.poll.options;
-        } catch (e) {
+        } catch {
           console.warn('Failed to parse poll data, treating as text');
         }
       }
@@ -81,7 +85,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
       if (response.success && response.data) {
         // Transform the updated post data
         const { transformApiPostToPost } = await import('@/lib/utils/posts.utils');
-        const updatedPost = transformApiPostToPost(response.data as any);
+        const updatedPost = transformApiPostToPost(response.data as unknown as ApiPost);
         onPostUpdate?.(updatedPost);
         setIsEditing(false);
         toast.success("Post updated successfully!");

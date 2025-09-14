@@ -103,7 +103,7 @@ const mockPosts: Post[] = [
   }
 ]
 
-export function ProfilePosts({ userId: _userId, currentUser }: ProfilePostsProps) {
+export function ProfilePosts({ currentUser }: ProfilePostsProps) {
   const [posts] = useState<Post[]>(mockPosts)
 
   const handleReaction = (postId: string) => {

@@ -36,7 +36,7 @@ import { CreateEventForm } from "@/components/club-management/create-event-form"
 import { EditEventForm } from "@/components/club-management/edit-event-form";
 
 export default function ClubManagementPage() {
-  const { user: _user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { selectedClub, clubs, loading: clubLoading, isOwner, isAdmin, error: clubError, refreshClubs } = useClub();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
@@ -356,7 +356,7 @@ export default function ClubManagementPage() {
               try {
                 await MembersService.deleteMember(m.id);
                 setMembers(prev => prev.filter(x => x.id !== m.id));
-              } catch (err) {
+              } catch {
                 // no-op; could surface toast
               }
             }}

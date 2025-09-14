@@ -30,7 +30,7 @@ export function SearchFilter({ onSearch, onClear }: SearchFilterProps) {
   const [showFilters, setShowFilters] = useState(false);
 
   const handleSearch = () => {
-    const filters: any = {};
+    const filters: Record<string, unknown> = {};
     
     if (search.trim()) filters.search = search.trim();
     if (contentType) filters.content_type = contentType;

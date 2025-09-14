@@ -83,7 +83,7 @@ export function ClubOverview() {
 
   useEffect(() => {
     loadClubStats();
-  }, [selectedClub]);
+  }, [selectedClub, loadClubStats]);
 
   if (loading) {
     return (

@@ -5,7 +5,7 @@ import { PostForm } from "./post-form";
 import { PostCard } from "./post-card";
 import { SearchFilter } from "./search-filter";
 import { Post, User, ApiPost } from "@/lib/types";
-import { postsService } from "@/lib/services/posts.service";
+import { postsService, CreatePostRequest } from "@/lib/services/posts.service";
 import { transformApiPostsToPosts } from "@/lib/utils/posts.utils";
 import { toast } from "sonner";
 import { useClub } from "@/lib/club-context";
@@ -18,8 +18,35 @@ interface NewsfeedProps {
 export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [loading, setLoading] = useState(false);
-  const [searchFilters, setSearchFilters] = useState<any>({});
+  // const [searchFilters] = useState<Record<string, unknown>>({});
   const { selectedClub } = useClub();
+
+  const loadPosts = async (filters: Record<string, unknown> = {}) => {
+    if (!selectedClub?.id) return;
+    
+    setLoading(true);
+    try {
+      const response = await postsService.getPosts({
+        club_id: parseInt(selectedClub.id),
+        limit: 20,
+        sort_by: 'created_at',
+        sort_order: 'desc',
+        ...filters
+      });
+
+      if (response.success && response.data) {
+        const transformedPosts = transformApiPostsToPosts(response.data as unknown as ApiPost[]);
+        setPosts(transformedPosts);
+      } else {
+        toast.error(response.error || 'Failed to load posts');
+      }
+    } catch (error) {
+      console.error('Error loading posts:', error);
+      toast.error('Failed to load posts');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Load posts from API on component mount
   useEffect(() => {
@@ -34,16 +61,18 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
 
     const subscription = postsService.subscribeToPosts(parseInt(selectedClub.id), (payload) => {
       console.log('Real-time post update:', payload);
+      const payloadData = payload as Record<string, unknown>;
       
-      if (payload.eventType === 'INSERT') {
+      if (payloadData.eventType === 'INSERT') {
         // New post added
         loadPosts(); // Reload all posts to get the latest data
-      } else if (payload.eventType === 'UPDATE') {
+      } else if (payloadData.eventType === 'UPDATE') {
         // Post updated (e.g., reaction count changed)
         loadPosts(); // Reload to get updated counts
-      } else if (payload.eventType === 'DELETE') {
+      } else if (payloadData.eventType === 'DELETE') {
         // Post deleted
-        setPosts(prev => prev.filter(post => post.id !== payload.old.id.toString()));
+        const oldData = payloadData.old as Record<string, unknown>;
+        setPosts(prev => prev.filter(post => post.id !== (oldData.id as number).toString()));
       }
     });
 
@@ -52,33 +81,6 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
     };
   }, [selectedClub?.id]);
 
-  const loadPosts = async (filters: any = {}) => {
-    if (!selectedClub?.id) return;
-    
-    setLoading(true);
-    try {
-      const response = await postsService.getPosts({
-        club_id: parseInt(selectedClub.id),
-        limit: 20,
-        sort_by: 'created_at',
-        sort_order: 'desc',
-        ...filters
-      });
-
-      if (response.success && response.data) {
-        const transformedPosts = transformApiPostsToPosts(response.data as any);
-        setPosts(transformedPosts);
-      } else {
-        toast.error(response.error || 'Failed to load posts');
-      }
-    } catch (error) {
-      console.error('Error loading posts:', error);
-      toast.error('Failed to load posts');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleCreatePost = async (content: string, type: "text" | "event" | "poll", attachments?: File[]) => {
     if (!selectedClub?.id) {
       toast.error('No club selected');
@@ -86,7 +88,7 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
     }
 
     try {
-      let postData: any = {
+      const postData: CreatePostRequest = {
         club_id: parseInt(selectedClub.id),
         content_type: type,
         content_text: content,
@@ -99,7 +101,7 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
           postData.content_text = parsedContent.text;
           postData.poll_question = parsedContent.poll.question;
           postData.poll_options = parsedContent.poll.options;
-        } catch (e) {
+        } catch {
           // If parsing fails, treat as regular text
           console.warn('Failed to parse poll data, treating as text');
         }
@@ -122,7 +124,7 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
         }
 
         // Add the new post to the beginning of the list
-        const newPost = transformApiPostsToPosts([response.data as any])[0];
+        const newPost = transformApiPostsToPosts([response.data as unknown as ApiPost])[0];
         setPosts(prev => [newPost, ...prev]);
         toast.success("Post created successfully!");
       } else {
@@ -158,7 +160,7 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
     }
   };
 
-  const handleComment = (postId: string) => {
+  const handleComment = () => {
     // Comment functionality is handled by PostCard component
     // This function is called when comment button is clicked
   };
@@ -188,13 +190,13 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
     setPosts(prev => prev.filter(post => post.id !== postId));
   };
 
-  const handleSearch = (filters: any) => {
-    setSearchFilters(filters);
+  const handleSearch = (filters: Record<string, unknown>) => {
+    // setSearchFilters(filters);
     loadPosts(filters);
   };
 
   const handleClearSearch = () => {
-    setSearchFilters({});
+    // setSearchFilters({});
     loadPosts();
   };
 

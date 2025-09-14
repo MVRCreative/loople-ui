@@ -6,7 +6,7 @@ import { Comment } from "./comment";
 import { CommentForm } from "./comment-form";
 import { Comment as CommentType, User } from "@/lib/types";
 import { postsService } from "@/lib/services/posts.service";
-import { transformApiCommentsToComments } from "@/lib/utils/posts.utils";
+// import { transformApiCommentsToComments } from "@/lib/utils/posts.utils";
 import { toast } from "sonner";
 import { MessageCircle, Loader2 } from "lucide-react";
 
@@ -33,25 +33,26 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
 
       if (response.success && response.data) {
         // Transform the raw API comments to frontend format
-        const transformedComments = response.data.map((apiComment: any) => {
+        const transformedComments = response.data.map((apiComment: Record<string, unknown>) => {
+          const users = apiComment.users as Record<string, unknown> || {};
           const user = {
-            id: apiComment.users?.id || '',
-            name: apiComment.users?.raw_user_meta_data?.first_name && apiComment.users?.raw_user_meta_data?.last_name 
-              ? `${apiComment.users.raw_user_meta_data.first_name} ${apiComment.users.raw_user_meta_data.last_name}`
-              : apiComment.users?.email || 'Unknown User',
+            id: (users.id as string) || '',
+            name: (users.raw_user_meta_data as Record<string, unknown>)?.first_name && (users.raw_user_meta_data as Record<string, unknown>)?.last_name 
+              ? `${(users.raw_user_meta_data as Record<string, unknown>).first_name} ${(users.raw_user_meta_data as Record<string, unknown>).last_name}`
+              : (users.email as string) || 'Unknown User',
             role: 'Member',
-            avatar: apiComment.users?.raw_user_meta_data?.first_name 
-              ? apiComment.users.raw_user_meta_data.first_name.charAt(0).toUpperCase()
-              : apiComment.users?.email?.charAt(0).toUpperCase() || 'U',
+            avatar: (users.raw_user_meta_data as Record<string, unknown>)?.first_name 
+              ? ((users.raw_user_meta_data as Record<string, unknown>).first_name as string).charAt(0).toUpperCase()
+              : (users.email as string)?.charAt(0).toUpperCase() || 'U',
             isAdmin: false
           };
 
           return {
-            id: apiComment.id.toString(),
-            postId: apiComment.post_id.toString(),
+            id: (apiComment.id as number).toString(),
+            postId: (apiComment.post_id as number).toString(),
             user,
-            content: apiComment.content,
-            timestamp: new Date(apiComment.created_at).toLocaleDateString(),
+            content: apiComment.content as string,
+            timestamp: new Date(apiComment.created_at as string).toLocaleDateString(),
             reactions: 0
           };
         });
@@ -84,25 +85,26 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
 
       if (response.success && response.data) {
         // Transform the new comment to frontend format
-        const apiComment = response.data as any;
+        const apiComment = response.data as Record<string, unknown>;
+        const users = apiComment.users as Record<string, unknown> || {};
         const user = {
-          id: apiComment.users?.id || '',
-          name: apiComment.users?.raw_user_meta_data?.first_name && apiComment.users?.raw_user_meta_data?.last_name 
-            ? `${apiComment.users.raw_user_meta_data.first_name} ${apiComment.users.raw_user_meta_data.last_name}`
-            : apiComment.users?.email || 'Unknown User',
+          id: (users.id as string) || '',
+          name: (users.raw_user_meta_data as Record<string, unknown>)?.first_name && (users.raw_user_meta_data as Record<string, unknown>)?.last_name 
+            ? `${(users.raw_user_meta_data as Record<string, unknown>).first_name} ${(users.raw_user_meta_data as Record<string, unknown>).last_name}`
+            : (users.email as string) || 'Unknown User',
           role: 'Member',
-          avatar: apiComment.users?.raw_user_meta_data?.first_name 
-            ? apiComment.users.raw_user_meta_data.first_name.charAt(0).toUpperCase()
-            : apiComment.users?.email?.charAt(0).toUpperCase() || 'U',
+          avatar: (users.raw_user_meta_data as Record<string, unknown>)?.first_name 
+            ? ((users.raw_user_meta_data as Record<string, unknown>).first_name as string).charAt(0).toUpperCase()
+            : (users.email as string)?.charAt(0).toUpperCase() || 'U',
           isAdmin: false
         };
 
         const newComment = {
-          id: apiComment.id.toString(),
-          postId: apiComment.post_id.toString(),
+          id: (apiComment.id as number).toString(),
+          postId: (apiComment.post_id as number).toString(),
           user,
-          content: apiComment.content,
-          timestamp: new Date(apiComment.created_at).toLocaleDateString(),
+          content: apiComment.content as string,
+          timestamp: new Date(apiComment.created_at as string).toLocaleDateString(),
           reactions: 0
         };
 
@@ -143,7 +145,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
     if (initialComments.length === 0) {
       loadComments();
     }
-  }, [postId]);
+  }, [postId, initialComments.length]);
 
   return (
     <div className="border-t border-border pt-4 mt-4">

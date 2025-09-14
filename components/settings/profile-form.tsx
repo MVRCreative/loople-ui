@@ -69,7 +69,7 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
 
   const avatarUrl = form.watch("avatar_url")
 
-  async function onSubmit(values: ProfileFormValues) {
+  async function onSubmit() {
     setStatus("saving")
     setMessage(null)
     

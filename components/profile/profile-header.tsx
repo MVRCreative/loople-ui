@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import NextImage from "next/image"
 
 interface ProfileHeaderProps {
   userId: string
@@ -32,14 +33,16 @@ const profile = {
   ],
 }
 
-export function ProfileHeader({ userId }: ProfileHeaderProps) {
+export function ProfileHeader({}: ProfileHeaderProps) {
   return (
     <div className="w-full">
       {/* Cover Image */}
       <div className="h-32 w-full lg:h-48">
-        <img 
+        <NextImage 
           alt="" 
           src={profile.backgroundImage} 
+          width={1200}
+          height={192}
           className="h-full w-full object-cover" 
         />
       </div>

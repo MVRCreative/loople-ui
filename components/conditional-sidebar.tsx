@@ -1,12 +1,12 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { AppSidebar } from "@/components/app-sidebar";
+// import { AppSidebar } from "@/components/app-sidebar";
 import { NewsfeedSidebar } from "@/components/newsfeed-sidebar";
 import { NewsfeedRightSidebar } from "@/components/newsfeed-right-sidebar";
-import { MessagesSidebar } from "@/components/MessagesSidebar";
-import { MessageThread } from "@/components/MessageThread";
-import { SidebarProvider } from "@/components/ui/sidebar";
+// import { MessagesSidebar } from "@/components/MessagesSidebar";
+// import { MessageThread } from "@/components/MessageThread";
+// import { SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -24,14 +24,14 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
-  const isNewsfeedRoute = pathname === "/";
-  const isMessagesRoute = pathname.startsWith("/messages");
-  const isSettingsRoute = pathname.startsWith("/settings");
-  const isProfileRoute = pathname.startsWith("/profile");
+  // const _isNewsfeedRoute = pathname === "/";
+  // const _isMessagesRoute = pathname.startsWith("/messages");
+  // const _isSettingsRoute = pathname.startsWith("/settings");
+  // const _isProfileRoute = pathname.startsWith("/profile");
   const isAuthRoute = pathname.startsWith("/auth");
   const isRootRoute = pathname === "/";
-  const isFeedPage = pathname === "/";
-  const isClubManagementPage = pathname.startsWith("/club-management");
+  // const _isFeedPage = pathname === "/";
+  // const _isClubManagementPage = pathname.startsWith("/club-management");
 
   // Redirect to login if not authenticated and trying to access protected routes
   useEffect(() => {
@@ -42,12 +42,13 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
 
   // Set default sidebar state based on page
   useEffect(() => {
+    const isFeedPage = pathname === "/";
     if (isFeedPage) {
       setIsRightSidebarCollapsed(false); // Expanded on feed page
     } else {
       setIsRightSidebarCollapsed(true); // Collapsed on other pages
     }
-  }, [isFeedPage]);
+  }, [pathname]);
 
   const handleSidebarToggle = (collapsed: boolean) => {
     setIsTransitioning(true);

@@ -18,7 +18,7 @@ export default function LogoutPage() {
         } else {
           toast.error(result.error || "Sign out failed");
         }
-      } catch (error) {
+      } catch {
         toast.error("An error occurred during sign out");
       } finally {
         router.push("/auth/login");
