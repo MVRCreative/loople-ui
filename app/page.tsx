@@ -1,22 +1,28 @@
+"use client";
+
 import { Newsfeed } from "@/components/newsfeed/newsfeed";
 import { Toaster } from "@/components/ui/sonner";
 import { User } from "@/lib/types";
+import { useAuth } from "@/lib/auth-context";
+import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
 
 export default function Page() {
-  // Create a default user for the newsfeed
-  const currentUser: User = {
-    id: "default",
-    name: "Current User",
-    role: "Member",
-    avatar: "U",
-    isAdmin: false,
-  };
+  const { user: authUser, isAuthenticated } = useAuth();
+
+  // Convert auth user to frontend User type, or create guest user
+  const currentUser: User = authUser 
+    ? convertAuthUserToUser(authUser)
+    : createGuestUser();
 
   return (
     <>
       <div className="flex flex-1 flex-col overflow-hidden">
         <div className="p-4 space-y-6">
-          <Newsfeed initialPosts={[]} currentUser={currentUser} />
+          <Newsfeed 
+            initialPosts={[]} 
+            currentUser={currentUser}
+            isAuthenticated={isAuthenticated}
+          />
         </div>
       </div>
       <Toaster />

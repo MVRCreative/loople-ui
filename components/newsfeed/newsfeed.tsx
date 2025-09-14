@@ -13,9 +13,10 @@ import { useClub } from "@/lib/club-context";
 interface NewsfeedProps {
   initialPosts: Post[];
   currentUser: User;
+  isAuthenticated?: boolean;
 }
 
-export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
+export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }: NewsfeedProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [loading, setLoading] = useState(false);
   // const [searchFilters] = useState<Record<string, unknown>>({});
@@ -82,6 +83,11 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
   }, [selectedClub?.id]);
 
   const handleCreatePost = async (content: string, type: "text" | "event" | "poll", attachments?: File[]) => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to create posts');
+      return;
+    }
+
     if (!selectedClub?.id) {
       toast.error('No club selected');
       return;
@@ -202,7 +208,7 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
 
   return (
     <div className="w-full">
-      <PostForm currentUser={currentUser} onSubmit={handleCreatePost} />
+      <PostForm currentUser={currentUser} onSubmit={handleCreatePost} isAuthenticated={isAuthenticated} />
       
       <SearchFilter 
         onSearch={handleSearch}
