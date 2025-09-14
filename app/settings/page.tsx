@@ -11,8 +11,16 @@ import { useEffect, useState } from "react"
 export default function Page() {
   const { user, isAuthenticated, loading } = useAuth()
   const router = useRouter()
-  const [userData, setUserData] = useState<any>(null)
-  const [clubsData, setClubsData] = useState<any[]>([])
+  const [userData, setUserData] = useState<{
+    email: string;
+    first_name?: string;
+    last_name?: string;
+  } | null>(null)
+  const [clubsData, setClubsData] = useState<{
+    id: string;
+    name: string;
+    subdomain: string;
+  }[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   // Redirect if not authenticated
