@@ -1,4 +1,5 @@
-// Mock authentication system for UI-only project
+// DEPRECATED: Mock authentication system - replaced with real Supabase Auth
+// This file is kept for reference but should not be used in new code
 export interface MockUser {
   id: string;
   email: string;

@@ -16,7 +16,7 @@ import {
   Building,
   Settings as SettingsIcon
 } from "lucide-react";
-import { ClubData } from "@/lib/club-mock-data";
+import { ClubData } from "@/lib/types/club-management";
 
 interface ClubSettingsProps {
   clubData: ClubData;

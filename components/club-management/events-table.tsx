@@ -28,7 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Event } from "@/lib/club-mock-data";
+import { Event } from "@/lib/services/events.service";
 
 interface EventsTableProps {
   events: Event[];
@@ -172,13 +172,13 @@ export function EventsTable({ events, onEditEvent, onDeleteEvent, onViewRegistra
                 </TableCell>
                 <TableCell>
                   <div className="text-xs lg:text-sm">
-                    {getEventTypeBadge(event.eventType)}
+                    {getEventTypeBadge(event.event_type)}
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   <div className="flex items-center text-xs lg:text-sm">
                     <Calendar className="h-3 w-3 mr-1 text-muted-foreground" />
-                    <span className="truncate">{formatDate(event.startDate)}</span>
+                    <span className="truncate">{formatDate(event.start_date)}</span>
                   </div>
                 </TableCell>
                 <TableCell className="hidden lg:table-cell">
@@ -191,8 +191,8 @@ export function EventsTable({ events, onEditEvent, onDeleteEvent, onViewRegistra
                   <div className="flex items-center text-xs lg:text-sm">
                     <Users className="h-3 w-3 mr-1 text-muted-foreground" />
                     <span className="truncate">
-                      {event.registeredCount}
-                      {event.maxCapacity && ` / ${event.maxCapacity}`}
+                      {event.registered_count}
+                      {event.max_capacity && ` / ${event.max_capacity}`}
                     </span>
                   </div>
                 </TableCell>
@@ -200,10 +200,10 @@ export function EventsTable({ events, onEditEvent, onDeleteEvent, onViewRegistra
                   <div className="flex items-center text-xs lg:text-sm">
                     <DollarSign className="h-3 w-3 mr-1 text-muted-foreground" />
                     <span className="truncate">
-                      {event.priceMember === 0 ? 'Free' : `$${event.priceMember}`}
-                      {event.priceNonMember && event.priceNonMember !== event.priceMember && (
+                      {event.price_member === 0 ? 'Free' : `$${event.price_member}`}
+                      {event.price_non_member && event.price_non_member !== event.price_member && (
                         <span className="text-muted-foreground ml-1">
-                          / ${event.priceNonMember}
+                          / ${event.price_non_member}
                         </span>
                       )}
                     </span>
