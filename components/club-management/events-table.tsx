@@ -114,15 +114,15 @@ export function EventsTable({ events, onEditEvent, onDeleteEvent, onViewRegistra
               ];
               const rows = filteredEvents.map(e => [
                 e.title,
-                e.eventType,
-                e.startDate,
-                e.endDate,
+                e.event_type,
+                e.start_date,
+                e.end_date,
                 e.location,
-                e.maxCapacity ?? '',
-                e.priceMember ?? 0,
-                e.priceNonMember ?? '',
+                e.max_capacity ?? '',
+                e.price_member ?? 0,
+                e.price_non_member ?? '',
                 e.status,
-                e.registeredCount
+                e.registered_count
               ]);
               const csv = [headers, ...rows].map(r => r.map(v => `${String(v).replace(/"/g, '""')}`).join(',')).join('\n');
               const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });

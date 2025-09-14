@@ -14,7 +14,7 @@ export function ProfilePageClient({ userId }: ProfilePageClientProps) {
   // Convert auth user to the expected User type
   const currentUser = user ? {
     id: user.id,
-    name: user.user_metadata?.full_name || `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`.trim() || user.email,
+    name: `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`.trim() || user.email,
     role: "Member", // TODO: Get actual role from user data
     avatar: user.user_metadata?.first_name?.[0] || user.email?.[0] || "U",
     isAdmin: false, // TODO: Get actual admin status

@@ -38,6 +38,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
     if (!loading && !isAuthenticated && !isAuthRoute && !isRootRoute) {
       router.push("/auth/login");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, loading, isAuthRoute, isRootRoute, router]);
 
   // Set default sidebar state based on screen size and page

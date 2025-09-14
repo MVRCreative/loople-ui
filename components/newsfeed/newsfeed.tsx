@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PostForm } from "./post-form";
 import { PostCard } from "./post-card";
 import { SearchFilter } from "./search-filter";
@@ -22,7 +22,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
   // const [searchFilters] = useState<Record<string, unknown>>({});
   const { selectedClub } = useClub();
 
-  const loadPosts = async (filters: Record<string, unknown> = {}) => {
+  const loadPosts = useCallback(async (filters: Record<string, unknown> = {}) => {
     if (!selectedClub?.id) return;
     
     setLoading(true);
@@ -47,13 +47,14 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedClub?.id]);
 
   // Load posts from API on component mount
   useEffect(() => {
     if (selectedClub?.id) {
       loadPosts();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClub?.id]);
 
   // Set up real-time subscriptions
@@ -80,6 +81,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     return () => {
       subscription.unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClub?.id]);
 
   const handleCreatePost = async (content: string, type: "text" | "event" | "poll", attachments?: File[]) => {

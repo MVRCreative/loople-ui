@@ -268,10 +268,10 @@ class PostsService {
         throw new Error(uploadError.message)
       }
 
-      // Get public URL
-      const { data: { publicUrl: _publicUrl } } = supabase.storage
-        .from('post-media')
-        .getPublicUrl(fileName)
+      // Get public URL (not used in this function but available for future use)
+      // const { data: { publicUrl } } = supabase.storage
+      //   .from('post-media')
+      //   .getPublicUrl(fileName)
 
       // Create media attachment record
       const { data: { session } } = await supabase.auth.getSession()

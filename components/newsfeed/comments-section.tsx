@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Comment } from "./comment";
 import { CommentForm } from "./comment-form";
@@ -23,7 +23,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
 
-  const loadComments = async (pageNum: number = 1, append: boolean = false) => {
+  const loadComments = useCallback(async (pageNum: number = 1, append: boolean = false) => {
     setLoading(true);
     try {
       const response = await postsService.getComments(parseInt(postId), {
@@ -73,7 +73,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
     } finally {
       setLoading(false);
     }
-  };
+  }, [postId]);
 
   const handleCreateComment = async (content: string, parentCommentId?: number) => {
     try {
@@ -145,6 +145,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
     if (initialComments.length === 0) {
       loadComments();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId, initialComments.length]);
 
   return (

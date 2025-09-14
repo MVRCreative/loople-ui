@@ -12,6 +12,7 @@ export default function DashboardPage() {
     if (!loading && !isAuthenticated) {
       router.push("/auth/login");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, loading, router]);
 
   if (loading) {

@@ -55,8 +55,8 @@ export default function ClubManagementPage() {
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [editingEvent, setEditingEvent] = useState<ApiEvent | null>(null);
-  const [registrations, setRegistrations] = useState<Registration[]>([]);
-  const [payments, setPayments] = useState<Payment[]>([]);
+  const [registrations] = useState<Registration[]>([]);
+  const [payments] = useState<Payment[]>([]);
 
   const mapApiEventToUiEvent = (e: ApiEvent): UiEvent => e;
 
@@ -64,6 +64,7 @@ export default function ClubManagementPage() {
     if (!authLoading && !isAuthenticated) {
       router.push("/auth/login");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authLoading, router]);
 
   // Load members for selected club

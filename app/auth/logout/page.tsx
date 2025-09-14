@@ -26,7 +26,8 @@ export default function LogoutPage() {
     };
 
     handleLogout();
-  }, [signOut, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex min-h-[80vh] w-full flex-col items-center justify-center p-4">

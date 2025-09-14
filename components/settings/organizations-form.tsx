@@ -5,16 +5,15 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Building2, Star, StarOff } from "lucide-react"
 import { useClub } from "@/lib/club-context"
-import { useAuth } from "@/lib/auth-context"
+import { Club } from "@/lib/services/clubs.service"
 
 interface OrganizationsFormProps {
-  initialClubs?: any[]
+  initialClubs?: Club[]
   defaultClubId?: string
 }
 
 export default function OrganizationsForm({ defaultClubId }: OrganizationsFormProps) {
   const { clubs, selectedClub, selectClub, loading: clubsLoading } = useClub()
-  const { isAuthenticated } = useAuth()
   
   const [defaultClub, setDefaultClub] = React.useState<string | null>(defaultClubId || selectedClub?.id || null)
   const [status, setStatus] = React.useState<"idle" | "loading" | "saving" | "saved" | "error">("idle")
@@ -36,7 +35,7 @@ export default function OrganizationsForm({ defaultClubId }: OrganizationsFormPr
         setStatus("error")
         setMessage("Club not found.")
       }
-    } catch (error) {
+    } catch {
       setStatus("error")
       setMessage("Failed to update default organization.")
     }

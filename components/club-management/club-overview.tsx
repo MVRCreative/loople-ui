@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 // import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -33,7 +33,7 @@ export function ClubOverview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const loadClubStats = async () => {
+  const loadClubStats = useCallback(async () => {
     if (!selectedClub) return;
 
     try {
@@ -79,11 +79,12 @@ export function ClubOverview() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedClub]);
 
   useEffect(() => {
     loadClubStats();
-  }, [selectedClub, loadClubStats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClub]);
 
   if (loading) {
     return (

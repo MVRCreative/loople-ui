@@ -1,5 +1,3 @@
-import { ProfileHeader } from "@/components/profile/profile-header"
-import { ProfilePosts } from "@/components/profile/profile-posts"
 import { ProfilePageClient } from "./profile-page-client"
 
 interface ProfilePageProps {
