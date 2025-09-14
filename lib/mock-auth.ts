@@ -1,4 +1,5 @@
-// Mock authentication system for UI-only project
+// DEPRECATED: Mock authentication system - replaced with real Supabase Auth
+// This file is kept for reference but should not be used in new code
 export interface MockUser {
   id: string;
   email: string;
@@ -27,7 +28,7 @@ export function getCurrentUser(): MockUser | null {
   return mockCurrentUser;
 }
 
-export function login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+export function login(): Promise<{ success: boolean; error?: string }> {
   // Mock login - always succeeds for demo purposes
   return Promise.resolve({ success: true });
 }

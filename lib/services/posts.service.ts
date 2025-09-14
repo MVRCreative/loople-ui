@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { Post, Comment, User } from '@/lib/types'
+import { Post, Comment } from '@/lib/types'
 
 export interface CreatePostRequest {
   club_id: number
@@ -155,14 +155,14 @@ class PostsService {
     return this.makeRequest(`posts/${postId}/reactions`)
   }
 
-  async createReaction(postId: number, reactionData: CreateReactionRequest): Promise<ApiResponse<any>> {
+  async createReaction(postId: number, reactionData: CreateReactionRequest): Promise<ApiResponse<unknown>> {
     return this.makeRequest(`posts/${postId}/reactions`, {
       method: 'POST',
       body: JSON.stringify(reactionData),
     })
   }
 
-  async updateReaction(postId: number, reactionData: CreateReactionRequest): Promise<ApiResponse<any>> {
+  async updateReaction(postId: number, reactionData: CreateReactionRequest): Promise<ApiResponse<unknown>> {
     return this.makeRequest(`posts/${postId}/reactions`, {
       method: 'PUT',
       body: JSON.stringify(reactionData),
@@ -198,7 +198,7 @@ class PostsService {
   }
 
   // Real-time subscriptions
-  subscribeToPosts(clubId: number, callback: (payload: any) => void) {
+  subscribeToPosts(clubId: number, callback: (payload: unknown) => void) {
     return supabase
       .channel('posts')
       .on(
@@ -214,7 +214,7 @@ class PostsService {
       .subscribe()
   }
 
-  subscribeToComments(postId: number, callback: (payload: any) => void) {
+  subscribeToComments(postId: number, callback: (payload: unknown) => void) {
     return supabase
       .channel('comments')
       .on(
@@ -230,7 +230,7 @@ class PostsService {
       .subscribe()
   }
 
-  subscribeToReactions(postId: number, callback: (payload: any) => void) {
+  subscribeToReactions(postId: number, callback: (payload: unknown) => void) {
     return supabase
       .channel('reactions')
       .on(
@@ -260,7 +260,7 @@ class PostsService {
       const fileExt = file.name.split('.').pop()
       const fileName = `${postId}/${Date.now()}.${fileExt}`
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('post-media')
         .upload(fileName, file)
 
@@ -268,10 +268,10 @@ class PostsService {
         throw new Error(uploadError.message)
       }
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('post-media')
-        .getPublicUrl(fileName)
+      // Get public URL (not used in this function but available for future use)
+      // const { data: { publicUrl } } = supabase.storage
+      //   .from('post-media')
+      //   .getPublicUrl(fileName)
 
       // Create media attachment record
       const { data: { session } } = await supabase.auth.getSession()

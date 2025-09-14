@@ -102,8 +102,7 @@ export default async function Page() {
             
             {/* Organizations Section */}
             <OrganizationsForm 
-              initialClubs={clubs}
-              defaultClubId={clubs.length > 0 ? clubs[0].id : undefined}
+              defaultClubId={clubs.length > 0 ? clubs[0].id.toString() : undefined}
             />
             
             {/* Additional Settings Section */}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { ClubsService, Club } from './services/clubs.service';
 import { useAuth } from './auth-context';
 
@@ -30,7 +30,7 @@ export function ClubProvider({ children }: ClubProviderProps) {
   const [error, setError] = useState<string | null>(null);
 
   // Load user's clubs when authenticated
-  const loadUserClubs = async () => {
+  const loadUserClubs = useCallback(async () => {
     if (!isAuthenticated || !user) return;
 
     try {
@@ -40,19 +40,13 @@ export function ClubProvider({ children }: ClubProviderProps) {
       const userClubs = await ClubsService.getUserClubs();
       // Ensure we always have an array
       setClubs(Array.isArray(userClubs) ? userClubs : []);
-      
-      // Auto-select first club if none selected
-      const safeClubs = Array.isArray(userClubs) ? userClubs : [];
-      if (safeClubs.length > 0 && !selectedClub) {
-        setSelectedClub(safeClubs[0]);
-      }
     } catch (err) {
       console.error('Error loading user clubs:', err);
       setError(err instanceof Error ? err.message : 'Failed to load clubs');
     } finally {
       setLoading(false);
     }
-  };
+  }, [isAuthenticated, user]);
 
   // Load clubs when user becomes authenticated
   useEffect(() => {
@@ -63,6 +57,7 @@ export function ClubProvider({ children }: ClubProviderProps) {
       setClubs([]);
       setSelectedClub(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user]);
 
   // Select a club
@@ -73,15 +68,22 @@ export function ClubProvider({ children }: ClubProviderProps) {
   };
 
   // Auto-select newly created club
-  const selectNewClub = (newClub: Club) => {
-    setClubs(prev => [...prev, newClub]);
-    selectClub(newClub);
-  };
+  // const _selectNewClub = (newClub: Club) => {
+  //   setClubs(prev => [...prev, newClub]);
+  //   selectClub(newClub);
+  // };
 
   // Refresh clubs data
   const refreshClubs = async () => {
     await loadUserClubs();
   };
+
+  // Auto-select first club when clubs are loaded
+  useEffect(() => {
+    if (clubs.length > 0 && !selectedClub) {
+      setSelectedClub(clubs[0]);
+    }
+  }, [clubs, selectedClub]);
 
   // Restore selected club from localStorage on mount
   useEffect(() => {
@@ -91,16 +93,10 @@ export function ClubProvider({ children }: ClubProviderProps) {
         const savedClub = clubs.find(club => club.id === savedClubId);
         if (savedClub) {
           setSelectedClub(savedClub);
-        } else {
-          // If saved club not found, select first club
-          setSelectedClub(clubs[0]);
         }
-      } else {
-        // No saved club, select first club
-        setSelectedClub(clubs[0]);
       }
     }
-  }, [clubs]);
+  }, [clubs, selectedClub]);
 
   // Check user's role/permissions for selected club
   const isOwner = selectedClub ? selectedClub.owner_id === user?.id : false;

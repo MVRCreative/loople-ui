@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { PostForm } from "./post-form";
 import { PostCard } from "./post-card";
 import { SearchFilter } from "./search-filter";
 import { Post, User, ApiPost } from "@/lib/types";
-import { postsService } from "@/lib/services/posts.service";
+import { postsService, CreatePostRequest } from "@/lib/services/posts.service";
 import { transformApiPostsToPosts } from "@/lib/utils/posts.utils";
 import { toast } from "sonner";
 import { useClub } from "@/lib/club-context";
@@ -13,46 +13,16 @@ import { useClub } from "@/lib/club-context";
 interface NewsfeedProps {
   initialPosts: Post[];
   currentUser: User;
+  isAuthenticated?: boolean;
 }
 
-export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
+export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }: NewsfeedProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [loading, setLoading] = useState(false);
-  const [searchFilters, setSearchFilters] = useState<any>({});
+  // const [searchFilters] = useState<Record<string, unknown>>({});
   const { selectedClub } = useClub();
 
-  // Load posts from API on component mount
-  useEffect(() => {
-    if (selectedClub?.id) {
-      loadPosts();
-    }
-  }, [selectedClub?.id]);
-
-  // Set up real-time subscriptions
-  useEffect(() => {
-    if (!selectedClub?.id) return;
-
-    const subscription = postsService.subscribeToPosts(parseInt(selectedClub.id), (payload) => {
-      console.log('Real-time post update:', payload);
-      
-      if (payload.eventType === 'INSERT') {
-        // New post added
-        loadPosts(); // Reload all posts to get the latest data
-      } else if (payload.eventType === 'UPDATE') {
-        // Post updated (e.g., reaction count changed)
-        loadPosts(); // Reload to get updated counts
-      } else if (payload.eventType === 'DELETE') {
-        // Post deleted
-        setPosts(prev => prev.filter(post => post.id !== payload.old.id.toString()));
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [selectedClub?.id]);
-
-  const loadPosts = async (filters: any = {}) => {
+  const loadPosts = useCallback(async (filters: Record<string, unknown> = {}) => {
     if (!selectedClub?.id) return;
     
     setLoading(true);
@@ -66,7 +36,7 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
       });
 
       if (response.success && response.data) {
-        const transformedPosts = transformApiPostsToPosts(response.data as any);
+        const transformedPosts = transformApiPostsToPosts(response.data as unknown as ApiPost[]);
         setPosts(transformedPosts);
       } else {
         toast.error(response.error || 'Failed to load posts');
@@ -77,16 +47,56 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedClub?.id]);
+
+  // Load posts from API on component mount
+  useEffect(() => {
+    if (selectedClub?.id) {
+      loadPosts();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClub?.id]);
+
+  // Set up real-time subscriptions
+  useEffect(() => {
+    if (!selectedClub?.id) return;
+
+    const subscription = postsService.subscribeToPosts(parseInt(selectedClub.id), (payload) => {
+      console.log('Real-time post update:', payload);
+      const payloadData = payload as Record<string, unknown>;
+      
+      if (payloadData.eventType === 'INSERT') {
+        // New post added
+        loadPosts(); // Reload all posts to get the latest data
+      } else if (payloadData.eventType === 'UPDATE') {
+        // Post updated (e.g., reaction count changed)
+        loadPosts(); // Reload to get updated counts
+      } else if (payloadData.eventType === 'DELETE') {
+        // Post deleted
+        const oldData = payloadData.old as Record<string, unknown>;
+        setPosts(prev => prev.filter(post => post.id !== (oldData.id as number).toString()));
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedClub?.id]);
 
   const handleCreatePost = async (content: string, type: "text" | "event" | "poll", attachments?: File[]) => {
+    if (!isAuthenticated) {
+      toast.error('Please sign in to create posts');
+      return;
+    }
+
     if (!selectedClub?.id) {
       toast.error('No club selected');
       return;
     }
 
     try {
-      let postData: any = {
+      const postData: CreatePostRequest = {
         club_id: parseInt(selectedClub.id),
         content_type: type,
         content_text: content,
@@ -99,7 +109,7 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
           postData.content_text = parsedContent.text;
           postData.poll_question = parsedContent.poll.question;
           postData.poll_options = parsedContent.poll.options;
-        } catch (e) {
+        } catch {
           // If parsing fails, treat as regular text
           console.warn('Failed to parse poll data, treating as text');
         }
@@ -122,7 +132,7 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
         }
 
         // Add the new post to the beginning of the list
-        const newPost = transformApiPostsToPosts([response.data as any])[0];
+        const newPost = transformApiPostsToPosts([response.data as unknown as ApiPost])[0];
         setPosts(prev => [newPost, ...prev]);
         toast.success("Post created successfully!");
       } else {
@@ -158,7 +168,7 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
     }
   };
 
-  const handleComment = (postId: string) => {
+  const handleComment = () => {
     // Comment functionality is handled by PostCard component
     // This function is called when comment button is clicked
   };
@@ -188,19 +198,19 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
     setPosts(prev => prev.filter(post => post.id !== postId));
   };
 
-  const handleSearch = (filters: any) => {
-    setSearchFilters(filters);
+  const handleSearch = (filters: Record<string, unknown>) => {
+    // setSearchFilters(filters);
     loadPosts(filters);
   };
 
   const handleClearSearch = () => {
-    setSearchFilters({});
+    // setSearchFilters({});
     loadPosts();
   };
 
   return (
-    <div className="w-full">
-      <PostForm currentUser={currentUser} onSubmit={handleCreatePost} />
+    <div className="w-full py-2 sm:py-4 md:py-6 overflow-x-hidden">
+      <PostForm currentUser={currentUser} onSubmit={handleCreatePost} isAuthenticated={isAuthenticated} />
       
       <SearchFilter 
         onSearch={handleSearch}
@@ -208,7 +218,8 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
       />
       
       {loading ? (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <p className="text-lg">Loading posts...</p>
         </div>
       ) : (
@@ -229,8 +240,13 @@ export function Newsfeed({ initialPosts, currentUser }: NewsfeedProps) {
       )}
       
       {!loading && posts.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          <p className="text-lg">No posts yet</p>
+        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+          </div>
+          <p className="text-lg font-medium">No posts yet</p>
           <p className="text-sm">Be the first to share an update!</p>
         </div>
       )}

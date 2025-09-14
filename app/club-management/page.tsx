@@ -26,7 +26,9 @@ import { ClubSettings } from "@/components/club-management/club-settings";
 import { ClubOverview } from "@/components/club-management/club-overview";
 import { CreateClubForm } from "@/components/club-management/create-club-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { mockClubData, mockRegistrations, mockPayments, Event as UiEvent } from "@/lib/club-mock-data";
+// Use real Event type from service
+type UiEvent = ApiEvent;
+import { Registration, Payment } from "@/lib/types/club-management";
 import { MembersService, Member } from "@/lib/services/members.service";
 import { CreateMemberForm } from "@/components/club-management/create-member-form";
 import { InviteMemberForm } from "@/components/club-management/invite-member-form";
@@ -36,7 +38,7 @@ import { CreateEventForm } from "@/components/club-management/create-event-form"
 import { EditEventForm } from "@/components/club-management/edit-event-form";
 
 export default function ClubManagementPage() {
-  const { user: _user, isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const { selectedClub, clubs, loading: clubLoading, isOwner, isAdmin, error: clubError, refreshClubs } = useClub();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("overview");
@@ -44,6 +46,7 @@ export default function ClubManagementPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
+  const [memberCount, setMemberCount] = useState(0);
   const [showInviteMember, setShowInviteMember] = useState(false);
   const [showCreateMember, setShowCreateMember] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
@@ -52,28 +55,16 @@ export default function ClubManagementPage() {
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [showCreateEvent, setShowCreateEvent] = useState(false);
   const [editingEvent, setEditingEvent] = useState<ApiEvent | null>(null);
+  const [registrations] = useState<Registration[]>([]);
+  const [payments] = useState<Payment[]>([]);
 
-  const mapApiEventToUiEvent = (e: ApiEvent): UiEvent => ({
-    id: String(e.id),
-    clubId: String(e.club_id),
-    title: e.title,
-    description: e.description || "",
-    eventType: e.event_type as UiEvent["eventType"],
-    startDate: e.start_date,
-    endDate: e.end_date,
-    location: e.location || "",
-    maxCapacity: e.max_capacity,
-    registrationDeadline: e.registration_deadline,
-    priceMember: e.price_member,
-    priceNonMember: e.price_non_member,
-    status: e.status as UiEvent["status"],
-    registeredCount: e.registered_count ?? 0,
-  });
+  const mapApiEventToUiEvent = (e: ApiEvent): UiEvent => e;
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push("/auth/login");
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authLoading, router]);
 
   // Load members for selected club
@@ -84,7 +75,9 @@ export default function ClubManagementPage() {
         setMembersLoading(true);
         setMembersError(null);
         const data = await MembersService.getClubMembers(selectedClub.id);
-        setMembers(Array.isArray(data) ? data : []);
+        const membersData = Array.isArray(data) ? data : [];
+        setMembers(membersData);
+        setMemberCount(membersData.length);
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to load members';
         setMembersError(message);
@@ -256,7 +249,7 @@ export default function ClubManagementPage() {
             {selectedClub.name}
           </Badge>
           <Badge variant="secondary" className="text-xs lg:text-sm">
-            {mockClubData.memberCount} Members
+            {memberCount} Members
           </Badge>
           {!canManage && (
             <Badge variant="destructive" className="text-xs lg:text-sm">
@@ -355,8 +348,12 @@ export default function ClubManagementPage() {
             onDeleteMember={async (m) => {
               try {
                 await MembersService.deleteMember(m.id);
-                setMembers(prev => prev.filter(x => x.id !== m.id));
-              } catch (err) {
+                setMembers(prev => {
+                  const filtered = prev.filter(x => x.id !== m.id);
+                  setMemberCount(filtered.length);
+                  return filtered;
+                });
+              } catch {
                 // no-op; could surface toast
               }
             }}
@@ -386,26 +383,8 @@ export default function ClubManagementPage() {
             <EventsTable 
               events={events} 
               onEditEvent={(uiEvent) => {
-                // Find matching api event by id in latest list
-                // Map back: we only need id to fetch fresh single if desired; use existing fields
-                const apiLike: ApiEvent = {
-                  id: uiEvent.id,
-                  club_id: uiEvent.clubId,
-                  title: uiEvent.title,
-                  description: uiEvent.description,
-                  event_type: uiEvent.eventType as ApiEvent["event_type"],
-                  start_date: uiEvent.startDate,
-                  end_date: uiEvent.endDate,
-                  location: uiEvent.location,
-                  max_capacity: uiEvent.maxCapacity,
-                  registration_deadline: uiEvent.registrationDeadline,
-                  price_member: uiEvent.priceMember,
-                  price_non_member: uiEvent.priceNonMember,
-                  status: uiEvent.status as ApiEvent["status"],
-                  registered_count: uiEvent.registeredCount,
-                  created_at: "",
-                  updated_at: "",
-                };
+                // Since UiEvent is now the same as ApiEvent, we can use it directly
+                const apiLike: ApiEvent = uiEvent;
                 setEditingEvent(apiLike);
               }}
               onDeleteEvent={async (uiEvent) => {
@@ -432,7 +411,7 @@ export default function ClubManagementPage() {
               Export Report
             </Button>
           </div>
-          <RegistrationsTable registrations={mockRegistrations} />
+          <RegistrationsTable registrations={registrations} />
         </TabsContent>
 
         <TabsContent value="payments" className="space-y-4">
@@ -452,7 +431,7 @@ export default function ClubManagementPage() {
               </Button>
             </div>
           </div>
-          <PaymentsTable payments={mockPayments} />
+          <PaymentsTable payments={payments} />
         </TabsContent>
 
         <TabsContent value="settings" className="space-y-4">
@@ -462,7 +441,7 @@ export default function ClubManagementPage() {
           </div>
           {canManage ? (
             <ClubSettings clubData={{
-              ...mockClubData,
+              id: selectedClub.id,
               name: selectedClub.name,
               subdomain: selectedClub.subdomain,
               description: selectedClub.description || '',
@@ -472,6 +451,11 @@ export default function ClubManagementPage() {
               city: selectedClub.city || '',
               state: selectedClub.state || '',
               zipCode: selectedClub.zip_code || '',
+              memberCount: memberCount,
+              upcomingEvents: events.filter(e => new Date(e.start_date) > new Date()).length,
+              monthlyRevenue: 0, // TODO: Calculate from payments
+              activePrograms: 0, // TODO: Get from programs service
+              onboardingCompleted: selectedClub.onboarding_completed,
             }} />
           ) : (
             <Card>
@@ -543,7 +527,9 @@ export default function ClubManagementPage() {
             setShowCreateMember(false);
             if (selectedClub) {
               const refreshed = await MembersService.getClubMembers(selectedClub.id);
-              setMembers(Array.isArray(refreshed) ? refreshed : []);
+              const membersData = Array.isArray(refreshed) ? refreshed : [];
+              setMembers(membersData);
+              setMemberCount(membersData.length);
             }
           }} onCancel={() => setShowCreateMember(false)} />
         </DialogContent>
@@ -557,7 +543,9 @@ export default function ClubManagementPage() {
               setEditingMember(null);
               if (selectedClub) {
                 const refreshed = await MembersService.getClubMembers(selectedClub.id);
-                setMembers(Array.isArray(refreshed) ? refreshed : []);
+                const membersData = Array.isArray(refreshed) ? refreshed : [];
+                setMembers(membersData);
+                setMemberCount(membersData.length);
               }
             }} onCancel={() => setEditingMember(null)} />
           )}

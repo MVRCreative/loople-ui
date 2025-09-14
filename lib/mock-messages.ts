@@ -1,3 +1,6 @@
+// DEPRECATED: Mock messaging system - should be replaced with real Supabase Realtime messaging
+// This file is kept for reference but should not be used in new code
+
 export type Conversation = {
   id: string
   name: string

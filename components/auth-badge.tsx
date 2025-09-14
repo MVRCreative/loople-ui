@@ -1,23 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { isAuthenticated, getCurrentUser } from "@/lib/mock-auth";
+import { useAuth } from "@/lib/auth-context";
 
 export default function AuthBadge() {
-  const [state, setState] = useState<"unknown" | "live" | "none">("unknown");
+  const { isAuthenticated, loading } = useAuth();
 
-  useEffect(() => {
-    // Mock auth state check
-    const checkAuth = () => {
-      const user = getCurrentUser();
-      setState(user ? "live" : "none");
-    };
-
-    checkAuth();
-  }, []);
-
-  const label =
-    state === "unknown" ? "AUTH: …" : state === "live" ? "AUTH: LIVE" : "AUTH: NO SESSION";
+  const label = loading 
+    ? "AUTH: …" 
+    : isAuthenticated 
+      ? "AUTH: LIVE" 
+      : "AUTH: NO SESSION";
 
   return (
     <span className="text-[11px] px-2 py-1 rounded border opacity-80">
