@@ -63,7 +63,7 @@ export function ClubProvider({ children }: ClubProviderProps) {
       setClubs([]);
       setSelectedClub(null);
     }
-  }, [isAuthenticated, user, loadUserClubs]);
+  }, [isAuthenticated, user]);
 
   // Select a club
   const selectClub = (club: Club) => {
@@ -73,6 +73,7 @@ export function ClubProvider({ children }: ClubProviderProps) {
   };
 
   // Auto-select newly created club
+
   const _selectNewClub = (newClub: Club) => {
     setClubs(prev => [...prev, newClub]);
     selectClub(newClub);
