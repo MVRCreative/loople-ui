@@ -78,35 +78,39 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   if (isAuthRoute) {
     return (
       <div className="min-h-screen w-full bg-background">
-        <main>
-          {children}
-        </main>
+        <div className="max-w-[1200px] mx-auto">
+          <main>
+            {children}
+          </main>
+        </div>
       </div>
     );
   }
 
-  // Responsive layout with always-visible left sidebar
+  // Responsive layout with always-visible left sidebar and flexible right sidebar
   const getGridLayout = () => {
     if (isRightSidebarCollapsed) {
       // Collapsed right sidebar - main content grows to fill space
-      return `w-full max-w-none
+      return `w-full
         [grid-template-columns:240px_1fr]
         sm:[grid-template-columns:280px_1fr]
         md:[grid-template-columns:280px_1fr_60px]
-        lg:[grid-template-columns:280px_680px_60px]`;
+        lg:[grid-template-columns:280px_1fr_60px]`;
     } else {
-      // Expanded right sidebar - Facebook-like layout
-      return `w-full max-w-none
+      // Expanded right sidebar - flexible width based on screen size
+      return `w-full
         [grid-template-columns:240px_1fr]
         sm:[grid-template-columns:280px_1fr]
-        md:[grid-template-columns:280px_1fr_360px]
-        lg:[grid-template-columns:280px_680px_360px]`;
+        md:[grid-template-columns:280px_1fr_280px]
+        lg:[grid-template-columns:280px_1fr_320px]
+        xl:[grid-template-columns:280px_1fr_360px]`;
     }
   };
 
   return (
     <div className="min-h-screen w-full bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
-      <div className={`grid gap-x-0 w-full transition-all duration-500 ease-in-out ${getGridLayout()}`}>
+      <div className="max-w-[1200px] mx-auto">
+        <div className={`grid gap-x-0 w-full transition-all duration-500 ease-in-out ${getGridLayout()}`}>
         <aside className="block sticky top-0 h-screen overflow-y-auto">
           <NewsfeedSidebar />
         </aside>
@@ -124,8 +128,8 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
             </Button>
           </div>
           
-          <div className="w-full px-2 sm:px-4 lg:px-6">
-            <div className="max-w-[680px] mx-auto">
+          <div className="w-full px-2 sm:px-4 lg:px-6 flex justify-center">
+            <div className="w-full max-w-[680px]">
               {children}
             </div>
           </div>
@@ -154,7 +158,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
               </div>
             </div>
           ) : (
-            <div className="relative transition-all duration-300">
+            <div className="relative transition-all duration-300 w-full">
               <NewsfeedRightSidebar />
               <Button
                 variant="ghost"
@@ -179,7 +183,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
               onClick={() => handleSidebarToggle(true)}
             />
             {/* Sidebar */}
-            <div className="absolute right-0 top-0 h-full w-80 bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-xl">
+            <div className="absolute right-0 top-0 h-full w-[min(320px,80vw)] bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-xl">
               <div className="relative h-full">
                 <Button
                   variant="ghost"
@@ -197,6 +201,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
             </div>
           </div>
         )}
+        </div>
       </div>
     </div>
   );

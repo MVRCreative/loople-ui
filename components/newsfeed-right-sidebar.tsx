@@ -46,7 +46,7 @@ const userPrograms = [
 
 export function NewsfeedRightSidebar() {
   return (
-    <div className="w-[360px] bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 p-4 sticky top-0 h-screen overflow-y-auto">
+    <div className="w-full bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 p-4 sticky top-0 h-screen overflow-y-auto">
       {/* Search */}
       <div className="mb-6">
         <div className="relative" suppressHydrationWarning>
