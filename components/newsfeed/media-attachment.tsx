@@ -26,7 +26,7 @@ export function MediaAttachment({ attachment, onDelete, canDelete = false }: Med
   const getFileIcon = () => {
     switch (attachment.file_type) {
       case 'image':
-        return <Image className="h-4 w-4" />;
+        return <Image className="h-4 w-4" aria-label="Image file" />;
       case 'video':
         return <Video className="h-4 w-4" />;
       default:

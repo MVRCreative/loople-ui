@@ -44,7 +44,6 @@ export default function ClubManagementPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
-  const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
   const [memberCount, setMemberCount] = useState(0);
   const [showInviteMember, setShowInviteMember] = useState(false);
@@ -72,7 +71,6 @@ export default function ClubManagementPage() {
     const loadMembers = async () => {
       if (!selectedClub) return;
       try {
-        setMembersLoading(true);
         setMembersError(null);
         const data = await MembersService.getClubMembers(selectedClub.id);
         const membersData = Array.isArray(data) ? data : [];
@@ -81,8 +79,6 @@ export default function ClubManagementPage() {
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to load members';
         setMembersError(message);
-      } finally {
-        setMembersLoading(false);
       }
     };
     loadMembers();

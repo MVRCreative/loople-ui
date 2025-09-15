@@ -109,7 +109,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
 
   return (
     <div className="min-h-screen w-full bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
-      <div className="max-w-[1200px] mx-auto">
+      <div className="w-full max-w-[1200px] mx-auto">
         <div className={`grid gap-x-0 w-full transition-all duration-500 ease-in-out ${getGridLayout()}`}>
         <aside className="block sticky top-0 h-screen overflow-y-auto">
           <NewsfeedSidebar />
@@ -129,7 +129,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
           </div>
           
           <div className="w-full px-2 sm:px-4 lg:px-6 flex justify-center">
-            <div className="w-full max-w-[680px]">
+            <div className="w-full">
               {children}
             </div>
           </div>
