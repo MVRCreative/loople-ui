@@ -113,7 +113,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 sm:p-3 md:p-4 mb-2 sm:mb-3 md:mb-4 shadow-sm overflow-x-hidden">
+    <div className="bg-card border border-border rounded-lg p-2 sm:p-3 md:p-4 mb-2 sm:mb-3 md:mb-4 shadow-sm overflow-x-hidden">
       {/* Post Header */}
       <div className="flex items-start gap-3 mb-3">
         <Avatar className="h-10 w-10">

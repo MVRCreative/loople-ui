@@ -108,20 +108,20 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   };
 
   return (
-    <div className="min-h-screen w-full bg-gray-50 dark:bg-gray-900 overflow-x-hidden">
+    <div className="min-h-screen w-full bg-background overflow-x-hidden">
       <div className="w-full max-w-[1200px] mx-auto">
         <div className={`grid gap-x-0 w-full transition-all duration-500 ease-in-out ${getGridLayout()}`}>
         <aside className="block sticky top-0 h-screen overflow-y-auto">
           <NewsfeedSidebar />
         </aside>
-        <main className={`relative transition-all duration-500 ease-in-out ${isTransitioning ? 'opacity-95' : 'opacity-100'} bg-white dark:bg-gray-800 min-h-screen`}>
+        <main className={`relative transition-all duration-500 ease-in-out ${isTransitioning ? 'opacity-95' : 'opacity-100'} bg-background min-h-screen`}>
           {/* Mobile right sidebar toggle button */}
           <div className="md:hidden fixed top-4 right-4 z-50">
             <Button
               variant="outline"
               size="sm"
               onClick={() => handleSidebarToggle(!isRightSidebarCollapsed)}
-              className="bg-white dark:bg-gray-800 shadow-lg border-gray-200 dark:border-gray-700"
+              className="bg-background shadow-lg border-border"
             >
               <Calendar className="h-4 w-4 mr-2" />
               {isRightSidebarCollapsed ? 'Show' : 'Hide'}
@@ -137,7 +137,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
         {/* Desktop right sidebar */}
         <aside className="hidden md:block sticky top-0 h-screen overflow-y-auto">
           {isRightSidebarCollapsed ? (
-            <div className="w-[60px] bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 sticky top-0 h-screen flex flex-col items-center py-4 transition-all duration-300">
+            <div className="w-[60px] bg-background border-l border-border sticky top-0 h-screen flex flex-col items-center py-4 transition-all duration-300">
               <Button
                 variant="ghost"
                 size="sm"
@@ -149,16 +149,16 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
                 <ChevronLeft className="h-4 w-4 transition-transform duration-200" />
               </Button>
               <div className="flex flex-col gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 cursor-pointer" title="Upcoming Events">
-                  <Calendar className="h-5 w-5 text-gray-600 dark:text-gray-300 transition-colors duration-200" />
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-accent transition-all duration-200 cursor-pointer" title="Upcoming Events">
+                  <Calendar className="h-5 w-5 text-muted-foreground transition-colors duration-200" />
                 </div>
-                <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200 cursor-pointer" title="Your Programs">
-                  <Users className="h-5 w-5 text-gray-600 dark:text-gray-300 transition-colors duration-200" />
+                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-accent transition-all duration-200 cursor-pointer" title="Your Programs">
+                  <Users className="h-5 w-5 text-muted-foreground transition-colors duration-200" />
                 </div>
               </div>
             </div>
           ) : (
-            <div className="relative transition-all duration-300 w-full">
+            <div className="relative transition-all duration-300 w-full" suppressHydrationWarning>
               <NewsfeedRightSidebar />
               <Button
                 variant="ghost"
@@ -167,6 +167,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
                 className="absolute top-4 right-4 z-10 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 rounded-full w-8 h-8"
                 title="Collapse sidebar"
                 disabled={isTransitioning}
+                suppressHydrationWarning
               >
                 <ChevronRight className="h-4 w-4 transition-transform duration-200" />
               </Button>
@@ -183,7 +184,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
               onClick={() => handleSidebarToggle(true)}
             />
             {/* Sidebar */}
-            <div className="absolute right-0 top-0 h-full w-[min(320px,80vw)] bg-white dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700 shadow-xl">
+            <div className="absolute right-0 top-0 h-full w-[min(320px,80vw)] bg-background border-l border-border shadow-xl">
               <div className="relative h-full">
                 <Button
                   variant="ghost"

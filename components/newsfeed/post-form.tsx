@@ -93,7 +93,7 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false }: Pos
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 sm:p-3 md:p-4 mb-3 sm:mb-4 md:mb-6 shadow-sm overflow-x-hidden">
+    <div className="bg-card border border-border rounded-lg p-2 sm:p-3 md:p-4 mb-3 sm:mb-4 md:mb-6 shadow-sm overflow-x-hidden">
       <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
         <div className="flex gap-3">
           <Avatar className="h-10 w-10">
@@ -107,7 +107,7 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false }: Pos
               value={content}
               onChange={(e) => setContent(e.target.value)}
               placeholder={isAuthenticated ? "What's on your mind?" : "Sign in to share your thoughts..."}
-              className="w-full min-h-[60px] p-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400"
+              className="w-full min-h-[60px] p-3 border border-border rounded-lg bg-muted text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground placeholder:text-muted-foreground"
               rows={3}
               disabled={!isAuthenticated}
               suppressHydrationWarning
