@@ -1,14 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { AnimatedList, AnimatedListItem } from "@/components/ui/animated-list"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Users, Building2, UserCheck, Database } from "lucide-react"
-import { AdminService, AdminProfile, AdminClub, AdminMembership } from "@/lib/services"
-
-type User = AdminProfile;
-type Club = AdminClub;
-type UserClubRelationship = AdminMembership;
+import { AdminService } from "@/lib/services"
 
 export default async function SuperAdminPage() {
   // Fetch all data via services with error capture

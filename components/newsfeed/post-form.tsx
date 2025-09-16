@@ -5,21 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Calendar, MessageCircle, Paperclip, X } from "lucide-react";
 import { User } from "@/lib/types";
-import { postsService } from "@/lib/services/posts.service";
 import { toast } from "sonner";
 
 interface PostFormProps {
   currentUser: User;
   onSubmit: (content: string, type: "text" | "event" | "poll", attachments?: File[]) => void;
+  isAuthenticated?: boolean;
 }
 
-export function PostForm({ currentUser, onSubmit }: PostFormProps) {
+export function PostForm({ currentUser, onSubmit, isAuthenticated = false }: PostFormProps) {
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState<"text" | "event" | "poll">("text");
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -94,7 +93,7 @@ export function PostForm({ currentUser, onSubmit }: PostFormProps) {
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-4 mb-6">
+    <div className="bg-card border border-border rounded-lg p-2 sm:p-3 md:p-4 mb-3 sm:mb-4 md:mb-6 shadow-sm overflow-x-hidden">
       <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
         <div className="flex gap-3">
           <Avatar className="h-10 w-10">
@@ -107,14 +106,15 @@ export function PostForm({ currentUser, onSubmit }: PostFormProps) {
             <textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Share an update with your club..."
-              className="w-full min-h-[60px] p-3 border border-input rounded-lg bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+              placeholder={isAuthenticated ? "What's on your mind?" : "Sign in to share your thoughts..."}
+              className="w-full min-h-[60px] p-3 border border-border rounded-lg bg-muted text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground placeholder:text-muted-foreground"
               rows={3}
+              disabled={!isAuthenticated}
               suppressHydrationWarning
             />
             
             {/* Poll form fields */}
-            {postType === "poll" && (
+            {postType === "poll" && isAuthenticated && (
               <div className="space-y-3 mt-3">
                 <input
                   type="text"
@@ -194,6 +194,7 @@ export function PostForm({ currentUser, onSubmit }: PostFormProps) {
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
                   className="h-8 px-3"
+                  disabled={!isAuthenticated}
                   suppressHydrationWarning
                 >
                   <Paperclip className="h-4 w-4 mr-1" />
@@ -206,6 +207,7 @@ export function PostForm({ currentUser, onSubmit }: PostFormProps) {
                   size="sm"
                   onClick={() => setPostType("event")}
                   className="h-8 px-3"
+                  disabled={!isAuthenticated}
                   suppressHydrationWarning
                 >
                   <Calendar className="h-4 w-4 mr-1" />
@@ -217,6 +219,7 @@ export function PostForm({ currentUser, onSubmit }: PostFormProps) {
                   size="sm"
                   onClick={() => setPostType("poll")}
                   className="h-8 px-3"
+                  disabled={!isAuthenticated}
                   suppressHydrationWarning
                 >
                   <MessageCircle className="h-4 w-4 mr-1" />
@@ -226,11 +229,11 @@ export function PostForm({ currentUser, onSubmit }: PostFormProps) {
               
               <Button
                 type="submit"
-                disabled={!content.trim() || (postType === "poll" && (!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2))}
+                disabled={!isAuthenticated || !content.trim() || (postType === "poll" && (!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2))}
                 className="h-8 px-4"
                 suppressHydrationWarning
               >
-                Post
+                {isAuthenticated ? "Post" : "Sign In Required"}
               </Button>
             </div>
           </div>

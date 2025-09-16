@@ -23,62 +23,62 @@ export function getRelativeTime(dateString: string): string {
 }
 
 // Helper function to create user object from API data
-export function createUserFromApi(apiUser: any): User {
-  const firstName = apiUser.first_name || apiUser.raw_user_meta_data?.first_name || ''
-  const lastName = apiUser.last_name || apiUser.raw_user_meta_data?.last_name || ''
-  const name = firstName && lastName ? `${firstName} ${lastName}` : apiUser.email
+export function createUserFromApi(apiUser: Record<string, unknown>): User {
+  const firstName = (apiUser.first_name as string) || ((apiUser.raw_user_meta_data as Record<string, unknown>)?.first_name as string) || ''
+  const lastName = (apiUser.last_name as string) || ((apiUser.raw_user_meta_data as Record<string, unknown>)?.last_name as string) || ''
+  const name = firstName && lastName ? `${firstName} ${lastName}` : (apiUser.email as string)
   
   return {
-    id: apiUser.id,
+    id: apiUser.id as string,
     name: name,
     role: 'Member', // Default role, could be enhanced with actual role data
-    avatar: firstName ? firstName.charAt(0).toUpperCase() : apiUser.email.charAt(0).toUpperCase(),
+    avatar: firstName ? firstName.charAt(0).toUpperCase() : (apiUser.email as string).charAt(0).toUpperCase(),
     isAdmin: false, // Default, could be enhanced with actual admin status
   }
 }
 
 // Helper function to create event object from API data
-export function createEventFromApi(apiEvent: any): Event {
+export function createEventFromApi(apiEvent: Record<string, unknown>): Event {
   return {
-    id: apiEvent.id.toString(),
-    title: apiEvent.title,
-    location: apiEvent.location || 'TBD',
-    date: new Date(apiEvent.start_date).toLocaleDateString(),
-    time: new Date(apiEvent.start_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    description: apiEvent.description,
+    id: (apiEvent.id as number).toString(),
+    title: apiEvent.title as string,
+    location: (apiEvent.location as string) || 'TBD',
+    date: new Date(apiEvent.start_date as string).toLocaleDateString(),
+    time: new Date(apiEvent.start_date as string).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    description: apiEvent.description as string,
   }
 }
 
 // Transform API post to frontend post format
 export function transformApiPostToPost(apiPost: ApiPost): Post {
-  const user = createUserFromApi(apiPost.users)
+  const user = createUserFromApi(apiPost.users || {})
   
   // Create content object based on post type
-  let content: any = {
+  const content = {
     type: apiPost.content_type,
     text: apiPost.content_text,
-  }
+  } as unknown
 
   // Add event data if it's an event post
   if (apiPost.content_type === 'event' && apiPost.events) {
-    content.event = createEventFromApi(apiPost.events)
+    (content as Record<string, unknown>).event = createEventFromApi(apiPost.events)
   }
 
   // Add poll data if it's a poll post
   if (apiPost.content_type === 'poll' && apiPost.poll_question && apiPost.poll_options) {
     const pollOptions = JSON.parse(apiPost.poll_options)
-    const pollVotesRaw = JSON.parse(apiPost.poll_votes || '{}')
+    const pollVotesRaw = JSON.parse(apiPost.poll_votes || '{}') as Record<string, number>
     
     // Clean up poll votes - remove user vote tracking keys and keep only vote counts
     const pollVotes: Record<string, number> = {}
-    Object.keys(pollVotesRaw).forEach(key => {
+    for (const key in pollVotesRaw) {
       // Only include numeric keys (vote counts), skip user vote tracking keys
       if (!key.startsWith('user_') && !isNaN(Number(key))) {
         pollVotes[key] = pollVotesRaw[key]
       }
-    })
+    }
     
-    content.poll = {
+    (content as Record<string, unknown>).poll = {
       question: apiPost.poll_question,
       options: pollOptions,
       votes: pollVotes,
@@ -89,7 +89,7 @@ export function transformApiPostToPost(apiPost: ApiPost): Post {
   return {
     id: apiPost.id.toString(),
     user,
-    content,
+    content: content as { type: "text" | "event" | "poll"; text: string; event?: Event; poll?: { question: string; options: string[]; votes: Record<string, number>; userVote: number | null } },
     timestamp: getRelativeTime(apiPost.created_at),
     reactions: apiPost.reaction_count || 0,
     comments: apiPost.comment_count || 0,
@@ -99,7 +99,7 @@ export function transformApiPostToPost(apiPost: ApiPost): Post {
 
 // Transform API comment to frontend comment format
 export function transformApiCommentToComment(apiComment: ApiComment): Comment {
-  const user = createUserFromApi(apiComment.users)
+  const user = createUserFromApi(apiComment.users || {})
   
   return {
     id: apiComment.id.toString(),

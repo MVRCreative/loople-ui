@@ -18,7 +18,7 @@ export default function LogoutPage() {
         } else {
           toast.error(result.error || "Sign out failed");
         }
-      } catch (error) {
+      } catch {
         toast.error("An error occurred during sign out");
       } finally {
         router.push("/auth/login");
@@ -26,7 +26,8 @@ export default function LogoutPage() {
     };
 
     handleLogout();
-  }, [signOut, router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="flex min-h-[80vh] w-full flex-col items-center justify-center p-4">

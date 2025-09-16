@@ -27,7 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Registration } from "@/lib/club-mock-data";
+import { Registration } from "@/lib/types/club-management";
 
 interface RegistrationsTableProps {
   registrations: Registration[];

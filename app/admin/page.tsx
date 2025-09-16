@@ -1,81 +1,85 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { AnimatedList, AnimatedListItem } from "@/components/ui/animated-list"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Settings, Activity, Calendar, TrendingUp } from "lucide-react"
+import { useClub } from "@/lib/club-context"
+import { MembersService, Member } from "@/lib/services/members.service"
 
-type MemberRow = {
-  id: string;
-  member_type: string | null;
-  created_at: string | null;
-  user: {
-    id: string;
-    email: string | null;
-    full_name: string | null;
-  } | null;
-};
+export default function AdminPage() {
+  const { selectedClub } = useClub()
+  const [members, setMembers] = useState<Member[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-export default function AdminPage({
-  searchParams,
-}: {
-  searchParams?: { [key: string]: string | string[] | undefined }
-}) {
-  // Mock data for UI demonstration
-  const mockMembers: MemberRow[] = [
-    {
-      id: "1",
-      member_type: "admin",
-      created_at: "2024-01-15T10:30:00Z",
-      user: {
-        id: "user-1",
-        email: "admin@loople.com",
-        full_name: "Loople Admin"
+  useEffect(() => {
+    const loadMembers = async () => {
+      if (!selectedClub) {
+        setLoading(false)
+        return
       }
-    },
-    {
-      id: "2", 
-      member_type: "coach",
-      created_at: "2024-01-20T14:15:00Z",
-      user: {
-        id: "user-2",
-        email: "coach@sarah.com",
-        full_name: "Coach Sarah"
-      }
-    },
-    {
-      id: "3",
-      member_type: "member", 
-      created_at: "2024-02-01T09:45:00Z",
-      user: {
-        id: "user-3",
-        email: "john@davis.com",
-        full_name: "John Davis"
-      }
-    },
-    {
-      id: "4",
-      member_type: "member",
-      created_at: "2024-02-05T16:20:00Z", 
-      user: {
-        id: "user-4",
-        email: "jane@smith.com",
-        full_name: "Jane Smith"
-      }
-    },
-    {
-      id: "5",
-      member_type: "coach",
-      created_at: "2024-02-10T11:30:00Z",
-      user: {
-        id: "user-5", 
-        email: "mike@coach.com",
-        full_name: "Mike Johnson"
+
+      try {
+        setLoading(true)
+        setError(null)
+        const membersData = await MembersService.getClubMembers(selectedClub.id)
+        setMembers(membersData || [])
+      } catch (err) {
+        console.error('Error loading members:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load members')
+      } finally {
+        setLoading(false)
       }
     }
-  ]
 
-  const rows = mockMembers
+    loadMembers()
+  }, [selectedClub])
+
+  if (!selectedClub) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-0">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold">No Club Selected</h3>
+              <p className="text-muted-foreground">Please select a club to view member management.</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  if (loading) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-0">
+        <div className="text-center py-8">
+          <div className="text-sm text-muted-foreground">Loading members...</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-1 flex-col gap-4 p-0">
+        <Card>
+          <CardContent className="p-6">
+            <div className="text-center">
+              <h3 className="text-lg font-semibold text-red-600">Error</h3>
+              <p className="text-muted-foreground">{error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  const rows = members
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-0">
@@ -94,15 +98,21 @@ export default function AdminPage({
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Active Coaches</CardDescription>
+            <CardDescription>Active Members</CardDescription>
             <CardTitle className="text-4xl">
-              {rows.filter(r => r.member_type === 'coach').length}
+              {rows.filter(m => m.status === 'active').length}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
               <Activity className="h-4 w-4 inline mr-1" />
-              +2 new this week
+              {rows.filter(m => {
+                const date = new Date(m.created_at || '')
+                const now = new Date()
+                const diffTime = Math.abs(now.getTime() - date.getTime())
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+                return diffDays <= 7
+              }).length} new this week
             </div>
           </CardContent>
         </Card>
@@ -110,8 +120,8 @@ export default function AdminPage({
           <CardHeader className="pb-2">
             <CardDescription>New Members</CardDescription>
             <CardTitle className="text-4xl">
-              {rows.filter(r => {
-                const date = new Date(r.created_at || '')
+              {rows.filter(m => {
+                const date = new Date(m.created_at || '')
                 const now = new Date()
                 const diffTime = Math.abs(now.getTime() - date.getTime())
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
@@ -147,23 +157,23 @@ export default function AdminPage({
             </TableHeader>
             <TableBody>
               <AnimatedList>
-                {rows.map((row) => (
-                  <AnimatedListItem key={row.id}>
+                {rows.map((member) => (
+                  <AnimatedListItem key={member.id}>
                     <TableRow>
                       <TableCell className="font-medium">
-                        {row.user?.full_name || 'Unknown'}
+                        {`${member.first_name} ${member.last_name}`}
                       </TableCell>
-                      <TableCell>{row.user?.email || 'No email'}</TableCell>
+                      <TableCell>{member.email || 'No email'}</TableCell>
                       <TableCell>
                         <Badge variant={
-                          row.member_type === 'admin' ? 'default' :
-                          row.member_type === 'coach' ? 'secondary' : 'outline'
+                          member.member_type === 'adult' ? 'default' :
+                          member.member_type === 'child' ? 'secondary' : 'outline'
                         }>
-                          {row.member_type || 'member'}
+                          {member.member_type || 'member'}
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {row.created_at ? new Date(row.created_at).toLocaleDateString() : 'Unknown'}
+                        {member.created_at ? new Date(member.created_at).toLocaleDateString() : 'Unknown'}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm">

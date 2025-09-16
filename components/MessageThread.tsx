@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { mockConversations, mockMessages } from "@/lib/mock-messages"; // TODO(step1): replace mock with live Supabase query
+import { mockConversations, mockMessages } from "@/lib/mock-messages"; // DEPRECATED: This component uses mock data and should be replaced with real Supabase messaging
 
 interface MessageThreadProps {
   id: string;

@@ -1,30 +1,84 @@
+"use client";
+
 import ProfileForm from "@/components/settings/profile-form"
 import OrganizationsForm from "@/components/settings/organizations-form"
 import UserInfoLogger from "@/components/user-info-logger"
 import { UsersService, ClubsService } from "@/lib/services"
-import { authService } from "@/lib/auth-service"
-import { redirect } from "next/navigation"
+import { useAuth } from "@/lib/auth-context"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export default function Page() {
+  const { user, isAuthenticated, loading } = useAuth()
+  const router = useRouter()
+  const [userData, setUserData] = useState<{
+    email: string;
+    first_name?: string;
+    last_name?: string;
+  } | null>(null)
+  const [clubsData, setClubsData] = useState<{
+    id: string;
+    name: string;
+    subdomain: string;
+  }[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-export default async function Page() {
-  const user = await authService.getCurrentUser()
-  if (!user) {
-    redirect("/auth/login")
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!loading && !isAuthenticated) {
+      router.push("/auth/login")
+    }
+  }, [isAuthenticated, loading, router])
+
+  // Load user data when authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const loadUserData = async () => {
+        try {
+          setIsLoading(true)
+          const userRecord = await UsersService.getUserById(user.id)
+          const clubs = await ClubsService.getUserClubs()
+          
+          setUserData(userRecord)
+          setClubsData(clubs || [])
+        } catch (error) {
+          console.error('Error loading user data:', error)
+        } finally {
+          setIsLoading(false)
+        }
+      }
+      
+      loadUserData()
+    }
+  }, [isAuthenticated, user])
+
+  // Show loading while checking auth or loading data
+  if (loading || isLoading) {
+    return (
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <div className="p-4 space-y-6">
+          <div className="space-y-1">
+            <h1 className="text-xl font-semibold">Settings</h1>
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
-  const userRecord = await UsersService.getUserById(user.id)
-  const userData = userRecord
+  // Don't render if not authenticated (will redirect)
+  if (!isAuthenticated || !user) {
+    return null
+  }
+
+  // Transform user data to match expected format
+  const processedUserData = userData
     ? {
-      email: userRecord.email,
-      full_name: `${userRecord.first_name ?? ""} ${userRecord.last_name ?? ""}`.trim(),
+      email: userData.email,
+      full_name: `${userData.first_name ?? ""} ${userData.last_name ?? ""}`.trim(),
       avatar_url: "",
     }
     : null
-
-  // Load clubs that the user is a member of
-  const clubsData = await ClubsService.getUserClubs()
 
   // Transform clubs data to match expected format
   type ClubsServiceClub = {
@@ -32,7 +86,7 @@ export default async function Page() {
     name: string;
     subdomain: string;
   };
-  const clubs = (clubsData || [])
+  const clubs = clubsData
     .map((club: ClubsServiceClub) => ({
       id: Number(club.id),
       name: club.name,
@@ -40,24 +94,25 @@ export default async function Page() {
       member_type: "member",
     }))
     .filter((club) => Boolean(club.id) && Boolean(club.name))
+  
   // Split full_name into first_name and last_name
-  const fullName = userData?.full_name ?? ""
+  const fullName = processedUserData?.full_name ?? ""
   const nameParts = fullName.trim().split(" ")
   const firstName = nameParts[0] ?? ""
   const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : ""
 
-  // Server-side console logs (appear in terminal where you run npm run dev)
-  console.log("=== SERVER: USER INFORMATION ===")
+  // Client-side console logs
+  console.log("=== CLIENT: USER INFORMATION ===")
   console.log("UUID:", user.id)
-  console.log("Email:", userData?.email ?? user.email ?? "Not available")
+  console.log("Email:", processedUserData?.email ?? user.email ?? "Not available")
   console.log("First Name:", firstName)
   console.log("Last Name:", lastName)
   console.log("Full Name:", fullName)
-  console.log("Avatar URL:", userData?.avatar_url ?? "Not available")
+  console.log("Avatar URL:", processedUserData?.avatar_url ?? "Not available")
   console.log("=================================")
 
-  // Server-side console logs for clubs
-  console.log("=== SERVER: CLUBS INFORMATION ===")
+  // Client-side console logs for clubs
+  console.log("=== CLIENT: CLUBS INFORMATION ===")
   console.log("Number of clubs:", clubs.length)
   clubs.forEach((club, index) => {
     console.log(`Club ${index + 1}:`, {
@@ -74,11 +129,11 @@ export default async function Page() {
       <UserInfoLogger 
         userInfo={{
           uuid: user.id,
-          email: userData?.email ?? user.email ?? "Not available",
+          email: processedUserData?.email ?? user.email ?? "Not available",
           firstName,
           lastName,
           fullName,
-          avatarUrl: userData?.avatar_url ?? "Not available"
+          avatarUrl: processedUserData?.avatar_url ?? "Not available"
         }}
       />
       
@@ -93,17 +148,16 @@ export default async function Page() {
             {/* Profile Section */}
             <ProfileForm
               initialData={{
-                email: userData?.email ?? user.email ?? "",
+                email: processedUserData?.email ?? user.email ?? "",
                 first_name: firstName,
                 last_name: lastName,
-                avatar_url: userData?.avatar_url ?? "",
+                avatar_url: processedUserData?.avatar_url ?? "",
               }}
             />
             
             {/* Organizations Section */}
             <OrganizationsForm 
-              initialClubs={clubs}
-              defaultClubId={clubs.length > 0 ? clubs[0].id : undefined}
+              defaultClubId={clubs.length > 0 ? clubs[0].id.toString() : undefined}
             />
             
             {/* Additional Settings Section */}

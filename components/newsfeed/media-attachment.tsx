@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Image, File, Video, Download, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import NextImage from "next/image";
 
 interface MediaAttachmentProps {
   attachment: {
@@ -25,7 +26,7 @@ export function MediaAttachment({ attachment, onDelete, canDelete = false }: Med
   const getFileIcon = () => {
     switch (attachment.file_type) {
       case 'image':
-        return <Image className="h-4 w-4" />;
+        return <Image className="h-4 w-4" aria-label="Image file" />;
       case 'video':
         return <Video className="h-4 w-4" />;
       default:
@@ -73,9 +74,11 @@ export function MediaAttachment({ attachment, onDelete, canDelete = false }: Med
     if (attachment.file_type === 'image' && !imageError) {
       return (
         <div className="relative group">
-          <img
+          <NextImage
             src={getFileUrl()}
             alt={attachment.file_name}
+            width={400}
+            height={128}
             className="w-full h-32 object-cover rounded-lg"
             onError={() => setImageError(true)}
           />

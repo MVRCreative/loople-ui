@@ -28,7 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Payment } from "@/lib/club-mock-data";
+import { Payment } from "@/lib/types/club-management";
 
 interface PaymentsTableProps {
   payments: Payment[];

@@ -7,11 +7,8 @@ import {
   SignInResponse,
   AuthUser,
   AuthSession,
-  AuthError,
   ApiResponse,
-  Club,
-  UserRecord,
-  Member
+  Club
 } from './auth-types';
 
 class AuthService {

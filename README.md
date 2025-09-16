@@ -1,6 +1,6 @@
-# Loople UI - Frontend Only
+# Loople UI - Full Stack Application
 
-This is a **UI-only** Next.js project showcasing the Loople application interface. All backend functionality has been removed and replaced with mock data for demonstration purposes.
+This is a **full-stack** Next.js application with Supabase backend integration. The application provides real authentication, club management, and data persistence.
 
 ## Features
 
@@ -9,7 +9,7 @@ This is a **UI-only** Next.js project showcasing the Loople application interfac
 - 🏊‍♂️ **Swimming Club Interface** - Complete dashboard for club management
 - 💬 **Messaging System** - Real-time messaging interface (UI only)
 - 📊 **Analytics Dashboard** - Charts and data visualization
-- 🔐 **Authentication UI** - Login/signup forms (mock authentication)
+- 🔐 **Real Authentication** - Supabase Auth integration with real user management
 - 🏢 **Multi-tenant UI** - Club switching interface
 
 ## Getting Started
@@ -50,14 +50,22 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 └── public/                # Static assets
 ```
 
-## Mock Data
+## Real Data Integration
 
-The application uses mock data located in `lib/data.ts` and `lib/mock-auth.ts`:
+The application integrates with Supabase for:
 
-- **Users**: Mock user profiles and roles
-- **Events**: Sample swimming events and competitions
-- **Posts**: Newsfeed content and announcements
-- **Authentication**: Mock login/logout functionality
+- **Authentication**: Real user authentication and session management
+- **Clubs**: Multi-tenant club management with real data persistence
+- **Members**: Real member management and role-based permissions
+- **Events**: Event creation and management with real data
+- **Posts**: Newsfeed with real content and interactions
+
+## Deprecated Components
+
+Some components still use mock data and are marked as deprecated:
+
+- **Messaging System**: `MessageThread` and `ConversationsList` components use mock data
+- **Mock Data Files**: `lib/mock-auth.ts`, `lib/mock-messages.ts` are deprecated
 
 ## UI Components
 

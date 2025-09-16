@@ -1,6 +1,8 @@
+"use client";
+
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Post } from "@/lib/types";
+import type { Post } from "@/lib/types";
 import { EventCard } from "./event-card";
 import { PostActions } from "./post-actions";
 
@@ -12,9 +14,15 @@ interface PostCardProps {
   isFirst?: boolean;
 }
 
-export function PostCard({ post, onReaction, onComment, onShare, isFirst = false }: PostCardProps) {
+export function PostCard({
+  post,
+  onReaction,
+  onComment,
+  onShare,
+  isFirst = false,
+}: PostCardProps) {
   return (
-    <div className={`p-8 mb-4 ${!isFirst ? 'border-t border-border' : ''}`}>
+    <div className={`p-8 mb-4 ${!isFirst ? "border-t border-border" : ""}`}>
       {/* Post Header */}
       <div className="flex items-start gap-3 mb-3">
         <Avatar className="h-10 w-10">
@@ -22,7 +30,7 @@ export function PostCard({ post, onReaction, onComment, onShare, isFirst = false
             {post.user.avatar}
           </div>
         </Avatar>
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -39,19 +47,19 @@ export function PostCard({ post, onReaction, onComment, onShare, isFirst = false
           </div>
         </div>
       </div>
-      
+
       {/* Post Content */}
       <div className="mb-3">
         <p className="text-card-foreground text-sm leading-relaxed">
           {post.content.text}
         </p>
-        
+
         {/* Event Card */}
         {post.content.type === "event" && post.content.event && (
           <EventCard event={post.content.event} />
         )}
-        
-        {/* Poll Card - TODO: Implement poll display */}
+
+        {/* Poll placeholder */}
         {post.content.type === "poll" && post.content.poll && (
           <div className="bg-muted/50 border border-border rounded-lg p-4 mt-3">
             <p className="font-medium text-card-foreground mb-2">
@@ -63,7 +71,7 @@ export function PostCard({ post, onReaction, onComment, onShare, isFirst = false
           </div>
         )}
       </div>
-      
+
       {/* Post Actions */}
       <PostActions
         postId={post.id}

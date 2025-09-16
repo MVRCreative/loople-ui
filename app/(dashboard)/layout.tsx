@@ -6,8 +6,8 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen w-full bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-5xl space-y-6">
+    <div className="w-full p-4">
+      <div className="w-full max-w-5xl mx-auto space-y-6">
         {children}
       </div>
     </div>
