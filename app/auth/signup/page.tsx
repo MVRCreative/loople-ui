@@ -209,7 +209,13 @@ export default function SignUpPage() {
 
   return (
     <div className="flex min-h-[80vh] w-full flex-col items-center justify-center p-4">
-      <div className="mb-6 text-center text-3xl font-semibold">Loople</div>
+      <div className="mb-6 text-center">
+        <img 
+          src="/loople logo3.svg" 
+          alt="Loople Logo" 
+          className="h-12 w-auto mx-auto"
+        />
+      </div>
       <Card className="w-full max-w-md border-0 shadow-none relative">
         <CardHeader>
           <CardTitle>Create Account</CardTitle>
