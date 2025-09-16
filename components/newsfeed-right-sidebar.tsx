@@ -61,7 +61,7 @@ export function NewsfeedRightSidebar() {
 
       {/* Upcoming Events */}
       <div className="mb-8 rounded-lg border border-border bg-background p-4">
-        <h3 className="font-semibold text-lg mb-4">Upcoming Events</h3>
+        <h3 className="font-semibold text-lg mb-4 text-foreground">Upcoming Events</h3>
         <div className="space-y-3">
           {upcomingEvents.map((event, index) => (
             <div key={index} className="flex items-start gap-3 p-3">
@@ -69,7 +69,7 @@ export function NewsfeedRightSidebar() {
                 <Calendar className="h-4 w-4 text-muted-foreground" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm">{event.day}: {event.event}</p>
+                <p className="font-medium text-sm text-foreground">{event.day}: {event.event}</p>
                 <p className="text-xs text-muted-foreground">{event.program}</p>
                 <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                   <Clock className="h-3 w-3" />
@@ -88,13 +88,13 @@ export function NewsfeedRightSidebar() {
 
       {/* Your Programs */}
       <div className="rounded-lg border border-border bg-background p-4">
-        <h3 className="font-semibold text-lg mb-4">Your Programs</h3>
+        <h3 className="font-semibold text-lg mb-4 text-foreground">Your Programs</h3>
         <div className="space-y-3">
           {userPrograms.map((program, index) => (
             <div key={index} className="p-3">
               <div className="flex items-center gap-2 mb-2">
                 <Users className="h-4 w-4 text-muted-foreground" />
-                <p className="font-medium text-sm">{program.name}</p>
+                <p className="font-medium text-sm text-foreground">{program.name}</p>
               </div>
               <p className="text-xs text-muted-foreground mb-1">Coach: {program.coach}</p>
               <p className="text-xs text-muted-foreground">Next: {program.next}</p>

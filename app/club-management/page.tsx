@@ -151,7 +151,7 @@ export default function ClubManagementPage() {
         <div className="p-8">
           <div className="max-w-2xl mx-auto space-y-6">
             <div className="text-center">
-              <h1 className="text-3xl font-bold mb-2">Welcome to Club Management</h1>
+              <h1 className="text-3xl font-bold mb-2 text-brand-primary">Welcome to Club Management</h1>
               <p className="text-muted-foreground mb-8">
                 You don&apos;t have any clubs yet. Create your first club to get started with managing members, events, and more.
               </p>
@@ -169,7 +169,7 @@ export default function ClubManagementPage() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Building2 className="h-16 w-16 text-muted-foreground mb-4" />
-                  <h2 className="text-xl font-semibold mb-2">Create Your First Club</h2>
+                  <h2 className="text-xl font-semibold mb-2 text-brand-primary">Create Your First Club</h2>
                   <p className="text-muted-foreground text-center mb-6">
                     Start by creating a club to manage your swimming community.
                   </p>
@@ -196,7 +196,7 @@ export default function ClubManagementPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
-            <h2 className="text-xl font-semibold mb-2">No Club Selected</h2>
+            <h2 className="text-xl font-semibold mb-2 text-brand-primary">No Club Selected</h2>
             <p className="text-muted-foreground text-center mb-4">
               Please select a club from the club switcher to manage.
             </p>
@@ -221,7 +221,7 @@ export default function ClubManagementPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Error Loading Club</h2>
+            <h2 className="text-xl font-semibold mb-2 text-brand-primary">Error Loading Club</h2>
             <p className="text-muted-foreground text-center mb-4">
               {clubError}
             </p>
@@ -246,7 +246,7 @@ export default function ClubManagementPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Club Management</h1>
+          <h1 className="text-2xl lg:text-3xl font-bold text-brand-primary">Club Management</h1>
           <p className="text-muted-foreground mt-1 text-sm lg:text-base">
             Manage your swimming club members, events, and finances
           </p>
@@ -329,7 +329,7 @@ export default function ClubManagementPage() {
         <TabsContent value="members" className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-xl lg:text-2xl font-bold">Members</h2>
+              <h2 className="text-xl lg:text-2xl font-bold text-brand-primary">Members</h2>
               <p className="text-muted-foreground text-sm lg:text-base">Manage club members and their information</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -367,7 +367,7 @@ export default function ClubManagementPage() {
         <TabsContent value="events" className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-xl lg:text-2xl font-bold">Events</h2>
+              <h2 className="text-xl lg:text-2xl font-bold text-brand-primary">Events</h2>
               <p className="text-muted-foreground text-sm lg:text-base">Manage club events and competitions</p>
             </div>
             <Button size="sm" className="text-xs lg:text-sm" onClick={() => setShowCreateEvent(true)}>
@@ -424,7 +424,7 @@ export default function ClubManagementPage() {
         <TabsContent value="registrations" className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-xl lg:text-2xl font-bold">Registrations</h2>
+              <h2 className="text-xl lg:text-2xl font-bold text-brand-primary">Registrations</h2>
               <p className="text-muted-foreground text-sm lg:text-base">Track event registrations and attendance</p>
             </div>
             <Button variant="outline" size="sm" className="text-xs lg:text-sm">
@@ -438,7 +438,7 @@ export default function ClubManagementPage() {
         <TabsContent value="payments" className="space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h2 className="text-xl lg:text-2xl font-bold">Payments</h2>
+              <h2 className="text-xl lg:text-2xl font-bold text-brand-primary">Payments</h2>
               <p className="text-muted-foreground text-sm lg:text-base">Track payments and financial transactions</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
@@ -457,7 +457,7 @@ export default function ClubManagementPage() {
 
         <TabsContent value="settings" className="space-y-4">
           <div>
-            <h2 className="text-xl lg:text-2xl font-bold">Club Settings</h2>
+            <h2 className="text-xl lg:text-2xl font-bold text-brand-primary">Club Settings</h2>
             <p className="text-muted-foreground text-sm lg:text-base">Configure club information and preferences</p>
           </div>
           {canManage ? (
