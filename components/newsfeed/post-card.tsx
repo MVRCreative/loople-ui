@@ -175,7 +175,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
             comments={commentsCount}
             isLiked={isLiked}
             onReaction={onReaction}
-            onComment={onComment}
+            onComment={handleCommentClick}
             onShare={onShare}
           />
         </div>

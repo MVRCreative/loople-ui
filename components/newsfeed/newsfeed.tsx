@@ -60,7 +60,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
   useEffect(() => {
     if (!selectedClub?.id) return;
 
-    const subscription = postsService.subscribeToPosts(parseInt(selectedClub.id), (payload) => {
+    const channel = postsService.subscribeToPosts(parseInt(selectedClub.id), (payload) => {
       console.log('Real-time post update:', payload);
       const payloadData = payload as Record<string, unknown>;
       
@@ -78,7 +78,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     });
 
     return () => {
-      subscription.unsubscribe();
+      postsService.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClub?.id]);

@@ -101,7 +101,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [], com
     const postIdNumber = parseInt(postId);
     if (!postIdNumber) return;
 
-    const subscription = postsService.subscribeToComments(postIdNumber, (payload: Record<string, unknown>) => {
+    const channel = postsService.subscribeToComments(postIdNumber, (payload: Record<string, unknown>) => {
       const eventType = payload.eventType as string;
       if (eventType === 'INSERT' && payload.new) {
         const [inserted] = transformApiCommentsToComments([payload.new as unknown as any]);
@@ -116,7 +116,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [], com
     });
 
     return () => {
-      subscription.unsubscribe();
+      postsService.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [postId]);
