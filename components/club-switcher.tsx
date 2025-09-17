@@ -56,12 +56,12 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
 
   const handleClubManagement = () => {
     setIsOpen(false);
-    router.push("/club-management");
+    router.push("/admin/club-management");
   };
 
   const handleCreateClub = () => {
     setIsOpen(false);
-    router.push("/club-management?action=create");
+    router.push("/admin/club-management?action=create");
   };
 
   // Show club management links when no clubs or clubs is not an array

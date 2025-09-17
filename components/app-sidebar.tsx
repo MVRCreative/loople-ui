@@ -36,7 +36,7 @@ const navigation = [
     type: "section",
     icon: Building,
     items: [
-      { name: "Club Management", href: "/club-management" },
+      { name: "Club Management", href: "/admin/club-management" },
     ],
   },
   {

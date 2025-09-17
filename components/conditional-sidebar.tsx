@@ -26,6 +26,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   // const _isProfileRoute = pathname.startsWith("/profile");
   const isAuthRoute = pathname.startsWith("/auth");
   const isRootRoute = pathname === "/";
+  const isAdminRoute = pathname.startsWith("/admin");
   // const _isFeedPage = pathname === "/";
   // const _isClubManagementPage = pathname.startsWith("/club-management");
 
@@ -49,6 +50,11 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
         </div>
       </div>
     );
+  }
+
+  // Admin routes use their own layout - just pass through children
+  if (isAdminRoute) {
+    return <>{children}</>;
   }
 
   // Dynamic grid layout
