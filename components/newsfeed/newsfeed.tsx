@@ -179,7 +179,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
   };
 
   return (
-    <div className="w-full py-2 sm:py-4 md:py-6 max-w-2xl mx-auto">
+    <div className="w-full">
       <PostForm currentUser={currentUser} onSubmit={handleCreatePost} isAuthenticated={isAuthenticated} />
       
       {loading ? (
@@ -188,7 +188,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
           <p className="text-lg">Loading posts...</p>
         </div>
       ) : (
-        <div className="space-y-4 mt-6">
+        <div>
           {posts.map((post) => (
             <PostCard
               key={post.id}

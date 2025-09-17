@@ -18,7 +18,7 @@ export default function Page() {
   return (
     <>
       <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="px-4 sm:px-6 lg:px-8">
+        <div>
           <Newsfeed 
             initialPosts={[]} 
             currentUser={currentUser}

@@ -123,8 +123,8 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   }
 
   return (
-    <div className="bg-card border border-border rounded-lg p-3 sm:p-4 md:p-5 shadow-sm">
-      {/* Post Header */}
+    <div className="bg-card border-t border-l border-border p-4 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+      {/* Post Header and Content */}
       <div className="flex items-start gap-3 mb-3">
         <Avatar className="h-10 w-10">
           <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-lg">
@@ -133,7 +133,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
         </Avatar>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-card-foreground">
                 {post.user.name}
@@ -146,43 +146,41 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
               {post.timestamp}
             </span>
           </div>
+          
+          {/* Post Content */}
+          <p className="text-card-foreground text-sm leading-relaxed">
+            {post.content.text}
+          </p>
+        
+          {/* Event Card */}
+          {post.content.type === "event" && post.content.event && (
+            <EventCard event={post.content.event} />
+          )}
+          
+          {/* Poll Card - TODO: Implement poll display */}
+          {post.content.type === "poll" && post.content.poll && (
+            <div className="bg-muted/50 border border-border rounded-lg p-4 mt-3">
+              <p className="font-medium text-card-foreground mb-2">
+                {post.content.poll.question}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Poll functionality coming soon...
+              </p>
+            </div>
+          )}
+          
+          {/* Post Actions */}
+          <PostActions
+            postId={post.id}
+            reactions={reactionsCount}
+            comments={commentsCount}
+            isLiked={isLiked}
+            onReaction={onReaction}
+            onComment={onComment}
+            onShare={onShare}
+          />
         </div>
       </div>
-      
-      {/* Post Content */}
-      <div className="mb-3">
-        <p className="text-card-foreground text-sm leading-relaxed">
-          {post.content.text}
-        </p>
-        
-        {/* Event Card */}
-        {post.content.type === "event" && post.content.event && (
-          <EventCard event={post.content.event} />
-        )}
-        
-        {/* Poll Card - TODO: Implement poll display */}
-        {post.content.type === "poll" && post.content.poll && (
-          <div className="bg-muted/50 border border-border rounded-lg p-4 mt-3">
-            <p className="font-medium text-card-foreground mb-2">
-              {post.content.poll.question}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Poll functionality coming soon...
-            </p>
-          </div>
-        )}
-      </div>
-      
-      {/* Post Actions */}
-      <PostActions
-        postId={post.id}
-        reactions={reactionsCount}
-        comments={commentsCount}
-        isLiked={isLiked}
-        onReaction={onReaction}
-        onComment={onComment}
-        onShare={onShare}
-      />
       
       {/* Comments Section */}
       {showComments && (

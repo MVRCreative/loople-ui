@@ -84,8 +84,6 @@ export function NewsfeedRightSidebar() {
         </Button>
       </div>
 
-      <Separator className="my-6" />
-
       {/* Your Programs */}
       <div className="rounded-lg border border-border bg-background p-4">
         <h3 className="font-semibold text-lg mb-4 text-foreground">Your Programs</h3>

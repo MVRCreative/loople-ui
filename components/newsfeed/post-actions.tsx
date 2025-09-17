@@ -35,38 +35,32 @@ export function PostActions({
   return (
     <div className="flex items-center justify-between pt-3">
       <div className="flex items-center gap-6">
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
           onClick={handleReaction}
-          className={`h-8 px-3 gap-2 ${
+          className={`flex items-center gap-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md p-1 transition-colors ${
             localIsLiked ? "text-primary" : "text-muted-foreground"
           }`}
         >
           <ThumbsUp className={`h-4 w-4 ${localIsLiked ? "fill-current" : ""}`} />
-          <span className="text-sm">{localReactions}</span>
-        </Button>
+          <span>{localReactions}</span>
+        </button>
         
-        <Button
-          variant="ghost"
-          size="sm"
+        <button
           onClick={() => onComment(postId)}
-          className="h-8 px-3 gap-2 text-muted-foreground hover:text-foreground"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md p-1 transition-colors"
         >
           <MessageCircle className="h-4 w-4" />
-          <span className="text-sm">{comments}</span>
-        </Button>
+          <span>{comments}</span>
+        </button>
       </div>
       
-      <Button
-        variant="ghost"
-        size="sm"
+      <button
         onClick={() => onShare(postId)}
-        className="h-8 px-3 gap-2 text-muted-foreground hover:text-foreground"
+        className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md p-1 transition-colors"
       >
         <Share2 className="h-4 w-4" />
-        <span className="text-sm">Share</span>
-      </Button>
+        <span>Share</span>
+      </button>
     </div>
   );
 }

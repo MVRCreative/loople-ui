@@ -93,7 +93,7 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false }: Pos
   };
 
   return (
-    <div className="bg-card border border-border rounded-lg p-2 sm:p-3 md:p-4 mb-3 sm:mb-4 md:mb-6 shadow-sm overflow-x-hidden">
+    <div className="bg-card border border-border p-4 shadow-sm">
       <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
         <div className="flex gap-3">
           <Avatar className="h-10 w-10">
