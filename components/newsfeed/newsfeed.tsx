@@ -120,7 +120,14 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
 
       if (response.success && response.data) {
         const postId = parseInt(response.data.id);
-        const mediaAttachments: any[] = [];
+        const mediaAttachments: Array<{
+          id: number
+          file_name: string
+          file_path: string
+          file_size: number
+          mime_type: string
+          file_type: string
+        }> = [];
 
         // Upload media attachments if any
         if (attachments && attachments.length > 0) {
@@ -128,19 +135,19 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
             try {
               if (file instanceof File) {
                 const uploadResult = await postsService.uploadMedia(postId, file);
-                mediaAttachments.push(uploadResult as any);
-              } else if (file && typeof (file as any).url === 'string') {
+                if (uploadResult.success && uploadResult.data) {
+                  mediaAttachments.push(uploadResult.data);
+                }
+              } else if (file && typeof (file as { url: string; name: string; size: number; type: string }).url === 'string') {
+                const fileData = file as { url: string; name: string; size: number; type: string };
                 const createResult = await postsService.createMediaFromUrl(postId, {
-                  file_url: (file as any).url,
-                  file_name: (file as any).name,
-                  file_size: (file as any).size,
-                  mime_type: (file as any).type,
+                  file_url: fileData.url,
+                  file_name: fileData.name,
+                  file_size: fileData.size,
+                  mime_type: fileData.type,
                 });
                 if (createResult.success && createResult.data) {
                   mediaAttachments.push(createResult.data);
-                } else if ((createResult as any).id) {
-                  // Handle direct media attachment data (when API returns data directly)
-                  mediaAttachments.push(createResult as any);
                 }
               }
             } catch (error) {

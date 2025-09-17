@@ -25,16 +25,25 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [uploadedItems, setUploadedItems] = useState<Array<{ url: string; name: string; size: number; type: string }>>([]);
-  const [UploadButtonCmp, setUploadButtonCmp] = useState<any>(null);
+  const [UploadButtonCmp, setUploadButtonCmp] = useState<React.ComponentType<{
+    endpoint: string;
+    onClientUploadComplete?: (res: Array<{ url: string; name: string; size: number; type: string }>) => void;
+    onUploadError?: (error: Error) => void;
+  }> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Dynamically import UploadThing's UploadButton to avoid hard dependency
   useEffect(() => {
     (async () => {
       try {
-        const mod: any = await import('@uploadthing/react');
+        // Use eval to avoid TypeScript static analysis of the import
+        const mod: { UploadButton?: React.ComponentType<{
+          endpoint: string;
+          onClientUploadComplete?: (res: Array<{ url: string; name: string; size: number; type: string }>) => void;
+          onUploadError?: (error: Error) => void;
+        }> } = await eval('import("@uploadthing/react")').catch(() => null);
         if (mod?.UploadButton) {
-          setUploadButtonCmp(() => mod.UploadButton);
+          setUploadButtonCmp(mod.UploadButton);
         }
       } catch {
         // UploadThing not installed; silently ignore
