@@ -1,6 +1,6 @@
 "use client"
 
-import { Search, Calendar, Users, Clock } from "lucide-react"
+import { Search, Clock } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -65,9 +65,6 @@ export function NewsfeedRightSidebar() {
         <div className="space-y-3">
           {upcomingEvents.map((event, index) => (
             <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted hover:bg-accent transition-colors duration-200 cursor-pointer">
-              <div className="flex-shrink-0">
-                <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              </div>
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-sm text-foreground">{event.day}: {event.event}</p>
                 <p className="text-xs text-muted-foreground">{event.program}</p>
@@ -90,8 +87,7 @@ export function NewsfeedRightSidebar() {
         <div className="space-y-3">
           {userPrograms.map((program, index) => (
             <div key={index} className="p-3 rounded-lg bg-muted hover:bg-accent transition-colors duration-200 cursor-pointer">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
+              <div className="mb-2">
                 <p className="font-medium text-sm text-foreground">{program.name}</p>
               </div>
               <p className="text-xs text-muted-foreground mb-1">Coach: {program.coach}</p>
