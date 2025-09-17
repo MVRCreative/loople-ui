@@ -32,6 +32,15 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   const [isDeleting, setIsDeleting] = useState(false);
   const { selectedClub } = useClub();
 
+  const reactionsCount =
+    typeof post.reactions === "number"
+      ? post.reactions
+      : (post as { reactions?: { likes?: number } })?.reactions?.likes ?? 0;
+
+  const isLiked = Boolean((post as { viewerHasLiked?: boolean })?.viewerHasLiked ?? false);
+  const commentsCount =
+    Array.isArray(post.comments) ? post.comments.length : Number(post.comments ?? 0);
+
   const handleCommentClick = () => {
     setShowComments(!showComments);
     onComment(post.id);
@@ -167,9 +176,9 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
       {/* Post Actions */}
       <PostActions
         postId={post.id}
-        reactions={post.reactions}
-        comments={post.comments}
-        isLiked={post.reactions > 0}
+        reactions={reactionsCount}
+        comments={commentsCount}
+        isLiked={isLiked}
         onReaction={onReaction}
         onComment={onComment}
         onShare={onShare}
@@ -179,8 +188,8 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
       {showComments && (
         <CommentsSection
           postId={post.id}
-          comments={post.comments}
           currentUser={currentUser}
+          commentCount={commentsCount}
         />
       )}
     </div>
