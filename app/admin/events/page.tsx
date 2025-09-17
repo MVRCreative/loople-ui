@@ -5,10 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { EventMeta } from "@/components/events/EventMeta";
 import { useEvents } from "@/lib/events/hooks";
 import { formatEventDateTime, formatEventLocation, getEventStatusText } from "@/lib/events/selectors";
 import { Search, Plus, Eye, Edit, BarChart3, Filter, Calendar, Users } from "lucide-react";
@@ -78,7 +76,7 @@ export default function AdminEventsPage() {
   };
 
   const handleEditEvent = (eventId: string) => {
-    router.push(`/admin/events/edit-${eventId}`);
+    router.push(`/admin/events/create?edit=${eventId}`);
   };
 
   const handleEventDetails = (eventId: string) => {
@@ -199,166 +197,95 @@ export default function AdminEventsPage() {
         </div>
       </div>
 
-      {/* Events Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
+      {/* Events Grid */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-foreground">
             Events ({filteredEvents.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {filteredEvents.length > 0 ? (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Event</TableHead>
-                    <TableHead>Date & Time</TableHead>
-                    <TableHead>Location</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>RSVPs</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredEvents.map((event) => (
-                    <TableRow key={event.id}>
-                      <TableCell>
-                        <div className="space-y-1">
-                          <div className="font-medium">{event.title}</div>
-                          <EventMeta 
-                            event={event} 
-                            showCapacity={false} 
-                            showProgram={true}
-                            className="text-xs"
-                          />
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="text-sm">
-                          {formatEventDateTime(event.start_date, event.end_date)}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="text-sm text-muted-foreground">
-                          {formatEventLocation(event.location)}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <Badge variant={getStatusVariant(event.status)}>
-                          {getEventStatusText(event.status)}
-                        </Badge>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="text-sm">
-                          <div className="flex items-center gap-1">
-                            <Users className="h-3 w-3" />
-                            {event.rsvp_count.going} going
-                          </div>
-                          {event.rsvp_count.maybe > 0 && (
-                            <div className="text-xs text-muted-foreground">
-                              {event.rsvp_count.maybe} maybe
-                            </div>
-                          )}
-                        </div>
-                      </TableCell>
-                      
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewEvent(event.id)}
-                          >
-                            <Eye className="h-3 w-3" />
-                          </Button>
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEditEvent(event.id)}
-                          >
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEventDetails(event.id)}
-                          >
-                            <BarChart3 className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">No events found</h3>
-              <p className="text-muted-foreground mb-4">
-                {searchQuery || selectedStatus !== "all" 
-                  ? "Try adjusting your search or filters."
-                  : "Create your first event to get started."
-                }
-              </p>
-              <Button onClick={handleCreateEvent}>
-                <Plus className="h-4 w-4 mr-1" />
-                Create Event
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Quick Stats */}
-      {events.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="py-4 text-center">
-              <div className="text-2xl font-bold text-primary">
-                {events.filter(e => e.status === "published").length}
-              </div>
-              <div className="text-sm text-muted-foreground">Published</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="py-4 text-center">
-              <div className="text-2xl font-bold text-yellow-600">
-                {events.filter(e => e.status === "draft").length}
-              </div>
-              <div className="text-sm text-muted-foreground">Drafts</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="py-4 text-center">
-              <div className="text-2xl font-bold text-green-600">
-                {events.reduce((sum, event) => sum + event.rsvp_count.going, 0)}
-              </div>
-              <div className="text-sm text-muted-foreground">Total RSVPs</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="py-4 text-center">
-              <div className="text-2xl font-bold text-blue-600">
-                {events.length}
-              </div>
-              <div className="text-sm text-muted-foreground">Total Events</div>
-            </CardContent>
-          </Card>
+          </h2>
         </div>
-      )}
+        
+        {filteredEvents.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredEvents.map((event) => (
+              <Card key={event.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                {/* Event Image/Banner */}
+                <div className="h-48 bg-gradient-to-br from-primary/20 to-primary/40 relative">
+                  <div className="absolute inset-0 bg-black/20"></div>
+                  <div className="absolute top-3 right-3 flex gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 bg-white/20 hover:bg-white/30 text-white"
+                      onClick={() => handleViewEvent(event.id)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <Badge variant={getStatusVariant(event.status)} className="mb-2">
+                      {getEventStatusText(event.status)}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <CardContent className="p-4">
+                  {/* Event Title */}
+                  <h3 className="font-semibold text-lg mb-2 line-clamp-2">
+                    {event.title}
+                  </h3>
+                  
+                  {/* Date & Time */}
+                  <div className="text-sm text-muted-foreground mb-2">
+                    {formatEventDateTime(event.start_date, event.end_date)}
+                  </div>
+                  
+                  {/* Location */}
+                  <div className="text-sm text-muted-foreground mb-4">
+                    {formatEventLocation(event.location)}
+                  </div>
+                  
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => handleEditEvent(event.id)}
+                    >
+                      <Edit className="h-4 w-4 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEventDetails(event.id)}
+                    >
+                      <BarChart3 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">No events found</h3>
+            <p className="text-muted-foreground mb-4">
+              {searchQuery || selectedStatus !== "all" 
+                ? "Try adjusting your search or filters."
+                : "Create your first event to get started."
+              }
+            </p>
+            <Button onClick={handleCreateEvent}>
+              <Plus className="h-4 w-4 mr-1" />
+              Create Event
+            </Button>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
