@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Command, Home, Bell, User, Settings, LogOut, Moon, Users, MessageSquare } from "lucide-react"
+import { Home, Bell, User, Settings, LogOut, Moon, Users, MessageSquare } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -39,9 +39,11 @@ export function NewsfeedSidebar() {
       {/* Logo */}
       <div className="flex h-12 sm:h-14 md:h-16 w-full items-center px-2 sm:px-3 md:px-4 border-b border-border">
         <Link href="/" className="flex items-center gap-1 sm:gap-2 md:gap-3">
-          <div className="flex h-6 w-6 sm:h-7 sm:w-7 md:h-8 md:w-8 items-center justify-center rounded-lg bg-blue-600 text-white">
-            <Command className="h-3 w-3 sm:h-3 sm:w-3 md:h-4 md:w-4" />
-          </div>
+          <img 
+            src="/loople logo3.svg" 
+            alt="Loople Logo" 
+            className="h-6 w-auto sm:h-7 md:h-8"
+          />
           <span className="font-bold text-sm sm:text-base md:text-lg text-foreground">Loople</span>
         </Link>
       </div>

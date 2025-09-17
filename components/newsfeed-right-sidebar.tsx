@@ -60,7 +60,7 @@ export function NewsfeedRightSidebar() {
       </div>
 
       {/* Upcoming Events */}
-      <div className="mb-8">
+      <div className="mb-8 rounded-lg border border-border bg-background p-4">
         <h3 className="font-semibold text-lg mb-4 text-foreground">Upcoming Events</h3>
         <div className="space-y-3">
           {upcomingEvents.map((event, index) => (
@@ -87,15 +87,15 @@ export function NewsfeedRightSidebar() {
       <Separator className="my-6" />
 
       {/* Your Programs */}
-      <div>
+      <div className="rounded-lg border border-border bg-background p-4">
         <h3 className="font-semibold text-lg mb-4 text-foreground">Your Programs</h3>
         <div className="space-y-3">
           {userPrograms.map((program, index) => (
-            <div key={index} className="p-3 rounded-lg bg-muted hover:bg-accent transition-colors duration-200 cursor-pointer">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <p className="font-medium text-sm text-foreground">{program.name}</p>
-              </div>
+              <div key={index} className="p-3 rounded-lg bg-muted hover:bg-accent transition-colors duration-200 cursor-pointer">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <p className="font-medium text-sm text-foreground">{program.name}</p>
+                </div>
               <p className="text-xs text-muted-foreground mb-1">Coach: {program.coach}</p>
               <p className="text-xs text-muted-foreground">Next: {program.next}</p>
             </div>

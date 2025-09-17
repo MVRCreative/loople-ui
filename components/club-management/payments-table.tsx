@@ -93,7 +93,7 @@ export function PaymentsTable({ payments }: PaymentsTableProps) {
 
   return (
     <div className="space-y-4">
-      {/* Search and Actions */}
+      {/* Search */}
       <div className="flex items-center justify-between">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -104,19 +104,6 @@ export function PaymentsTable({ payments }: PaymentsTableProps) {
             className="pl-10"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button variant="outline" size="sm">
-            <CreditCard className="h-4 w-4 mr-2" />
-            Process Refund
-          </Button>
-          <Button size="sm">
-            Export Report
-          </Button>
-        </div>
       </div>
 
       {/* Payments Table */}
@@ -124,13 +111,13 @@ export function PaymentsTable({ payments }: PaymentsTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Member</TableHead>
-              <TableHead>Event</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Method</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Payment Date</TableHead>
-              <TableHead>Transaction ID</TableHead>
+              <TableHead className="min-w-[180px]">Member</TableHead>
+              <TableHead className="min-w-[160px]">Event</TableHead>
+              <TableHead className="min-w-[120px]">Amount</TableHead>
+              <TableHead className="min-w-[100px]">Method</TableHead>
+              <TableHead className="min-w-[100px]">Status</TableHead>
+              <TableHead className="min-w-[140px]">Payment Date</TableHead>
+              <TableHead className="min-w-[180px]">Transaction ID</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>

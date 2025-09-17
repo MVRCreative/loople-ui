@@ -9,9 +9,7 @@ import { NewsfeedRightSidebar } from "@/components/newsfeed-right-sidebar";
 // import { SidebarProvider } from "@/components/ui/sidebar";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Calendar, Users } from "lucide-react";
+import { useEffect } from "react";
 
 interface ConditionalSidebarProps {
   children: React.ReactNode;
@@ -21,8 +19,6 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const pathname = usePathname();
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
-  const [isRightSidebarCollapsed, setIsRightSidebarCollapsed] = useState(false);
-  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // const _isNewsfeedRoute = pathname === "/";
   // const _isMessagesRoute = pathname.startsWith("/messages");
@@ -41,39 +37,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, loading, isAuthRoute, isRootRoute, router]);
 
-  // Set default sidebar state based on screen size and page
-  useEffect(() => {
-    const checkScreenSize = () => {
-      const isSmallScreen = window.innerWidth < 768; // md breakpoint
-      const isFeedPage = pathname === "/";
-      
-      if (isSmallScreen) {
-        setIsRightSidebarCollapsed(true); // Always collapsed on small screens
-      } else if (isFeedPage) {
-        setIsRightSidebarCollapsed(false); // Expanded on feed page for larger screens
-      } else {
-        setIsRightSidebarCollapsed(true); // Collapsed on other pages for larger screens
-      }
-    };
-
-    // Check on mount and pathname change
-    checkScreenSize();
-
-    // Listen for resize events
-    window.addEventListener('resize', checkScreenSize);
-    
-    return () => {
-      window.removeEventListener('resize', checkScreenSize);
-    };
-  }, [pathname]);
-
-  const handleSidebarToggle = (collapsed: boolean) => {
-    setIsTransitioning(true);
-    setIsRightSidebarCollapsed(collapsed);
-    // Reset transition state after animation completes
-    setTimeout(() => setIsTransitioning(false), 500);
-  };
-
+  const isClubManagementPage = pathname.startsWith("/club-management");
   // Show auth pages without sidebar (these pages manage their own loading/errors)
   if (isAuthRoute) {
     return (
@@ -87,122 +51,54 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
     );
   }
 
-  // Responsive layout with always-visible left sidebar and flexible right sidebar
+  // Dynamic grid layout
   const getGridLayout = () => {
-    if (isRightSidebarCollapsed) {
-      // Collapsed right sidebar - main content grows to fill space
-      return `w-full
-        [grid-template-columns:240px_1fr]
-        sm:[grid-template-columns:280px_1fr]
-        md:[grid-template-columns:280px_1fr_60px]
-        lg:[grid-template-columns:280px_1fr_60px]`;
-    } else {
-      // Expanded right sidebar - flexible width based on screen size
-      return `w-full
-        [grid-template-columns:240px_1fr]
-        sm:[grid-template-columns:280px_1fr]
-        md:[grid-template-columns:280px_1fr_280px]
-        lg:[grid-template-columns:280px_1fr_320px]
-        xl:[grid-template-columns:280px_1fr_360px]`;
+    // Club management pages get full width - no right sidebar
+    if (isClubManagementPage) {
+      return `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
+        [grid-template-columns:600px]
+        lg:[grid-template-columns:906px]
+        xl:[grid-template-columns:275px_922px]`;
     }
+    
+    // Normal layout with right sidebar
+    return `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
+      [grid-template-columns:600px]
+      lg:[grid-template-columns:600px_350px]
+      xl:[grid-template-columns:275px_600px_350px]`;
   };
 
+  // For club management pages, use a simpler layout without right sidebar
+  if (isClubManagementPage) {
+    return (
+      <div className="min-h-screen w-full bg-background">
+        <div className="grid gap-x-0 mx-auto justify-center max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px] [grid-template-columns:600px] lg:[grid-template-columns:906px] xl:[grid-template-columns:275px_922px]">
+          <aside className="hidden xl:block">
+            <NewsfeedSidebar />
+          </aside>
+          <main className="relative">
+            {children}
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen w-full bg-background overflow-x-hidden">
-      <div className="w-full max-w-[1200px] mx-auto">
-        <div className={`grid gap-x-0 w-full transition-all duration-500 ease-in-out ${getGridLayout()}`}>
-        <aside className="block sticky top-0 h-screen overflow-y-auto">
+    <div className="min-h-screen w-full bg-background">
+      <div className={`grid gap-x-0 mx-auto justify-center ${getGridLayout()}`}>
+        <aside className="hidden xl:block">
           <NewsfeedSidebar />
         </aside>
-        <main className={`relative transition-all duration-500 ease-in-out ${isTransitioning ? 'opacity-95' : 'opacity-100'} bg-background min-h-screen`}>
-          {/* Mobile right sidebar toggle button */}
-          <div className="md:hidden fixed top-4 right-4 z-50">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleSidebarToggle(!isRightSidebarCollapsed)}
-              className="bg-background shadow-lg border-border"
-            >
-              <Calendar className="h-4 w-4 mr-2" />
-              {isRightSidebarCollapsed ? 'Show' : 'Hide'}
-            </Button>
-          </div>
-          
-          <div className="w-full px-2 sm:px-4 lg:px-6 flex justify-center">
-            <div className="w-full">
-              {children}
-            </div>
-          </div>
+        <main className="relative">
+          {children}
         </main>
-        {/* Desktop right sidebar */}
-        <aside className="hidden md:block sticky top-0 h-screen overflow-y-auto">
-          {isRightSidebarCollapsed ? (
-            <div className="w-[60px] bg-background border-l border-border sticky top-0 h-screen flex flex-col items-center py-4 transition-all duration-300">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleSidebarToggle(false)}
-                className="mb-6 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 rounded-full w-8 h-8"
-                title="Expand sidebar"
-                disabled={isTransitioning}
-              >
-                <ChevronLeft className="h-4 w-4 transition-transform duration-200" />
-              </Button>
-              <div className="flex flex-col gap-3">
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-accent transition-all duration-200 cursor-pointer" title="Upcoming Events">
-                  <Calendar className="h-5 w-5 text-muted-foreground transition-colors duration-200" />
-                </div>
-                <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center hover:bg-accent transition-all duration-200 cursor-pointer" title="Your Programs">
-                  <Users className="h-5 w-5 text-muted-foreground transition-colors duration-200" />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="relative transition-all duration-300 w-full" suppressHydrationWarning>
-              <NewsfeedRightSidebar />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleSidebarToggle(true)}
-                className="absolute top-4 right-4 z-10 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 rounded-full w-8 h-8"
-                title="Collapse sidebar"
-                disabled={isTransitioning}
-                suppressHydrationWarning
-              >
-                <ChevronRight className="h-4 w-4 transition-transform duration-200" />
-              </Button>
-            </div>
-          )}
-        </aside>
-
-        {/* Mobile right sidebar overlay */}
-        {!isRightSidebarCollapsed && (
-          <div className="md:hidden fixed inset-0 z-40">
-            {/* Backdrop */}
-            <div 
-              className="absolute inset-0 bg-black bg-opacity-50"
-              onClick={() => handleSidebarToggle(true)}
-            />
-            {/* Sidebar */}
-            <div className="absolute right-0 top-0 h-full w-[min(320px,80vw)] bg-background border-l border-border shadow-xl">
-              <div className="relative h-full">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleSidebarToggle(true)}
-                  className="absolute top-4 right-4 z-10 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200 rounded-full w-8 h-8"
-                  title="Close sidebar"
-                >
-                  <ChevronRight className="h-4 w-4 transition-transform duration-200" />
-                </Button>
-                <div className="pt-16">
-                  <NewsfeedRightSidebar />
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Only show right sidebar on non-club-management pages */}
+        {!isClubManagementPage && (
+          <aside className="hidden lg:block">
+            <NewsfeedRightSidebar />
+          </aside>
         )}
-        </div>
       </div>
     </div>
   );

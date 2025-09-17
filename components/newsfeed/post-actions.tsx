@@ -33,7 +33,7 @@ export function PostActions({
   };
 
   return (
-    <div className="flex items-center justify-between pt-3 border-t border-border">
+    <div className="flex items-center justify-between pt-3">
       <div className="flex items-center gap-6">
         <Button
           variant="ghost"

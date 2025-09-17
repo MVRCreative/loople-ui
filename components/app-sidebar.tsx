@@ -86,12 +86,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         {/* Logo */}
         <div className="flex h-16 items-center px-6">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
-              <div className="h-3 w-3 rounded-full bg-white" />
-            </div>
-            <span className="text-xl font-bold text-sidebar-foreground">LOOPLE</span>
-          </div>
+          <img 
+            src="/loople logo3.svg" 
+            alt="Loople Logo" 
+            className="h-8 w-auto"
+          />
         </div>
         
         {/* Club Switcher */}
@@ -145,7 +144,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             "flex items-center rounded-lg px-3 py-1.5 text-xs font-medium transition-colors",
                             isActive
                               ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                              : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                           )}
                         >
                           {subItem.name}

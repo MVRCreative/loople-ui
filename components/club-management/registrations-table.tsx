@@ -68,7 +68,7 @@ export function RegistrationsTable({ registrations }: RegistrationsTableProps) {
 
   return (
     <div className="space-y-4">
-      {/* Search and Actions */}
+      {/* Search */}
       <div className="flex items-center justify-between">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -79,12 +79,6 @@ export function RegistrationsTable({ registrations }: RegistrationsTableProps) {
             className="pl-10"
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <FileText className="h-4 w-4 mr-2" />
-            Export Report
-          </Button>
-        </div>
       </div>
 
       {/* Registrations Table */}
@@ -92,12 +86,12 @@ export function RegistrationsTable({ registrations }: RegistrationsTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Member</TableHead>
-              <TableHead>Event</TableHead>
-              <TableHead>Registration Date</TableHead>
-              <TableHead>Event Date</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Notes</TableHead>
+              <TableHead className="min-w-[200px]">Member</TableHead>
+              <TableHead className="min-w-[180px]">Event</TableHead>
+              <TableHead className="min-w-[140px]">Registration Date</TableHead>
+              <TableHead className="min-w-[140px]">Event Date</TableHead>
+              <TableHead className="min-w-[100px]">Status</TableHead>
+              <TableHead className="min-w-[150px]">Notes</TableHead>
               <TableHead className="w-[50px]"></TableHead>
             </TableRow>
           </TableHeader>
@@ -146,7 +140,7 @@ export function RegistrationsTable({ registrations }: RegistrationsTableProps) {
                 </TableCell>
                 <TableCell>
                   {registration.notes ? (
-                    <div className="text-sm text-muted-foreground max-w-[200px] truncate">
+                    <div className="text-sm text-muted-foreground max-w-[300px] truncate">
                       {registration.notes}
                     </div>
                   ) : (
