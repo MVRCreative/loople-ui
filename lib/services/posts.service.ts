@@ -320,6 +320,57 @@ class PostsService {
     }
   }
 
+  // Create media attachment record from an external URL (e.g., UploadThing)
+  async createMediaFromUrl(postId: number, params: {
+    file_url: string
+    file_name: string
+    file_size: number
+    mime_type: string
+  }): Promise<ApiResponse<{
+    id: number
+    file_name: string
+    file_path: string
+    file_size: number
+    mime_type: string
+    file_type: string
+  }>> {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        throw new Error('No authentication token found')
+      }
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/media`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          post_id: postId,
+          file_name: params.file_name,
+          file_path: params.file_url, // store external URL directly
+          file_size: params.file_size,
+          mime_type: params.mime_type,
+          file_type: params.mime_type.startsWith('image/') ? 'image' :
+                     params.mime_type.startsWith('video/') ? 'video' : 'document'
+        })
+      })
+
+      const result = await response.json()
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create media attachment from URL')
+      }
+      return result
+    } catch (error) {
+      console.error('Create media from URL error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+
   async getMediaAttachments(postId: number): Promise<ApiResponse<{
     id: number
     file_name: string

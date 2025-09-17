@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Calendar, MessageCircle, Paperclip, X } from "lucide-react";
@@ -9,17 +9,38 @@ import { toast } from "sonner";
 
 interface PostFormProps {
   currentUser: User;
-  onSubmit: (content: string, type: "text" | "event" | "poll", attachments?: File[]) => void;
+  onSubmit: (
+    content: string,
+    type: "text" | "event" | "poll",
+    attachments?: Array<File | { url: string; name: string; size: number; type: string }>
+  ) => void;
   isAuthenticated?: boolean;
+  isLoading?: boolean;
 }
 
-export function PostForm({ currentUser, onSubmit, isAuthenticated = false }: PostFormProps) {
+export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoading = false }: PostFormProps) {
   const [content, setContent] = useState("");
   const [postType, setPostType] = useState<"text" | "event" | "poll">("text");
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [uploadedItems, setUploadedItems] = useState<Array<{ url: string; name: string; size: number; type: string }>>([]);
+  const [UploadButtonCmp, setUploadButtonCmp] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Dynamically import UploadThing's UploadButton to avoid hard dependency
+  useEffect(() => {
+    (async () => {
+      try {
+        const mod: any = await import('@uploadthing/react');
+        if (mod?.UploadButton) {
+          setUploadButtonCmp(() => mod.UploadButton);
+        }
+      } catch {
+        // UploadThing not installed; silently ignore
+      }
+    })();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,15 +51,20 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false }: Pos
           question: pollQuestion,
           options: pollOptions.filter(option => option.trim())
         };
-        onSubmit(JSON.stringify({ text: content.trim(), poll: pollData }), postType, attachments);
+        onSubmit(
+          JSON.stringify({ text: content.trim(), poll: pollData }),
+          postType,
+          [...attachments, ...uploadedItems]
+        );
       } else {
-        onSubmit(content.trim(), postType, attachments);
+        onSubmit(content.trim(), postType, [...attachments, ...uploadedItems]);
       }
       setContent("");
       setPostType("text");
       setPollQuestion("");
       setPollOptions(["", ""]);
       setAttachments([]);
+      setUploadedItems([]);
     }
   };
 
@@ -84,6 +110,10 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false }: Pos
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
+  const removeUploadedItem = (index: number) => {
+    setUploadedItems(prev => prev.filter((_, i) => i !== index));
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -93,7 +123,17 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false }: Pos
   };
 
   return (
-    <div className="bg-card p-4">
+    <div className="bg-card p-4 relative">
+      {/* Loading Overlay */}
+      {isLoading && (
+        <div className="absolute inset-0 bg-background/20 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
+          <div className="flex flex-col items-center gap-3">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <p className="text-sm text-muted-foreground">Creating post...</p>
+          </div>
+        </div>
+      )}
+      
       <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
         <div className="flex gap-3">
           <Avatar className="h-10 w-10">
@@ -163,7 +203,31 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false }: Pos
               </div>
             )}
 
-            {/* Attachments */}
+            {/* UploadThing Uploader (images/videos/documents) */}
+            {isAuthenticated && UploadButtonCmp && (
+              <div className="mt-3">
+                <UploadButtonCmp
+                  endpoint="postMediaUploader"
+                  onClientUploadComplete={(res: Array<{ url: string; name?: string; size?: number; type?: string }> | undefined) => {
+                    if (!res) return;
+                    const mapped = res.map((f) => ({
+                      url: f.url,
+                      name: f.name || f.url.split('/').pop() || 'upload',
+                      size: f.size || 0,
+                      type: f.type || 'application/octet-stream',
+                    }));
+                    setUploadedItems(prev => [...prev, ...mapped]);
+                    toast.success('Upload complete');
+                  }}
+                  onUploadError={(error: Error) => {
+                    console.error(error);
+                    toast.error(error.message || 'Upload failed');
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Attachments (local files) */}
             {attachments.length > 0 && (
               <div className="space-y-2 mt-3">
                 <div className="text-sm font-medium text-card-foreground">Attachments:</div>
@@ -177,6 +241,29 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false }: Pos
                       variant="ghost"
                       size="sm"
                       onClick={() => removeAttachment(index)}
+                      className="h-6 w-6 p-0"
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Uploaded (external) items */}
+            {uploadedItems.length > 0 && (
+              <div className="space-y-2 mt-3">
+                <div className="text-sm font-medium text-card-foreground">Uploaded:</div>
+                {uploadedItems.map((item, index) => (
+                  <div key={index} className="flex items-center gap-2 p-2 border border-border rounded bg-muted/50">
+                    <Paperclip className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-sm text-card-foreground flex-1 truncate">{item.name}</span>
+                    <span className="text-xs text-muted-foreground">{formatFileSize(item.size)}</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeUploadedItem(index)}
                       className="h-6 w-6 p-0"
                     >
                       <X className="h-3 w-3" />

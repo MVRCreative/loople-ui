@@ -122,6 +122,7 @@ export function transformApiPostToPost(apiPost: ApiPost): Post {
     reactions: apiPost.reaction_count || 0,
     comments: apiPost.comment_count || 0,
     isLiked: false, // This would need to be determined based on user's reactions
+    media_attachments: apiPost.media_attachments || [], // Include media attachments
   }
 }
 

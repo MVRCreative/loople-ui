@@ -1,7 +1,7 @@
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Post, User, ApiPost } from "@/lib/types";
+import { Post, User, ApiPost, MediaAttachment } from "@/lib/types";
 import { CreatePostRequest } from "@/lib/services/posts.service";
 import { EventCard } from "./event-card";
 import { PostActions } from "./post-actions";
@@ -13,7 +13,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { postsService } from "@/lib/services/posts.service";
 import { toast } from "sonner";
 import { useClub } from "@/lib/club-context";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import NextImage from "next/image";
+import { supabase } from "@/lib/supabase";
 
 interface PostCardProps {
   post: Post;
@@ -30,6 +32,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   const [showComments, setShowComments] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
   const { selectedClub } = useClub();
 
   const reactionsCount =
@@ -111,6 +114,27 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   const canEdit = currentUser.id === post.user.id || currentUser.isAdmin;
   const canDelete = currentUser.id === post.user.id || currentUser.isAdmin;
 
+  // Set hero image from joined media attachments
+  useEffect(() => {
+    const mediaAttachments = post.media_attachments;
+    
+    if (mediaAttachments && Array.isArray(mediaAttachments)) {
+      const firstImage = mediaAttachments.find((a: MediaAttachment) => a.file_type === 'image');
+      
+      if (firstImage) {
+        const path: string = firstImage.file_path;
+        
+        if (/^https?:\/\//i.test(path)) {
+          setHeroImageUrl(path);
+        } else {
+          // Convert storage path to public URL
+          const { data: { publicUrl } } = supabase.storage.from('post-media').getPublicUrl(path);
+          setHeroImageUrl(publicUrl);
+        }
+      }
+    }
+  }, [post]);
+
   if (isEditing) {
     return (
       <PostEditForm
@@ -124,6 +148,11 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
 
   return (
     <div className="bg-card border-t border-l border-border p-4 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+      {heroImageUrl && (
+        <div className="mb-3 -mt-1 rounded-md overflow-hidden border border-border/60">
+          <NextImage src={heroImageUrl} alt={post.content.text.slice(0, 64) || 'Post image'} width={1200} height={630} className="w-full h-64 object-cover" />
+        </div>
+      )}
       {/* Post Header and Content */}
       <div className="flex items-start gap-3 mb-3">
         <Avatar className="h-10 w-10">

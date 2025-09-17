@@ -35,6 +35,10 @@ export function MediaAttachment({ attachment, onDelete, canDelete = false }: Med
   };
 
   const getFileUrl = () => {
+    // If file_path is an absolute URL (e.g., from UploadThing), use it directly
+    if (/^https?:\/\//i.test(attachment.file_path)) {
+      return attachment.file_path;
+    }
     const { data: { publicUrl } } = supabase.storage
       .from('post-media')
       .getPublicUrl(attachment.file_path);
