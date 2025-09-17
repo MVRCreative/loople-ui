@@ -169,7 +169,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
         postId={post.id}
         reactions={post.reactions}
         comments={post.comments}
-        isLiked={post.reactions.likes > 0}
+        isLiked={post.reactions > 0}
         onReaction={onReaction}
         onComment={onComment}
         onShare={onShare}
