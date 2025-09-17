@@ -38,13 +38,12 @@ export function NewsfeedSidebar() {
     <div className="flex h-screen w-[240px] sm:w-[280px] flex-col bg-background border-r border-border sticky top-0 overflow-y-auto">
       {/* Logo */}
       <div className="flex h-12 sm:h-14 md:h-16 w-full items-center px-2 sm:px-3 md:px-4 border-b border-border">
-        <Link href="/" className="flex items-center gap-1 sm:gap-2 md:gap-3">
+        <Link href="/" className="flex items-center">
           <img 
             src="/loople logo3.svg" 
             alt="Loople Logo" 
             className="h-6 w-auto sm:h-7 md:h-8"
           />
-          <span className="font-bold text-sm sm:text-base md:text-lg text-foreground">Loople</span>
         </Link>
       </div>
 

@@ -179,7 +179,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
   };
 
   return (
-    <div className="w-full py-2 sm:py-4 md:py-6 overflow-x-hidden">
+    <div className="w-full py-2 sm:py-4 md:py-6 max-w-2xl mx-auto">
       <PostForm currentUser={currentUser} onSubmit={handleCreatePost} isAuthenticated={isAuthenticated} />
       
       {loading ? (
