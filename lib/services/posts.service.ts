@@ -200,7 +200,7 @@ class PostsService {
   // Real-time subscriptions
   subscribeToPosts(clubId: number, callback: (payload: unknown) => void) {
     return supabase
-      .channel('posts')
+      .channel(`posts:${clubId}`)
       .on(
         'postgres_changes',
         {
@@ -216,7 +216,7 @@ class PostsService {
 
   subscribeToComments(postId: number, callback: (payload: unknown) => void) {
     return supabase
-      .channel('comments')
+      .channel(`comments:${postId}`)
       .on(
         'postgres_changes',
         {
@@ -232,7 +232,7 @@ class PostsService {
 
   subscribeToReactions(postId: number, callback: (payload: unknown) => void) {
     return supabase
-      .channel('reactions')
+      .channel(`reactions:${postId}`)
       .on(
         'postgres_changes',
         {
@@ -244,6 +244,13 @@ class PostsService {
         callback
       )
       .subscribe()
+  }
+
+  // Cleanup helper for realtime channels
+  removeChannel(channel: unknown) {
+    // supabase.removeChannel expects a RealtimeChannel instance; keep type loose to avoid import coupling
+    // @ts-ignore
+    return supabase.removeChannel(channel as any)
   }
 
   // Media Attachments
