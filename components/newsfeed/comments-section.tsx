@@ -6,7 +6,7 @@ import { Comment } from "./comment";
 import { CommentForm } from "./comment-form";
 import { Comment as CommentType, User } from "@/lib/types";
 import { postsService } from "@/lib/services/posts.service";
-// import { transformApiCommentsToComments } from "@/lib/utils/posts.utils";
+import { transformApiCommentsToComments } from "@/lib/utils/posts.utils";
 import { toast } from "sonner";
 import { MessageCircle, Loader2 } from "lucide-react";
 
@@ -33,30 +33,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [], com
       });
 
       if (response.success && response.data) {
-        // Transform the raw API comments to frontend format
-        const transformedComments = response.data.map((apiComment: Record<string, unknown>) => {
-          const users = apiComment.users as Record<string, unknown> || {};
-          const user = {
-            id: (users.id as string) || '',
-            name: (users.raw_user_meta_data as Record<string, unknown>)?.first_name && (users.raw_user_meta_data as Record<string, unknown>)?.last_name 
-              ? `${(users.raw_user_meta_data as Record<string, unknown>).first_name} ${(users.raw_user_meta_data as Record<string, unknown>).last_name}`
-              : (users.email as string) || 'Unknown User',
-            role: 'Member',
-            avatar: (users.raw_user_meta_data as Record<string, unknown>)?.first_name 
-              ? ((users.raw_user_meta_data as Record<string, unknown>).first_name as string).charAt(0).toUpperCase()
-              : (users.email as string)?.charAt(0).toUpperCase() || 'U',
-            isAdmin: false
-          };
-
-          return {
-            id: (apiComment.id as number).toString(),
-            postId: (apiComment.post_id as number).toString(),
-            user,
-            content: apiComment.content as string,
-            timestamp: new Date(apiComment.created_at as string).toLocaleDateString(),
-            reactions: 0
-          };
-        });
+        const transformedComments = transformApiCommentsToComments(response.data as unknown as any[]);
         
         if (append) {
           setComments(prev => [...prev, ...transformedComments]);
@@ -85,30 +62,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [], com
       });
 
       if (response.success && response.data) {
-        // Transform the new comment to frontend format
-        const apiComment = response.data as Record<string, unknown>;
-        const users = apiComment.users as Record<string, unknown> || {};
-        const user = {
-          id: (users.id as string) || '',
-          name: (users.raw_user_meta_data as Record<string, unknown>)?.first_name && (users.raw_user_meta_data as Record<string, unknown>)?.last_name 
-            ? `${(users.raw_user_meta_data as Record<string, unknown>).first_name} ${(users.raw_user_meta_data as Record<string, unknown>).last_name}`
-            : (users.email as string) || 'Unknown User',
-          role: 'Member',
-          avatar: (users.raw_user_meta_data as Record<string, unknown>)?.first_name 
-            ? ((users.raw_user_meta_data as Record<string, unknown>).first_name as string).charAt(0).toUpperCase()
-            : (users.email as string)?.charAt(0).toUpperCase() || 'U',
-          isAdmin: false
-        };
-
-        const newComment = {
-          id: (apiComment.id as number).toString(),
-          postId: (apiComment.post_id as number).toString(),
-          user,
-          content: apiComment.content as string,
-          timestamp: new Date(apiComment.created_at as string).toLocaleDateString(),
-          reactions: 0
-        };
-
+        const [newComment] = transformApiCommentsToComments([response.data as unknown as any]);
         setComments(prev => [...prev, newComment]);
         toast.success("Comment posted!");
       } else {
@@ -141,6 +95,31 @@ export function CommentsSection({ postId, currentUser, initialComments = [], com
     setPage(nextPage);
     loadComments(nextPage, true);
   };
+
+  // Realtime subscription for comments on this post
+  useEffect(() => {
+    const postIdNumber = parseInt(postId);
+    if (!postIdNumber) return;
+
+    const subscription = postsService.subscribeToComments(postIdNumber, (payload: Record<string, unknown>) => {
+      const eventType = payload.eventType as string;
+      if (eventType === 'INSERT' && payload.new) {
+        const [inserted] = transformApiCommentsToComments([payload.new as unknown as any]);
+        setComments(prev => [inserted, ...prev]);
+      } else if (eventType === 'DELETE' && payload.old) {
+        const deletedId = (payload.old as Record<string, unknown>).id as number;
+        setComments(prev => prev.filter(c => c.id !== String(deletedId)));
+      } else if (eventType === 'UPDATE') {
+        // Reload the current page to reflect updates
+        loadComments(page, false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postId]);
 
   useEffect(() => {
     if (initialComments.length === 0) {

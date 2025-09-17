@@ -37,7 +37,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
       ? post.reactions
       : (post as { reactions?: { likes?: number } })?.reactions?.likes ?? 0;
 
-  const isLiked = Boolean((post as { viewerHasLiked?: boolean })?.viewerHasLiked ?? false);
+  const isLiked = Boolean((post as { isLiked?: boolean })?.isLiked ?? false);
   const commentsCount =
     Array.isArray(post.comments) ? post.comments.length : Number(post.comments ?? 0);
 
@@ -157,16 +157,15 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
             <EventCard event={post.content.event} />
           )}
           
-          {/* Poll Card - TODO: Implement poll display */}
+          {/* Poll Voting */}
           {post.content.type === "poll" && post.content.poll && (
-            <div className="bg-muted/50 border border-border rounded-lg p-4 mt-3">
-              <p className="font-medium text-card-foreground mb-2">
-                {post.content.poll.question}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Poll functionality coming soon...
-              </p>
-            </div>
+            <PollVoting
+              postId={post.id}
+              pollQuestion={post.content.poll.question}
+              pollOptions={post.content.poll.options}
+              pollVotes={post.content.poll.votes}
+              userVote={post.content.poll.userVote ?? null}
+            />
           )}
           
           {/* Post Actions */}

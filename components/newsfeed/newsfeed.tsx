@@ -143,9 +143,35 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     }
   };
 
-  const handleReaction = (postId: string) => {
-    // TODO: Implement server-side reaction handling
-    
+  const handleReaction = async (postId: string) => {
+    // Optimistically toggle like and reaction count
+    const previousPosts = posts;
+    const target = posts.find(p => p.id === postId);
+    const wasLiked = Boolean(target?.isLiked);
+
+    setPosts(prev => prev.map(p => {
+      if (p.id !== postId) return p;
+      const nextReactions = typeof p.reactions === 'number' 
+        ? (wasLiked ? Math.max(0, p.reactions - 1) : p.reactions + 1)
+        : p.reactions;
+      return { ...p, isLiked: !wasLiked, reactions: nextReactions as number };
+    }));
+
+    try {
+      const postIdNum = parseInt(postId);
+      if (wasLiked) {
+        const resp = await postsService.deleteReaction(postIdNum);
+        if (!resp.success) throw new Error(resp.error || 'Failed to remove reaction');
+      } else {
+        const resp = await postsService.createReaction(postIdNum, { reaction_type: 'like' });
+        if (!resp.success) throw new Error(resp.error || 'Failed to add reaction');
+      }
+    } catch (error) {
+      console.error('Reaction update failed:', error);
+      // Revert on error
+      setPosts(previousPosts);
+      toast.error('Failed to update reaction');
+    }
   };
 
   const handleComment = (postId: string) => {

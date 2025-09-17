@@ -24,15 +24,42 @@ export function getRelativeTime(dateString: string): string {
 
 // Helper function to create user object from API data
 export function createUserFromApi(apiUser: Record<string, unknown>): User {
-  const firstName = (apiUser.first_name as string) || ((apiUser.raw_user_meta_data as Record<string, unknown>)?.first_name as string) || ''
-  const lastName = (apiUser.last_name as string) || ((apiUser.raw_user_meta_data as Record<string, unknown>)?.last_name as string) || ''
-  const name = firstName && lastName ? `${firstName} ${lastName}` : (apiUser.email as string)
+  // Support multiple shapes: auth.users (raw_user_meta_data or user_metadata), custom profiles, or edge function aliases
+  const rawMeta = (apiUser.raw_user_meta_data as Record<string, unknown>)
+    || (apiUser.user_metadata as Record<string, unknown>)
+    || {}
+
+  const firstName = (apiUser.first_name as string)
+    || (rawMeta.first_name as string)
+    || (rawMeta.firstName as string)
+    || ''
+
+  const lastName = (apiUser.last_name as string)
+    || (rawMeta.last_name as string)
+    || (rawMeta.lastName as string)
+    || ''
+
+  const fullNameFromMeta = (rawMeta.full_name as string)
+    || (apiUser.full_name as string)
+    || ''
+
+  const email = (apiUser.email as string)
+    || (rawMeta.email as string)
+    || (apiUser.user_email as string)
+    || ''
+
+  const displayName = (firstName || lastName)
+    ? `${firstName} ${lastName}`.trim()
+    : (fullNameFromMeta || email || 'Unknown User')
+
+  const avatarInitialSource = firstName || fullNameFromMeta || email || 'U'
+  const avatarInitial = avatarInitialSource.charAt(0).toUpperCase()
   
   return {
-    id: apiUser.id as string,
-    name: name,
+    id: (apiUser.id as string) || (apiUser.user_id as string) || '',
+    name: displayName,
     role: 'Member', // Default role, could be enhanced with actual role data
-    avatar: firstName ? firstName.charAt(0).toUpperCase() : (apiUser.email as string).charAt(0).toUpperCase(),
+    avatar: avatarInitial,
     isAdmin: false, // Default, could be enhanced with actual admin status
   }
 }
@@ -51,7 +78,8 @@ export function createEventFromApi(apiEvent: Record<string, unknown>): Event {
 
 // Transform API post to frontend post format
 export function transformApiPostToPost(apiPost: ApiPost): Post {
-  const user = createUserFromApi(apiPost.users || {})
+  // Prefer joined users object; fallback to top-level apiPost when functions include user fields inline
+  const user = createUserFromApi((apiPost as unknown as Record<string, unknown>).users || (apiPost as unknown as Record<string, unknown>))
   
   // Create content object based on post type
   const content = {
