@@ -148,11 +148,6 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
 
   return (
     <div className="bg-card border-t border-l border-border p-4 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
-      {heroImageUrl && (
-        <div className="mb-3 -mt-1 rounded-md overflow-hidden border border-border/60">
-          <NextImage src={heroImageUrl} alt={post.content.text.slice(0, 64) || 'Post image'} width={1200} height={630} className="w-full h-64 object-cover" />
-        </div>
-      )}
       {/* Post Header and Content */}
       <div className="flex items-start gap-3 mb-3">
         <Avatar className="h-10 w-10">
@@ -197,6 +192,19 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
             />
           )}
           
+          {/* Media (moved below content, near bottom) */}
+          {heroImageUrl && (
+            <div className="mt-3 rounded-lg overflow-hidden border border-border/60 bg-muted/20">
+              <NextImage
+                src={heroImageUrl}
+                alt={post.content.text.slice(0, 64) || 'Post image'}
+                width={1200}
+                height={675}
+                className="w-full h-auto object-cover"
+              />
+            </div>
+          )}
+
           {/* Post Actions */}
           <PostActions
             postId={post.id}
