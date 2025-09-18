@@ -22,18 +22,20 @@ export default function EventDetailsPage() {
   const { user: authUser, isAuthenticated } = useAuth();
   
   const eventId = typeof params?.eventId === "string" ? params.eventId : "";
-  const { event, rsvps, posts, loading, error, loadEvent } = useEvent(eventId);
-  const { getUserRSVP, updateRSVP } = useRSVP(eventId, "user-1"); // TODO: Get real user ID
   
   // Convert auth user to frontend User type
   const currentUser: User = authUser 
     ? convertAuthUserToUser(authUser)
     : createGuestUser();
+  
+  const { event, rsvps, posts, loading, error, loadEvent } = useEvent(eventId);
+  const { getUserRSVP, updateRSVP, loadRSVPs } = useRSVP(eventId, currentUser.id);
 
-  // Load event on mount
+  // Load event and RSVPs on mount
   useEffect(() => {
     loadEvent();
-  }, [loadEvent]);
+    loadRSVPs();
+  }, [loadEvent, loadRSVPs]);
 
   // Find user's RSVP status
   const userRSVP = getUserRSVP();

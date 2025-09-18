@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Clock, Eye, EyeOff, Lock } from "lucide-react";
+import { Calendar, MapPin, Clock, Eye, EyeOff, Lock, Edit, Trash2 } from "lucide-react";
 import { EventListItem } from "@/lib/events/types";
 import { formatEventDateTime, formatEventLocation, getEventVisibilityText } from "@/lib/events/selectors";
 
@@ -9,6 +9,9 @@ interface EventCardProps {
   event: EventListItem;
   showRSVP?: boolean;
   onRSVP?: (eventId: string) => void;
+  onEdit?: (eventId: string) => void;
+  onDelete?: (eventId: string) => void;
+  showOwnerActions?: boolean;
   className?: string;
 }
 
@@ -16,6 +19,9 @@ export function EventCard({
   event, 
   showRSVP = true, 
   onRSVP,
+  onEdit,
+  onDelete,
+  showOwnerActions = false,
   className 
 }: EventCardProps) {
   const handleRSVPClick = () => {
@@ -25,6 +31,14 @@ export function EventCard({
   const handleAddToCalendar = () => {
     // TODO: Implement calendar integration
     console.log("Add to calendar:", event.id);
+  };
+
+  const handleEditClick = () => {
+    onEdit?.(event.id);
+  };
+
+  const handleDeleteClick = () => {
+    onDelete?.(event.id);
   };
 
   const getVisibilityIcon = () => {
@@ -156,12 +170,32 @@ export function EventCard({
               )}
             </div>
             
-            <button
-              onClick={() => window.location.href = `/event/${event.id}`}
-              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md p-1 transition-colors"
-            >
-              <span>View Details</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {showOwnerActions && (
+                <>
+                  <button
+                    onClick={handleEditClick}
+                    className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-md p-1 transition-all duration-200 hover:scale-105"
+                  >
+                    <Edit className="h-4 w-4" />
+                    <span>Edit</span>
+                  </button>
+                  <button
+                    onClick={handleDeleteClick}
+                    className="flex items-center gap-2 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md p-1 transition-all duration-200 hover:scale-105"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Delete</span>
+                  </button>
+                </>
+              )}
+              <button
+                onClick={() => window.location.href = `/event/${event.id}`}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md p-1 transition-colors"
+              >
+                <span>View Details</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

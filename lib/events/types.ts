@@ -59,6 +59,7 @@ export interface EventDetail {
     not_going: number;
     total: number;
   };
+  image_url?: string;
 }
 
 // Event RSVP interface
@@ -153,4 +154,5 @@ export interface EventListItem {
     total: number;
   };
   program_name?: string;
+  image_url?: string;
 }

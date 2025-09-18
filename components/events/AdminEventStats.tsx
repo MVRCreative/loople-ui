@@ -114,14 +114,14 @@ export function AdminEventStats({
                 <div 
                   className="bg-primary h-2 rounded-full transition-all duration-300"
                   style={{ 
-                    width: `${Math.min((event.capacity.current / event.capacity.max) * 100, 100)}%` 
+                    width: `${event.capacity.max ? Math.min((event.capacity.current / event.capacity.max) * 100, 100) : 0}%` 
                   }}
                 />
               </div>
               
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
-                  {event.capacity.max - event.capacity.current} spots remaining
+                  {event.capacity.max ? event.capacity.max - event.capacity.current : 0} spots remaining
                 </span>
                 {event.capacity.waitlist && (
                   <Badge variant="outline" className="text-orange-600">

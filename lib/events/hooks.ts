@@ -2,6 +2,9 @@
 
 import { useState, useCallback } from "react";
 import { EventDetail, EventRSVP, EventPost, EventRSVPStatus } from "./types";
+import { EventsService, Event } from "@/lib/services/events.service";
+import { RSVPService, EventRegistration } from "@/lib/services/rsvp.service";
+import { useClub } from "@/lib/club-context";
 import { 
   mockEvents, 
   mockRSVPs, 
@@ -12,15 +15,21 @@ import {
 } from "@/lib/mocks/events";
 
 // Environment flag to enable/disable mock data
-const USE_MOCK_EVENTS = process.env.NEXT_PUBLIC_USE_MOCK_EVENTS === "true" || process.env.NODE_ENV === "development";
+const USE_MOCK_EVENTS = process.env.NEXT_PUBLIC_USE_MOCK_EVENTS === "true"; // Use real API by default
 
 // Custom hook for events list
 export function useEvents() {
   const [events, setEvents] = useState<EventDetail[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { selectedClub } = useClub();
 
   const loadEvents = useCallback(async () => {
+    if (!selectedClub) {
+      setEvents([]);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     
@@ -28,16 +37,72 @@ export function useEvents() {
       if (USE_MOCK_EVENTS) {
         // Simulate API delay
         await new Promise(resolve => setTimeout(resolve, 500));
-        setEvents(mockEvents);
+        // Filter mock events by selected club
+        const clubEvents = mockEvents.filter(event => event.club_id === selectedClub.id.toString());
+        setEvents(clubEvents);
       } else {
-        throw new Error("Real API not implemented yet");
+        // Use real API with club_id filter
+        const apiEvents = await EventsService.getEvents({ 
+          club_id: selectedClub.id,
+          is_active: true 
+        });
+        
+        // Transform API events to match frontend EventDetail interface
+        const transformedEvents: EventDetail[] = apiEvents.map((event: Event) => {
+          const now = new Date();
+          const startDate = new Date(event.start_date);
+          const endDate = new Date(event.end_date);
+          
+          
+          return {
+            id: event.id.toString(),
+            title: event.title,
+            description: event.description || '',
+            start_date: event.start_date,
+            end_date: event.end_date,
+            location: {
+              name: event.location || 'TBD',
+              address: undefined,
+              city: undefined,
+              state: undefined,
+              zip: undefined,
+            },
+            capacity: {
+              max: event.max_capacity,
+              current: event.event_registrations?.length || 0,
+              waitlist: false, // TODO: Calculate based on capacity
+            },
+            visibility: 'public' as const, // Default to public for now
+            status: event.is_active ? 'published' as const : 'draft' as const,
+            program: event.programs ? {
+              id: event.program_id?.toString() || '',
+              name: event.programs.name,
+              description: undefined,
+            } : undefined,
+            club_id: event.club_id.toString(),
+            created_by: '', // Not available in current API
+            created_at: event.created_at,
+            updated_at: event.updated_at,
+            is_upcoming: startDate > now,
+            is_past: startDate < now,
+            rsvp_count: {
+              going: event.event_registrations?.filter((r: any) => r.status === 'confirmed').length || 0,
+              maybe: event.event_registrations?.filter((r: any) => r.status === 'registered').length || 0,
+              not_going: 0,
+              total: event.event_registrations?.length || 0,
+            },
+            image_url: undefined,
+          };
+        });
+        
+        setEvents(transformedEvents);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load events");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [selectedClub]);
 
   return { events, loading, error, loadEvents };
 }
@@ -69,7 +134,66 @@ export function useEvent(eventId: string) {
         setRsvps(rsvpData);
         setPosts(postData);
       } else {
-        throw new Error("Real API not implemented yet");
+        // Use real API - get single event by ID
+        const apiEvent = await EventsService.getEventById(eventId);
+        
+        console.log('API Event received:', apiEvent);
+        
+        if (!apiEvent) {
+          setEvent(undefined);
+          setRsvps([]);
+          setPosts([]);
+          return;
+        }
+        
+        // Transform API event to match frontend EventDetail interface
+        const now = new Date();
+        const startDate = new Date(apiEvent.start_date || now);
+        const endDate = new Date(apiEvent.end_date || now);
+        
+        const transformedEvent: EventDetail = {
+          id: apiEvent.id?.toString() || '',
+          title: apiEvent.title || 'Untitled Event',
+          description: apiEvent.description || '',
+          start_date: apiEvent.start_date || new Date().toISOString(),
+          end_date: apiEvent.end_date || new Date().toISOString(),
+          location: {
+            name: apiEvent.location || 'TBD',
+            address: undefined,
+            city: undefined,
+            state: undefined,
+            zip: undefined,
+          },
+          capacity: {
+            max: apiEvent.max_capacity || undefined,
+            current: apiEvent.event_registrations?.length || 0,
+            waitlist: false, // TODO: Calculate based on capacity
+          },
+          visibility: 'public' as const, // Default to public for now
+          status: apiEvent.is_active ? 'published' as const : 'draft' as const,
+          program: apiEvent.programs ? {
+            id: apiEvent.program_id?.toString() || '',
+            name: apiEvent.programs.name || 'Unknown Program',
+            description: undefined,
+          } : undefined,
+          club_id: apiEvent.club_id?.toString() || '',
+          created_by: '', // Not available in current API
+          created_at: apiEvent.created_at || new Date().toISOString(),
+          updated_at: apiEvent.updated_at || new Date().toISOString(),
+          is_upcoming: startDate > now,
+          is_past: startDate < now,
+          rsvp_count: {
+            going: apiEvent.event_registrations?.filter((r: any) => r.status === 'confirmed').length || 0,
+            maybe: apiEvent.event_registrations?.filter((r: any) => r.status === 'registered').length || 0,
+            not_going: 0,
+            total: apiEvent.event_registrations?.length || 0,
+          },
+          image_url: undefined,
+        };
+        
+        setEvent(transformedEvent);
+        setRsvps([]); // TODO: Implement RSVP loading from API
+        setPosts([]); // TODO: Implement posts loading from API
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load event");
@@ -99,7 +223,27 @@ export function useRSVP(eventId: string, userId: string) {
         await new Promise(resolve => setTimeout(resolve, 200));
         setRsvps(getRSVPsByEventId(eventId));
       } else {
-        throw new Error("Real API not implemented yet");
+        // Use real API
+        const registrations = await RSVPService.getEventRSVPs(eventId);
+        
+        // Transform API registrations to frontend EventRSVP format
+        const transformedRSVPs: EventRSVP[] = registrations.map((reg: EventRegistration) => ({
+          id: reg.id.toString(),
+          event_id: reg.event_id.toString(),
+          user_id: reg.members.user_id,
+          status: mapRegistrationStatusToRSVPStatus(reg.status),
+          responded_at: reg.registration_date,
+          created_at: reg.created_at,
+          updated_at: reg.updated_at,
+          user: {
+            id: reg.members.user_id,
+            name: `${reg.members.first_name} ${reg.members.last_name}`,
+            avatar: "👤",
+            role: "Member",
+          },
+        }));
+        
+        setRsvps(transformedRSVPs);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load RSVPs");
@@ -149,7 +293,38 @@ export function useRSVP(eventId: string, userId: string) {
           setRsvps(prev => [...prev, newRSVP]);
         }
       } else {
-        throw new Error("Real API not implemented yet");
+        // Use real API
+        const registrationStatus = mapRSVPStatusToRegistrationStatus(status);
+        const updatedRegistration = await RSVPService.updateRSVP(eventId, registrationStatus);
+        
+        // Update local state
+        const transformedRSVP: EventRSVP = {
+          id: updatedRegistration.id.toString(),
+          event_id: updatedRegistration.event_id.toString(),
+          user_id: updatedRegistration.members.user_id,
+          status: mapRegistrationStatusToRSVPStatus(updatedRegistration.status),
+          responded_at: updatedRegistration.registration_date,
+          created_at: updatedRegistration.created_at,
+          updated_at: updatedRegistration.updated_at,
+          user: {
+            id: updatedRegistration.members.user_id,
+            name: `${updatedRegistration.members.first_name} ${updatedRegistration.members.last_name}`,
+            avatar: "👤",
+            role: "Member",
+          },
+        };
+        
+        // Update or add to local state
+        setRsvps(prev => {
+          const existingIndex = prev.findIndex(rsvp => rsvp.user_id === userId);
+          if (existingIndex >= 0) {
+            const updated = [...prev];
+            updated[existingIndex] = transformedRSVP;
+            return updated;
+          } else {
+            return [...prev, transformedRSVP];
+          }
+        });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update RSVP");
@@ -170,6 +345,40 @@ export function useRSVP(eventId: string, userId: string) {
     updateRSVP, 
     getUserRSVP 
   };
+}
+
+// Helper function to map registration status to RSVP status
+function mapRegistrationStatusToRSVPStatus(registrationStatus: string): EventRSVPStatus {
+  switch (registrationStatus) {
+    case 'confirmed':
+      return 'going';
+    case 'registered':
+      return 'maybe';
+    case 'canceled':
+      return 'not_going';
+    case 'waitlisted':
+      return 'maybe';
+    case 'attended':
+      return 'going';
+    default:
+      return 'not_responded';
+  }
+}
+
+// Helper function to map RSVP status to registration status
+function mapRSVPStatusToRegistrationStatus(rsvpStatus: EventRSVPStatus): 'registered' | 'confirmed' | 'canceled' | 'waitlisted' | 'attended' {
+  switch (rsvpStatus) {
+    case 'going':
+      return 'confirmed';
+    case 'maybe':
+      return 'registered';
+    case 'not_going':
+      return 'canceled';
+    case 'not_responded':
+      return 'registered';
+    default:
+      return 'registered';
+  }
 }
 
 // Helper function to get RSVP counts
