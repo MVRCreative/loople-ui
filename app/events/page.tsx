@@ -109,7 +109,8 @@ export default function EventsPage() {
   }
 
   return (
-    <div className="flex-1 space-y-6">
+    <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="space-y-6">
       {/* Header */}
       <div className="space-y-4">
         <div>
@@ -223,7 +224,7 @@ export default function EventsPage() {
           )}
         </TabsContent>
       </Tabs>
-
+      </div>
     </div>
   );
 }
