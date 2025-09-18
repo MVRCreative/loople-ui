@@ -28,8 +28,8 @@ export function EventHeader({
 
   return (
     <div className="w-full">
-      {/* Cover Image */}
-      <div className="h-32 w-full lg:h-48">
+      {/* Cover Image with Title Overlay */}
+      <div className="relative h-32 w-full lg:h-48">
         <NextImage 
           alt="" 
           src={backgroundImage} 
@@ -37,17 +37,20 @@ export function EventHeader({
           height={192}
           className="h-full w-full object-cover" 
         />
+        
+        {/* Dark overlay for better text contrast */}
+        <div className="absolute inset-0 bg-black/40"></div>
+        
+        {/* Event Title Overlay */}
+        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 lg:p-8">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white drop-shadow-lg">
+            {event.title}
+          </h1>
+        </div>
       </div>
       
       {/* Event Content */}
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-        <div className="-mt-12 sm:-mt-16">
-          {/* Event Title */}
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{event.title}</h1>
-          </div>
-        </div>
-        
         {/* Event Details */}
         <div className="mt-6 space-y-4">
           {/* Date, Time, Location */}
