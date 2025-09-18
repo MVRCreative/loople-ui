@@ -8,7 +8,8 @@ import {
   FileText,
   Shield,
   UserCog,
-  Database
+  Database,
+  MessageSquare
 } from "lucide-react"
 
 export const adminNavigation = [
@@ -34,6 +35,12 @@ export const adminNavigation = [
     name: "Events",
     href: "/admin/events",
     icon: Calendar,
+    current: false,
+  },
+  {
+    name: "Messages",
+    href: "/admin/messages",
+    icon: MessageSquare,
     current: false,
   },
   {
