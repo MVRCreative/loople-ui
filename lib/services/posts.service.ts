@@ -249,7 +249,7 @@ class PostsService {
   // Cleanup helper for realtime channels
   removeChannel(channel: unknown) {
     // supabase.removeChannel expects a RealtimeChannel instance; keep type loose to avoid import coupling
-    // @ts-ignore
+    // @ts-expect-error - RealtimeChannel type not imported to avoid coupling
     return supabase.removeChannel(channel as any)
   }
 

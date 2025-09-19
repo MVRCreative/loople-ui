@@ -33,7 +33,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [], com
       });
 
       if (response.success && response.data) {
-        const transformedComments = transformApiCommentsToComments(response.data as unknown as any[]);
+        const transformedComments = transformApiCommentsToComments(response.data as unknown as Comment[]);
         
         if (append) {
           setComments(prev => [...prev, ...transformedComments]);
@@ -62,7 +62,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [], com
       });
 
       if (response.success && response.data) {
-        const [newComment] = transformApiCommentsToComments([response.data as unknown as any]);
+        const [newComment] = transformApiCommentsToComments([response.data as unknown as Comment]);
         setComments(prev => [...prev, newComment]);
         toast.success("Comment posted!");
       } else {
@@ -104,7 +104,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [], com
     const channel = postsService.subscribeToComments(postIdNumber, (payload: Record<string, unknown>) => {
       const eventType = payload.eventType as string;
       if (eventType === 'INSERT' && payload.new) {
-        const [inserted] = transformApiCommentsToComments([payload.new as unknown as any]);
+        const [inserted] = transformApiCommentsToComments([payload.new as unknown as Comment]);
         setComments(prev => [inserted, ...prev]);
       } else if (eventType === 'DELETE' && payload.old) {
         const deletedId = (payload.old as Record<string, unknown>).id as number;

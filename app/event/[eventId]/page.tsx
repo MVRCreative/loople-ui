@@ -76,7 +76,7 @@ export default function EventDetailsPage() {
   };
 
   const handleRSVPUpdate = (status: string) => {
-    updateRSVP(status as any);
+    updateRSVP(status as 'going' | 'maybe' | 'not_going');
   };
 
   if (loading) {
