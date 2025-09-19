@@ -45,7 +45,7 @@ export function EventsTable({ events, onEditEvent, onDeleteEvent, onViewRegistra
   const filteredEvents = events.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (event.description && event.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    event.location.name.toLowerCase().includes(searchTerm.toLowerCase())
+    (event.location && event.location.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const getEventTypeBadge = (eventType: string) => {
@@ -184,7 +184,7 @@ export function EventsTable({ events, onEditEvent, onDeleteEvent, onViewRegistra
                 <TableCell>
                   <div className="flex items-center text-xs lg:text-sm">
                     <MapPin className="h-3 w-3 mr-1 text-muted-foreground" />
-                    <span className="truncate">{event.location.name}</span>
+                    <span className="truncate">{event.location || 'No location'}</span>
                   </div>
                 </TableCell>
                 <TableCell>

@@ -445,7 +445,7 @@ export default function ClubManagementPage() {
               }}
               onDeleteEvent={async (uiEvent) => {
                 try {
-                  await EventsService.deleteEvent(uiEvent.id);
+                  await EventsService.deleteEvent(uiEvent.id.toString());
                   await refreshEvents();
                 } catch {}
               }}

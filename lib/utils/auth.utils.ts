@@ -20,16 +20,16 @@ export function convertAuthUserToUser(authUser: AuthUser): User {
 
   // Check for admin status in multiple places
   // TODO: This should be replaced with proper admin role detection from database
-  const isAdmin = authUser.app_metadata?.isAdmin === true || 
-                  authUser.user_metadata?.role === 'Admin' ||
-                  authUser.user_metadata?.isAdmin === true ||
+  const isAdmin = (authUser.app_metadata as any)?.isAdmin === true || 
+                  (authUser.user_metadata as any)?.role === 'Admin' ||
+                  (authUser.user_metadata as any)?.isAdmin === true ||
                   // Temporary: allow admin access for now until proper auth is implemented
                   true; // TEMPORARY BYPASS - remove this line when proper admin auth is implemented
 
   return {
     id: authUser.id,
     name,
-    role: authUser.user_metadata?.role || 'Member',
+    role: (authUser.user_metadata as any)?.role || 'Member',
     avatar,
     isAdmin,
   };
