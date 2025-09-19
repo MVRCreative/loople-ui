@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Home, Bell, User, Settings, LogOut, Moon, Users, MessageSquare } from "lucide-react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -39,9 +40,11 @@ export function NewsfeedSidebar() {
       {/* Logo */}
       <div className="flex h-12 sm:h-14 md:h-16 w-full items-center px-2 sm:px-3 md:px-4 border-b border-border">
         <Link href="/" className="flex items-center">
-          <img 
+          <Image 
             src="/loople logo3.svg" 
             alt="Loople Logo" 
+            width={32}
+            height={32}
             className="h-6 w-auto sm:h-7 md:h-8"
           />
         </Link>

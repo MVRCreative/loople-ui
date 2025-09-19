@@ -1,19 +1,18 @@
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Post, User, ApiPost } from "@/lib/types";
+import { Post, User, ApiPost, MediaAttachment } from "@/lib/types";
 import { CreatePostRequest } from "@/lib/services/posts.service";
 import { EventCard } from "./event-card";
 import { PostActions } from "./post-actions";
 import { PollVoting } from "./poll-voting";
 import { CommentsSection } from "./comments-section";
 import { PostEditForm } from "./post-edit-form";
-import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { postsService } from "@/lib/services/posts.service";
 import { toast } from "sonner";
 import { useClub } from "@/lib/club-context";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import NextImage from "next/image";
+import { supabase } from "@/lib/supabase";
 
 interface PostCardProps {
   post: Post;
@@ -30,6 +29,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   const [showComments, setShowComments] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
   const { selectedClub } = useClub();
 
   const reactionsCount =
@@ -111,6 +111,27 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   const canEdit = currentUser.id === post.user.id || currentUser.isAdmin;
   const canDelete = currentUser.id === post.user.id || currentUser.isAdmin;
 
+  // Set hero image from joined media attachments
+  useEffect(() => {
+    const mediaAttachments = post.media_attachments;
+    
+    if (mediaAttachments && Array.isArray(mediaAttachments)) {
+      const firstImage = mediaAttachments.find((a: MediaAttachment) => a.file_type === 'image');
+      
+      if (firstImage) {
+        const path: string = firstImage.file_path;
+        
+        if (/^https?:\/\//i.test(path)) {
+          setHeroImageUrl(path);
+        } else {
+          // Convert storage path to public URL
+          const { data: { publicUrl } } = supabase.storage.from('post-media').getPublicUrl(path);
+          setHeroImageUrl(publicUrl);
+        }
+      }
+    }
+  }, [post]);
+
   if (isEditing) {
     return (
       <PostEditForm
@@ -168,6 +189,19 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
             />
           )}
           
+          {/* Media (moved below content, near bottom) */}
+          {heroImageUrl && (
+            <div className="mt-3 rounded-lg overflow-hidden border border-border/60 bg-muted/20">
+              <NextImage
+                src={heroImageUrl}
+                alt={post.content.text.slice(0, 64) || 'Post image'}
+                width={1200}
+                height={675}
+                className="w-full h-auto object-cover"
+              />
+            </div>
+          )}
+
           {/* Post Actions */}
           <PostActions
             postId={post.id}
@@ -186,7 +220,6 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
         <CommentsSection
           postId={post.id}
           currentUser={currentUser}
-          commentCount={commentsCount}
         />
       )}
     </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { ThumbsUp, MessageCircle, Share2 } from "lucide-react";
 
 interface PostActionsProps {

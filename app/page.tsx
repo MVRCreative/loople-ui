@@ -1,7 +1,6 @@
 "use client";
 
 import { Newsfeed } from "@/components/newsfeed/newsfeed";
-import { mockPosts } from "@/lib/data";
 import { Toaster } from "@/components/ui/sonner";
 import { User } from "@/lib/types";
 import { useAuth } from "@/lib/auth-context";

@@ -44,8 +44,8 @@ export function EventsTable({ events, onEditEvent, onDeleteEvent, onViewRegistra
 
   const filteredEvents = events.filter(event =>
     event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    event.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    event.location.toLowerCase().includes(searchTerm.toLowerCase())
+    (event.description && event.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (event.location && event.location.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   const getEventTypeBadge = (eventType: string) => {
@@ -122,7 +122,7 @@ export function EventsTable({ events, onEditEvent, onDeleteEvent, onViewRegistra
                 e.price_member ?? 0,
                 e.price_non_member ?? '',
                 e.status,
-                e.registered_count
+                e.rsvp_count.going
               ]);
               const csv = [headers, ...rows].map(r => r.map(v => `${String(v).replace(/"/g, '""')}`).join(',')).join('\n');
               const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -184,14 +184,14 @@ export function EventsTable({ events, onEditEvent, onDeleteEvent, onViewRegistra
                 <TableCell>
                   <div className="flex items-center text-xs lg:text-sm">
                     <MapPin className="h-3 w-3 mr-1 text-muted-foreground" />
-                    <span className="truncate">{event.location}</span>
+                    <span className="truncate">{event.location || 'No location'}</span>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center text-xs lg:text-sm">
                     <Users className="h-3 w-3 mr-1 text-muted-foreground" />
                     <span className="truncate">
-                      {event.registered_count}
+                      {event.rsvp_count.going}
                       {event.max_capacity && ` / ${event.max_capacity}`}
                     </span>
                   </div>

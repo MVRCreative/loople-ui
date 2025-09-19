@@ -42,6 +42,17 @@ export const apiUserSchema = z.object({
   }).optional(),
 });
 
+// Media attachment schema
+export const mediaAttachmentSchema = z.object({
+  id: z.number(),
+  file_name: z.string(),
+  file_path: z.string(),
+  file_size: z.number(),
+  mime_type: z.string(),
+  file_type: z.string(),
+  created_at: z.string(),
+});
+
 // API Post schema (from database)
 export const apiPostSchema = z.object({
   id: z.number(),
@@ -58,6 +69,7 @@ export const apiPostSchema = z.object({
   updated_at: z.string(),
   events: eventSchema.optional(),
   users: apiUserSchema.optional(),
+  media_attachments: z.array(mediaAttachmentSchema).optional(),
   reaction_count: z.number().optional(),
   comment_count: z.number().optional(),
   reactions_by_type: z.record(z.string(), z.number()).optional(),
@@ -86,6 +98,7 @@ export const postSchema = z.object({
   reactions: z.number().default(0),
   comments: z.number().default(0),
   isLiked: z.boolean().default(false),
+  media_attachments: z.array(mediaAttachmentSchema).optional(),
 });
 
 // Frontend Comment schema (for UI components)
@@ -109,3 +122,4 @@ export type Comment = z.infer<typeof commentSchema>;
 export type ApiUser = z.infer<typeof apiUserSchema>;
 export type ApiPost = z.infer<typeof apiPostSchema>;
 export type ApiComment = z.infer<typeof apiCommentSchema>;
+export type MediaAttachment = z.infer<typeof mediaAttachmentSchema>;

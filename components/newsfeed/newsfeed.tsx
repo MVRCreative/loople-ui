@@ -18,12 +18,13 @@ interface NewsfeedProps {
 export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }: NewsfeedProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [loading, setLoading] = useState(false);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
   // const [searchFilters] = useState<Record<string, unknown>>({});
   const { selectedClub } = useClub();
 
   const loadPosts = useCallback(async (filters: Record<string, unknown> = {}) => {
     if (!selectedClub?.id) return;
-    
+
     setLoading(true);
     try {
       const response = await postsService.getPosts({
@@ -61,9 +62,8 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     if (!selectedClub?.id) return;
 
     const channel = postsService.subscribeToPosts(parseInt(selectedClub.id), (payload) => {
-      console.log('Real-time post update:', payload);
-      const payloadData = payload as Record<string, unknown>;
-      
+        const payloadData = payload as Record<string, unknown>;
+
       if (payloadData.eventType === 'INSERT') {
         // New post added
         loadPosts(); // Reload all posts to get the latest data
@@ -83,7 +83,8 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClub?.id]);
 
-  const handleCreatePost = async (content: string, type: "text" | "event" | "poll", attachments?: File[]) => {
+  // attachments can be native File[] or external uploads with url/name/size/type
+  const handleCreatePost = async (content: string, type: "text" | "event" | "poll", attachments?: Array<File | { url: string; name: string; size: number; type: string }>) => {
     if (!isAuthenticated) {
       toast.error('Please sign in to create posts');
       return;
@@ -94,6 +95,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
       return;
     }
 
+    setIsCreatingPost(true);
     try {
       const postData: CreatePostRequest = {
         club_id: parseInt(selectedClub.id),
@@ -117,12 +119,37 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
       const response = await postsService.createPost(postData);
 
       if (response.success && response.data) {
+        const postId = parseInt(response.data.id);
+        const mediaAttachments: Array<{
+          id: number
+          file_name: string
+          file_path: string
+          file_size: number
+          mime_type: string
+          file_type: string
+        }> = [];
+
         // Upload media attachments if any
         if (attachments && attachments.length > 0) {
-          const postId = parseInt(response.data.id);
           for (const file of attachments) {
             try {
-              await postsService.uploadMedia(postId, file);
+              if (file instanceof File) {
+                const uploadResult = await postsService.uploadMedia(postId, file);
+                if (uploadResult.success && uploadResult.data) {
+                  mediaAttachments.push(uploadResult.data);
+                }
+              } else if (file && typeof (file as { url: string; name: string; size: number; type: string }).url === 'string') {
+                const fileData = file as { url: string; name: string; size: number; type: string };
+                const createResult = await postsService.createMediaFromUrl(postId, {
+                  file_url: fileData.url,
+                  file_name: fileData.name,
+                  file_size: fileData.size,
+                  mime_type: fileData.type,
+                });
+                if (createResult.success && createResult.data) {
+                  mediaAttachments.push(createResult.data);
+                }
+              }
             } catch (error) {
               console.error('Error uploading media:', error);
               toast.error(`Failed to upload ${file.name}`);
@@ -130,8 +157,14 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
           }
         }
 
+        // Create the post data with media attachments
+        const postWithMedia = {
+          ...response.data,
+          media_attachments: mediaAttachments
+        };
+
         // Add the new post to the beginning of the list
-        const newPost = transformApiPostsToPosts([response.data as unknown as ApiPost])[0];
+        const newPost = transformApiPostsToPosts([postWithMedia as unknown as ApiPost])[0];
         setPosts(prev => [newPost, ...prev]);
         toast.success("Post created successfully!");
       } else {
@@ -140,6 +173,8 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     } catch (error) {
       console.error('Error creating post:', error);
       toast.error('Failed to create post');
+    } finally {
+      setIsCreatingPost(false);
     }
   };
 
@@ -151,7 +186,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
 
     setPosts(prev => prev.map(p => {
       if (p.id !== postId) return p;
-      const nextReactions = typeof p.reactions === 'number' 
+      const nextReactions = typeof p.reactions === 'number'
         ? (wasLiked ? Math.max(0, p.reactions - 1) : p.reactions + 1)
         : p.reactions;
       return { ...p, isLiked: !wasLiked, reactions: nextReactions as number };
@@ -174,7 +209,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     }
   };
 
-  const handleComment = (postId: string) => {
+  const handleComment = () => {
     // Comment functionality is handled by PostCard component
     // This function is called when comment button is clicked
   };
@@ -195,7 +230,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
   };
 
   const handlePostUpdate = (updatedPost: Post) => {
-    setPosts(prev => prev.map(post => 
+    setPosts(prev => prev.map(post =>
       post.id === updatedPost.id ? updatedPost : post
     ));
   };
@@ -206,8 +241,8 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
 
   return (
     <div className="w-full">
-      <PostForm currentUser={currentUser} onSubmit={handleCreatePost} isAuthenticated={isAuthenticated} />
-      
+      <PostForm currentUser={currentUser} onSubmit={handleCreatePost} isAuthenticated={isAuthenticated} isLoading={isCreatingPost} />
+
       {loading ? (
         <div className="text-center py-12 text-muted-foreground">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -229,7 +264,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
           ))}
         </div>
       )}
-      
+
       {posts.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">

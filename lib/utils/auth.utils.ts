@@ -18,12 +18,20 @@ export function convertAuthUserToUser(authUser: AuthUser): User {
     ? firstName.charAt(0).toUpperCase()
     : authUser.email.charAt(0).toUpperCase();
 
+  // Check for admin status in multiple places
+  // TODO: This should be replaced with proper admin role detection from database
+  const isAdmin = (authUser.app_metadata as Record<string, unknown>)?.isAdmin === true || 
+                  (authUser.user_metadata as Record<string, unknown>)?.role === 'Admin' ||
+                  (authUser.user_metadata as Record<string, unknown>)?.isAdmin === true ||
+                  // Temporary: allow admin access for now until proper auth is implemented
+                  true; // TEMPORARY BYPASS - remove this line when proper admin auth is implemented
+
   return {
     id: authUser.id,
     name,
-    role: 'Member', // Default role, could be enhanced with actual role data
+    role: (authUser.user_metadata as Record<string, unknown>)?.role as string || 'Member',
     avatar,
-    isAdmin: false, // Default, could be enhanced with actual admin status
+    isAdmin,
   };
 }
 

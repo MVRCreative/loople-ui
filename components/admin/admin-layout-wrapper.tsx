@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { 
   Sidebar,
@@ -39,9 +40,11 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
         >
           <SidebarHeader>
             <div className="flex h-16 items-center px-6">
-              <img
+              <Image
                 alt="Loople"
                 src="/loople logo3.svg"
+                width={32}
+                height={32}
                 className="h-8 w-auto"
               />
             </div>

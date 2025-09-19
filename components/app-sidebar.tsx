@@ -2,6 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { Users, Globe, DollarSign, Archive, Building } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -86,9 +87,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         {/* Logo */}
         <div className="flex h-16 items-center px-6">
-          <img 
+          <Image 
             src="/loople logo3.svg" 
             alt="Loople Logo" 
+            width={32}
+            height={32}
             className="h-8 w-auto"
           />
         </div>

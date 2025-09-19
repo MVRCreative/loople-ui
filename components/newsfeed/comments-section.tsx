@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Comment } from "./comment";
 import { CommentForm } from "./comment-form";
-import { Comment as CommentType, User } from "@/lib/types";
+import { Comment as CommentType, User, ApiComment } from "@/lib/types";
 import { postsService } from "@/lib/services/posts.service";
 import { transformApiCommentsToComments } from "@/lib/utils/posts.utils";
 import { toast } from "sonner";
@@ -14,10 +14,9 @@ interface CommentsSectionProps {
   postId: string;
   currentUser: User;
   initialComments?: CommentType[];
-  commentCount?: number; // optional, for badge/UI only
 }
 
-export function CommentsSection({ postId, currentUser, initialComments = [], commentCount }: CommentsSectionProps) {
+export function CommentsSection({ postId, currentUser, initialComments = [] }: CommentsSectionProps) {
   const [comments, setComments] = useState<CommentType[]>(initialComments);
   const [loading, setLoading] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);
@@ -33,15 +32,15 @@ export function CommentsSection({ postId, currentUser, initialComments = [], com
       });
 
       if (response.success && response.data) {
-        const transformedComments = transformApiCommentsToComments(response.data as unknown as any[]);
+        const comments = response.data;
         
         if (append) {
-          setComments(prev => [...prev, ...transformedComments]);
+          setComments(prev => [...prev, ...comments]);
         } else {
-          setComments(transformedComments);
+          setComments(comments);
         }
         
-        setHasMore(transformedComments.length === 10);
+        setHasMore(comments.length === 10);
       } else {
         toast.error(response.error || 'Failed to load comments');
       }
@@ -62,8 +61,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [], com
       });
 
       if (response.success && response.data) {
-        const [newComment] = transformApiCommentsToComments([response.data as unknown as any]);
-        setComments(prev => [...prev, newComment]);
+        setComments(prev => [...prev, response.data!]);
         toast.success("Comment posted!");
       } else {
         toast.error(response.error || 'Failed to post comment');
@@ -101,13 +99,14 @@ export function CommentsSection({ postId, currentUser, initialComments = [], com
     const postIdNumber = parseInt(postId);
     if (!postIdNumber) return;
 
-    const channel = postsService.subscribeToComments(postIdNumber, (payload: Record<string, unknown>) => {
-      const eventType = payload.eventType as string;
-      if (eventType === 'INSERT' && payload.new) {
-        const [inserted] = transformApiCommentsToComments([payload.new as unknown as any]);
+    const channel = postsService.subscribeToComments(postIdNumber, (payload: unknown) => {
+      const typedPayload = payload as Record<string, unknown>;
+      const eventType = typedPayload.eventType as string;
+      if (eventType === 'INSERT' && typedPayload.new) {
+        const [inserted] = transformApiCommentsToComments([typedPayload.new as ApiComment]);
         setComments(prev => [inserted, ...prev]);
-      } else if (eventType === 'DELETE' && payload.old) {
-        const deletedId = (payload.old as Record<string, unknown>).id as number;
+      } else if (eventType === 'DELETE' && typedPayload.old) {
+        const deletedId = (typedPayload.old as Record<string, unknown>).id as number;
         setComments(prev => prev.filter(c => c.id !== String(deletedId)));
       } else if (eventType === 'UPDATE') {
         // Reload the current page to reflect updates

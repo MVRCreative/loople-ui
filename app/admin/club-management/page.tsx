@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useAuth } from "@/lib/auth-context";
 import { useClub } from "@/lib/club-context";
 import { useRouter } from "next/navigation";
@@ -101,9 +102,11 @@ function RecentActivityList() {
       {activityItems.map((item, index) => (
         <li key={`${item.user.name}-${index}`} className="py-4">
           <div className="flex items-center gap-x-3">
-            <img 
+            <Image 
               alt="" 
               src={item.user.imageUrl} 
+              width={24}
+              height={24}
               className="size-6 flex-none rounded-full bg-gray-800" 
             />
             <h3 className="flex-auto truncate text-sm/6 font-semibold text-gray-900">
@@ -445,7 +448,7 @@ export default function ClubManagementPage() {
               }}
               onDeleteEvent={async (uiEvent) => {
                 try {
-                  await EventsService.deleteEvent(uiEvent.id);
+                  await EventsService.deleteEvent(uiEvent.id.toString());
                   await refreshEvents();
                 } catch {}
               }}
