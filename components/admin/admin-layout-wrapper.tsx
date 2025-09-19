@@ -23,9 +23,10 @@ import { cn } from "@/lib/utils"
 
 interface AdminLayoutWrapperProps {
   children: React.ReactNode
+  sidebarContent?: React.ReactNode
 }
 
-export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
+export function AdminLayoutWrapper({ children, sidebarContent }: AdminLayoutWrapperProps) {
   const { user } = useAuth()
   const pathname = usePathname()
 
@@ -48,61 +49,67 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
           </SidebarHeader>
           
           <SidebarContent className="px-3 py-4">
-            <SidebarGroup>
-              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {adminNavigation.map((item) => {
-                    const isActive = pathname === item.href
-                    return (
-                      <SidebarMenuItem key={item.name}>
-                        <SidebarMenuButton 
-                          asChild
-                          isActive={isActive}
-                          className={cn(
-                            "w-full justify-start",
-                            isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
-                          )}
-                        >
-                          <a href={item.href}>
-                            <item.icon className="mr-2 h-4 w-4" />
-                            {item.name}
-                          </a>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    )
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-            
-            <SidebarGroup>
-              <SidebarGroupLabel>System</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {adminSecondaryNavigation.map((item) => {
-                    const isActive = pathname === item.href
-                    return (
-                      <SidebarMenuItem key={item.name}>
-                        <SidebarMenuButton 
-                          asChild
-                          isActive={isActive}
-                          className={cn(
-                            "w-full justify-start",
-                            isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
-                          )}
-                        >
-                          <a href={item.href}>
-                            <item.icon className="mr-2 h-4 w-4" />
-                            {item.name}
-                          </a>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    )
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            {sidebarContent ? (
+              sidebarContent
+            ) : (
+              <>
+                <SidebarGroup>
+                  <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {adminNavigation.map((item) => {
+                        const isActive = pathname === item.href
+                        return (
+                          <SidebarMenuItem key={item.name}>
+                            <SidebarMenuButton 
+                              asChild
+                              isActive={isActive}
+                              className={cn(
+                                "w-full justify-start",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
+                              )}
+                            >
+                              <a href={item.href}>
+                                <item.icon className="mr-2 h-4 w-4" />
+                                {item.name}
+                              </a>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        )
+                      })}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+                
+                <SidebarGroup>
+                  <SidebarGroupLabel>System</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {adminSecondaryNavigation.map((item) => {
+                        const isActive = pathname === item.href
+                        return (
+                          <SidebarMenuItem key={item.name}>
+                            <SidebarMenuButton 
+                              asChild
+                              isActive={isActive}
+                              className={cn(
+                                "w-full justify-start",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
+                              )}
+                            >
+                              <a href={item.href}>
+                                <item.icon className="mr-2 h-4 w-4" />
+                                {item.name}
+                              </a>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        )
+                      })}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              </>
+            )}
           </SidebarContent>
           
           <SidebarFooter className="border-t border-sidebar-border p-4">
@@ -128,9 +135,11 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Main Content with Rounded Container */}
           <main className="flex-1 overflow-auto p-6 bg-sidebar">
-            <div className="w-full">
-              <div className="rounded-xl border border-border bg-card p-6 shadow-sm">
-                {children}
+            <div className="w-full h-full">
+              <div className="rounded-xl border border-border bg-card p-6 min-h-full">
+                <div className="max-w-3xl">
+                  {children}
+                </div>
               </div>
             </div>
           </main>

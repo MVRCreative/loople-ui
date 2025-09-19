@@ -26,7 +26,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   // const _isProfileRoute = pathname.startsWith("/profile");
   const isAuthRoute = pathname.startsWith("/auth");
   const isRootRoute = pathname === "/";
-  const isAdminRoute = pathname.startsWith("/admin");
+  const isAdminRoute = pathname.startsWith("/admin") || pathname.startsWith("/create-club");
   // const _isFeedPage = pathname === "/";
   // const _isClubManagementPage = pathname.startsWith("/club-management");
 
