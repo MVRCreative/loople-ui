@@ -209,7 +209,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     }
   };
 
-  const handleComment = (postId: string) => {
+  const handleComment = () => {
     // Comment functionality is handled by PostCard component
     // This function is called when comment button is clicked
   };

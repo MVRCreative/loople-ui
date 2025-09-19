@@ -8,8 +8,6 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 interface RSVPButtonGroupProps {
-  eventId: string;
-  userId: string;
   currentStatus?: EventRSVPStatus;
   onRSVPUpdate?: (status: EventRSVPStatus) => void;
   disabled?: boolean;
@@ -17,8 +15,6 @@ interface RSVPButtonGroupProps {
 }
 
 export function RSVPButtonGroup({ 
-  eventId, 
-  userId, 
   currentStatus = "not_responded",
   onRSVPUpdate,
   disabled = false,

@@ -16,7 +16,7 @@ import { toast } from "sonner";
 export default function AdminEditEventPage() {
   const params = useParams();
   const router = useRouter();
-  const { user: authUser, isAuthenticated } = useAuth();
+  const { user: authUser } = useAuth();
   
   const eventId = typeof params?.eventId === "string" ? params.eventId : "";
   const { event, loading, error, loadEvent } = useEvent(eventId);

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -58,9 +59,11 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-[80vh] w-full flex-col items-center justify-center p-4">
       <div className="mb-6 text-center">
-        <img 
+        <Image 
           src="/loople logo3.svg" 
           alt="Loople Logo" 
+          width={48}
+          height={48}
           className="h-12 w-auto mx-auto"
         />
       </div>

@@ -10,6 +10,7 @@ import { AttendeesTable } from "@/components/events/AttendeesTable";
 import { RSVPButtonGroup } from "@/components/events/RSVPButtonGroup";
 import { EventFeed } from "@/components/events/EventFeed";
 import { useEvent, useRSVP } from "@/lib/events/hooks";
+import { EventRSVPStatus } from "@/lib/events/types";
 import { useAuth } from "@/lib/auth-context";
 import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
 import { User } from "@/lib/types";
@@ -78,7 +79,7 @@ export default function EventDetailsPage() {
   };
 
   const handleRSVPUpdate = (status: string) => {
-    updateRSVP(status as any);
+    updateRSVP(status as EventRSVPStatus);
   };
 
   if (loading) {
@@ -134,8 +135,6 @@ export default function EventDetailsPage() {
         <Card>
           <CardContent className="py-6">
             <RSVPButtonGroup
-              eventId={event.id}
-              userId={currentUser.id}
               currentStatus={userRSVPStatus}
               onRSVPUpdate={handleRSVPUpdate}
             />

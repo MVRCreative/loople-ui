@@ -110,8 +110,6 @@ export default function TestEventsPage() {
           </CardHeader>
           <CardContent>
             <RSVPButtonGroup
-              eventId={firstEvent.id}
-              userId="user-1"
               currentStatus="not_responded"
               onRSVPUpdate={handleRSVPUpdate}
             />

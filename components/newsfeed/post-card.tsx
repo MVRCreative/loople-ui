@@ -1,6 +1,5 @@
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Post, User, ApiPost, MediaAttachment } from "@/lib/types";
 import { CreatePostRequest } from "@/lib/services/posts.service";
 import { EventCard } from "./event-card";
@@ -8,8 +7,6 @@ import { PostActions } from "./post-actions";
 import { PollVoting } from "./poll-voting";
 import { CommentsSection } from "./comments-section";
 import { PostEditForm } from "./post-edit-form";
-import { MoreHorizontal, Edit, Trash2 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { postsService } from "@/lib/services/posts.service";
 import { toast } from "sonner";
 import { useClub } from "@/lib/club-context";
@@ -223,7 +220,6 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
         <CommentsSection
           postId={post.id}
           currentUser={currentUser}
-          commentCount={commentsCount}
         />
       )}
     </div>

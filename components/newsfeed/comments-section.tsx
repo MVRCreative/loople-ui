@@ -14,10 +14,9 @@ interface CommentsSectionProps {
   postId: string;
   currentUser: User;
   initialComments?: CommentType[];
-  commentCount?: number; // optional, for badge/UI only
 }
 
-export function CommentsSection({ postId, currentUser, initialComments = [], commentCount }: CommentsSectionProps) {
+export function CommentsSection({ postId, currentUser, initialComments = [] }: CommentsSectionProps) {
   const [comments, setComments] = useState<CommentType[]>(initialComments);
   const [loading, setLoading] = useState(false);
   const [showCommentForm, setShowCommentForm] = useState(false);

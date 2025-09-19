@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Image from "next/image";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { 
   Building2, 
   Users, 
@@ -222,7 +221,7 @@ export default function AdminPage() {
                     <td className="py-5 pr-3 pl-4 text-sm whitespace-nowrap sm:pl-0">
                       <div className="flex items-center">
                         <div className="size-11 shrink-0">
-                          <img alt="" src={person.image} className="size-11 rounded-full" />
+                          <Image alt="" src={person.image} width={44} height={44} className="size-11 rounded-full" />
                         </div>
                         <div className="ml-4">
                           <div className="font-medium text-foreground">{person.name}</div>

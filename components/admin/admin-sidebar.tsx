@@ -2,16 +2,9 @@
 
 import React from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { 
-  NavigationMenu, 
-  NavigationMenuList, 
-  NavigationMenuItem, 
-  NavigationMenuContent, 
-  NavigationMenuTrigger, 
-  NavigationMenuLink 
-} from "@/components/ui/navigation-menu"
 import { ClubSwitcher } from "@/components/club-switcher"
 import { adminNavigation, adminSecondaryNavigation } from "./admin-navigation"
 import { useAuth } from "@/lib/auth-context"
@@ -23,9 +16,11 @@ export function AdminSidebar() {
   return (
     <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-sidebar px-6 pb-2">
       <div className="relative flex h-16 shrink-0 items-center">
-        <img
+        <Image
           alt="Loople"
           src="/loople logo3.svg"
+          width={32}
+          height={32}
           className="h-8 w-auto"
         />
       </div>

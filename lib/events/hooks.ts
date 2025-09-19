@@ -7,8 +7,6 @@ import { RSVPService, EventRegistration } from "@/lib/services/rsvp.service";
 import { useClub } from "@/lib/club-context";
 import { 
   mockEvents, 
-  mockRSVPs, 
-  mockEventPosts, 
   getEventById, 
   getRSVPsByEventId, 
   getPostsByEventId 
@@ -86,8 +84,8 @@ export function useEvents() {
             is_upcoming: startDate > now,
             is_past: startDate < now,
             rsvp_count: {
-              going: event.event_registrations?.filter((r: any) => r.status === 'confirmed').length || 0,
-              maybe: event.event_registrations?.filter((r: any) => r.status === 'registered').length || 0,
+              going: event.event_registrations?.filter((r: { status: string }) => r.status === 'confirmed').length || 0,
+              maybe: event.event_registrations?.filter((r: { status: string }) => r.status === 'registered').length || 0,
               not_going: 0,
               total: event.event_registrations?.length || 0,
             },
@@ -183,8 +181,8 @@ export function useEvent(eventId: string) {
           is_upcoming: startDate > now,
           is_past: startDate < now,
           rsvp_count: {
-            going: apiEvent.event_registrations?.filter((r: any) => r.status === 'confirmed').length || 0,
-            maybe: apiEvent.event_registrations?.filter((r: any) => r.status === 'registered').length || 0,
+            going: apiEvent.event_registrations?.filter((r: { status: string }) => r.status === 'confirmed').length || 0,
+            maybe: apiEvent.event_registrations?.filter((r: { status: string }) => r.status === 'registered').length || 0,
             not_going: 0,
             total: apiEvent.event_registrations?.length || 0,
           },

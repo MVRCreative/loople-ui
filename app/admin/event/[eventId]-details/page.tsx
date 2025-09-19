@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,13 +11,13 @@ import { useEvent } from "@/lib/events/hooks";
 import { useAuth } from "@/lib/auth-context";
 import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
 import { User } from "@/lib/types";
-import { ArrowLeft, Edit, Eye, Share2, Calendar, Users, BarChart3 } from "lucide-react";
+import { ArrowLeft, Edit, Eye, Share2, Users, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AdminEventDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const { user: authUser, isAuthenticated } = useAuth();
+  const { user: authUser } = useAuth();
   
   const eventId = typeof params?.eventId === "string" ? params.eventId : "";
   const { event, rsvps, posts, loading, error, loadEvent } = useEvent(eventId);

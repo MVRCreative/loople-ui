@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useEvents } from "@/lib/events/hooks";
 import { formatEventDateTime, formatEventLocation, getEventStatusText } from "@/lib/events/selectors";
-import { Search, Plus, Eye, Edit, BarChart3, Filter, Calendar, Users } from "lucide-react";
+import { Search, Plus, Eye, BarChart3, Filter, Calendar, Users, Edit } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
 import { User } from "@/lib/types";
@@ -17,7 +17,7 @@ import { User } from "@/lib/types";
 export default function AdminEventsPage() {
   const router = useRouter();
   const { events, loading, error, loadEvents } = useEvents();
-  const { user: authUser, isAuthenticated } = useAuth();
+  const { user: authUser } = useAuth();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");

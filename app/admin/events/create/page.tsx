@@ -17,12 +17,10 @@ import {
   Upload,
   DollarSign,
   Users,
-  Clock,
   Image as ImageIcon,
   ChevronDown,
   Eye,
   Save,
-  MessageSquare,
   HelpCircle,
   Plus,
   X,
@@ -33,7 +31,6 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useEvents } from "@/lib/events/hooks";
 import { EventHeader } from "@/components/events/EventHeader";
-import { EventCard } from "@/components/events/EventCard";
 import { EventDetail, EventVisibility, EventStatus, EventListItem } from "@/lib/events/types";
 import { getUpcomingEventListItems } from "@/lib/mocks/events";
 import { formatEventDateTime, formatEventLocation } from "@/lib/events/selectors";

@@ -103,7 +103,7 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
       
       setStatus("saved")
       setMessage("Profile updated.")
-    } catch (error) {
+    } catch {
       setStatus("error")
       setMessage("Failed to update profile. Please try again.")
     }

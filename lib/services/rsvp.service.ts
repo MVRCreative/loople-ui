@@ -10,7 +10,7 @@ export interface EventRegistration {
   payment_amount?: number;
   payment_status: 'pending' | 'paid' | 'refunded';
   payment_id?: number;
-  registration_data: any;
+  registration_data: Record<string, unknown>;
   notes?: string;
   created_at: string;
   updated_at: string;

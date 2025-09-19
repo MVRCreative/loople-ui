@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Clock, Eye, EyeOff, Lock, Edit, Trash2 } from "lucide-react";
 import { EventListItem } from "@/lib/events/types";
@@ -108,9 +109,11 @@ export function EventCard({
           {/* Event Image */}
           {event.image_url && (
             <div className="mb-3">
-              <img 
+              <Image 
                 src={event.image_url} 
                 alt={event.title}
+                width={400}
+                height={192}
                 className="w-full h-48 object-cover rounded-md"
               />
             </div>
