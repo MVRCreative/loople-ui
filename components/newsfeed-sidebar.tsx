@@ -64,8 +64,8 @@ export function NewsfeedSidebar() {
             const isActive = item.href && item.href !== "#" && pathname === item.href
             const content = (
               <>
-                <item.icon className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
-                <span className={`text-xs sm:text-sm font-medium ${isActive ? 'text-primary' : 'text-foreground'}`}>{item.name}</span>
+                <item.icon className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 group-hover:text-blue-600 dark:group-hover:text-blue-400 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`} />
+                <span className={`text-xs sm:text-sm font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>{item.name}</span>
                 {item.badge && (
                   <div className="ml-auto flex h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white font-semibold">
                     {item.badge}
@@ -79,10 +79,10 @@ export function NewsfeedSidebar() {
                 {item.href && item.href !== "#" ? (
                   <Button
                     variant="ghost"
-                    className={`w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-10 md:h-12 px-1 sm:px-2 md:px-3 rounded-lg transition-all duration-200 ${
+                    className={`group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-10 md:h-12 px-1 sm:px-2 md:px-3 rounded-lg transition-all duration-350 ease-in-out hover:scale-[1.05] hover:bg-muted ${
                       isActive 
-                        ? 'bg-accent hover:bg-accent/80' 
-                        : 'hover:bg-accent'
+                        ? 'bg-muted' 
+                        : ''
                     }`}
                     asChild
                   >
@@ -91,7 +91,7 @@ export function NewsfeedSidebar() {
                 ) : (
                   <Button
                     variant="ghost"
-                    className="w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-10 md:h-12 px-1 sm:px-2 md:px-3 rounded-lg hover:bg-accent transition-all duration-200"
+                    className="group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-10 md:h-12 px-1 sm:px-2 md:px-3 rounded-lg transition-all duration-350 ease-in-out hover:scale-[1.05] hover:bg-muted"
                     onClick={(e) => e.preventDefault()}
                   >
                     {content}
@@ -108,9 +108,9 @@ export function NewsfeedSidebar() {
 
       {/* Theme toggle and logout */}
       <div className="flex flex-col gap-1 sm:gap-2 px-1 sm:px-2 md:px-3 py-2 sm:py-3 md:py-4 border-t border-border">
-        <div className="flex items-center gap-1 sm:gap-2 md:gap-3 px-1 sm:px-2 md:px-3 py-1 sm:py-2 rounded-lg hover:bg-accent transition-colors duration-200">
-          <Moon className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-muted-foreground" />
-          <span className="text-xs sm:text-sm text-foreground">Dark Mode</span>
+        <div className="group flex items-center gap-1 sm:gap-2 md:gap-3 px-1 sm:px-2 md:px-3 py-1 sm:py-2 rounded-lg transition-all duration-350 ease-in-out hover:scale-[1.05] hover:bg-muted">
+          <Moon className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-muted-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+          <span className="text-xs sm:text-sm text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400">Dark Mode</span>
           <div className="ml-auto">
             <ThemeSwitch />
           </div>
@@ -121,17 +121,17 @@ export function NewsfeedSidebar() {
         {isAuthenticated ? (
           <Button 
             variant="ghost" 
-            className="w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-9 md:h-10 px-1 sm:px-2 md:px-3 rounded-lg hover:bg-accent transition-all duration-200" 
+            className="group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-9 md:h-10 px-1 sm:px-2 md:px-3 rounded-lg transition-all duration-350 ease-in-out hover:scale-[1.05] hover:bg-muted" 
             onClick={handleLogout}
           >
-            <LogOut className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-muted-foreground" />
-            <span className="text-xs sm:text-sm text-foreground">Sign Out</span>
+            <LogOut className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-muted-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+            <span className="text-xs sm:text-sm text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400">Sign Out</span>
           </Button>
         ) : (
-          <Button variant="ghost" className="w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-9 md:h-10 px-1 sm:px-2 md:px-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-all duration-200" asChild>
+          <Button variant="ghost" className="group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-9 md:h-10 px-1 sm:px-2 md:px-3 rounded-lg transition-all duration-350 ease-in-out hover:scale-[1.05] hover:bg-muted" asChild>
             <Link href="/auth/login">
-              <User className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-muted-foreground" />
-              <span className="text-xs sm:text-sm text-foreground">Sign In</span>
+              <User className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-muted-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+              <span className="text-xs sm:text-sm text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400">Sign In</span>
             </Link>
           </Button>
         )}

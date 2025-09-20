@@ -21,7 +21,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const router = useRouter();
 
   // const _isNewsfeedRoute = pathname === "/";
-  // const _isMessagesRoute = pathname.startsWith("/messages");
+  const isMessagesRoute = pathname.startsWith("/messages");
   // const _isSettingsRoute = pathname.startsWith("/settings");
   // const _isProfileRoute = pathname.startsWith("/profile");
   const isAuthRoute = pathname.startsWith("/auth");
@@ -59,6 +59,14 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
 
   // Dynamic grid layout
   const getGridLayout = () => {
+    // Messages pages: nav (xl only) + content. On lg, nav is hidden so use a single column.
+    if (isMessagesRoute) {
+      return `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
+        [grid-template-columns:600px]
+        lg:[grid-template-columns:1fr]
+        xl:[grid-template-columns:275px_1fr]`;
+    }
+    
     // Club management pages get full width - no right sidebar
     if (isClubManagementPage) {
       return `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
@@ -73,6 +81,22 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
       lg:[grid-template-columns:600px_350px]
       xl:[grid-template-columns:275px_600px_350px]`;
   };
+
+  // For messages pages, use 3-column layout: nav + conversations + message thread
+  if (isMessagesRoute) {
+    return (
+      <div className="min-h-screen w-full bg-background">
+        <div className={`grid gap-x-0 mx-auto justify-center ${getGridLayout()}`}>
+          <aside className="hidden xl:block">
+            <NewsfeedSidebar />
+          </aside>
+          <main className="relative">
+            {children}
+          </main>
+        </div>
+      </div>
+    );
+  }
 
   // For club management pages, use a simpler layout without right sidebar
   if (isClubManagementPage) {

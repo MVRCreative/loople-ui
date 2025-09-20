@@ -5,14 +5,28 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Mail } from "lucide-react";
 import { mockConversations } from "@/lib/mock-messages"; // DEPRECATED: This component uses mock data and should be replaced with real Supabase messaging
+import { useEffect, useMemo, useState } from "react";
 
 interface ConversationsListProps {
   selectedId?: string;
 }
 
 export function ConversationsList({ selectedId }: ConversationsListProps) {
+  // Local state for read/unread styling and ordering
+  const [conversations, setConversations] = useState(() => mockConversations);
+
+  // Mark selected conversation as read when viewing its thread
+  useEffect(() => {
+    if (!selectedId) return;
+    setConversations((prev) =>
+      prev.map((c) => (c.id === selectedId ? { ...c, unread: false } : c))
+    );
+  }, [selectedId]);
+
+  const ordered = useMemo(() => conversations, [conversations]);
+
   return (
-    <div className="w-[350px] border-r border-border bg-background h-screen sticky top-0">
+    <div className="w-[350px] border-l border-r border-border bg-background text-foreground h-screen sticky top-0">
       <div className="p-3 sticky top-0 bg-background z-10">
         <div className="flex items-center gap-2">
           <Input placeholder="Search Direct Messages" className="h-9" />
@@ -41,7 +55,7 @@ export function ConversationsList({ selectedId }: ConversationsListProps) {
               </div>
             </Link>
           </li>
-          {mockConversations.map((c) => {
+          {ordered.map((c) => {
             const isActive = c.id === selectedId;
             return (
               <li key={c.id}>
@@ -55,10 +69,10 @@ export function ConversationsList({ selectedId }: ConversationsListProps) {
                     <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center text-sm">{c.name.charAt(0)}</div>
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium truncate">{c.name}</p>
+                        <p className={`truncate ${c.unread ? "font-semibold text-foreground" : "font-medium text-foreground"}`}>{c.name}</p>
                         <span className="text-xs text-muted-foreground">{c.lastTimestamp}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground truncate">{c.lastMessage}</p>
+                      <p className={`text-xs truncate ${c.unread ? "text-foreground" : "text-muted-foreground"}`}>{c.lastMessage}</p>
                     </div>
                     {c.unread && <span className="h-2 w-2 rounded-full bg-primary mt-2" />}
                   </div>

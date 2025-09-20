@@ -9,13 +9,13 @@ export default function MessageThreadPage() {
   const id = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : "";
 
   return (
-    <div className="flex flex-1 flex-col overflow-hidden">
-      {/* On mobile (<lg), only show the thread with a back button; at >=lg, list + thread are shown via ConditionalSidebar's right rail */}
-      <div className="lg:hidden">
+    <div className="flex flex-1 h-screen overflow-hidden">
+      {/* Conversations list - middle column */}
+      <ConversationsList selectedId={id} />
+      
+      {/* Message thread - right column */}
+      <div className="flex-1">
         <MessageThread id={id} />
-      </div>
-      <div className="hidden lg:block">
-        <ConversationsList selectedId={id} />
       </div>
     </div>
   );
