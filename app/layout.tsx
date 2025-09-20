@@ -30,7 +30,11 @@ export default function RootLayout({
           rel="preload" 
           href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&display=swap" 
           as="style" 
-          onLoad="this.onload=null;this.rel='stylesheet'"
+          onLoad={(e) => {
+            const link = e.currentTarget as HTMLLinkElement
+            link.onload = null
+            link.rel = 'stylesheet'
+          }}
         />
         <noscript>
           <link href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&display=swap" rel="stylesheet" />
