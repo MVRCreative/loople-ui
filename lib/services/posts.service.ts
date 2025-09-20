@@ -250,7 +250,7 @@ class PostsService {
   removeChannel(channel: unknown) {
     // supabase.removeChannel expects a RealtimeChannel instance; keep type loose to avoid import coupling
     // @ts-expect-error - RealtimeChannel type not imported to avoid coupling
-    return supabase.removeChannel(channel as any)
+    return supabase.removeChannel(channel as unknown)
   }
 
   // Media Attachments
