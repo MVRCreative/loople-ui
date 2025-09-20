@@ -21,6 +21,11 @@ export function AdminEventStats({
   const rsvpCounts = getRSVPCounts(rsvps);
   const totalResponses = rsvpCounts.total;
   const responseRate = event.capacity?.max ? (totalResponses / event.capacity.max) * 100 : 0;
+  
+  // Safe locals for capacity values
+  const current = event.capacity?.current ?? 0;
+  const max = event.capacity?.max ?? 0;
+  const percent = max > 0 ? Math.min((current / max) * 100, 100) : 0;
 
   const handleExportRSVPs = () => {
     // TODO: Implement CSV export functionality
@@ -106,7 +111,7 @@ export function AdminEventStats({
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Capacity Utilization</span>
                 <span className="text-sm text-muted-foreground">
-                  {event.capacity.current} / {event.capacity.max}
+                  {current} / {max}
                 </span>
               </div>
               
@@ -114,14 +119,14 @@ export function AdminEventStats({
                 <div 
                   className="bg-primary h-2 rounded-full transition-all duration-300"
                   style={{ 
-                    width: `${Math.min((event.capacity.current / event.capacity.max) * 100, 100)}%` 
+                    width: `${percent}%` 
                   }}
                 />
               </div>
               
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">
-                  {event.capacity.max - event.capacity.current} spots remaining
+                  {max - current} spots remaining
                 </span>
                 {event.capacity.waitlist && (
                   <Badge variant="outline" className="text-orange-600">
