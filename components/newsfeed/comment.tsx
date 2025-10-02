@@ -43,14 +43,14 @@ export function Comment({ comment, currentUser, onReply, onDelete, isReply = fal
     }
   };
 
-  const canDelete = currentUser.id === comment.user.id || currentUser.isAdmin;
+  const canDelete = !!comment.user && (currentUser.id === comment.user.id || currentUser.isAdmin);
 
   return (
     <div className={`${isReply ? 'ml-8 border-l-2 border-border pl-4' : ''}`}>
       <div className="flex gap-3 mb-3">
         <Avatar className="h-8 w-8">
           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">
-            {comment.user.avatar}
+            {comment.user?.avatar ?? '👤'}
           </div>
         </Avatar>
         
@@ -58,10 +58,10 @@ export function Comment({ comment, currentUser, onReply, onDelete, isReply = fal
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="font-semibold text-sm text-card-foreground">
-                {comment.user.name}
+                {comment.user?.name ?? 'Unknown User'}
               </span>
               <Badge variant="secondary" className="text-xs">
-                {comment.user.role}
+                {comment.user?.role ?? 'Member'}
               </Badge>
             </div>
             
@@ -124,7 +124,7 @@ export function Comment({ comment, currentUser, onReply, onDelete, isReply = fal
             onSubmit={handleReply}
             onCancel={() => setShowReplyForm(false)}
             parentCommentId={parseInt(comment.id)}
-            placeholder={`Reply to ${comment.user.name}...`}
+            placeholder={`Reply to ${comment.user?.name ?? 'user'}...`}
           />
         </div>
       )}

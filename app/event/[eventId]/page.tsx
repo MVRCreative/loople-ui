@@ -214,6 +214,7 @@ export default function EventDetailsPage() {
             
             <EventFeed 
               eventId={event.id}
+              clubId={parseInt(event.club_id)}
               className="mt-4"
             />
           </div>

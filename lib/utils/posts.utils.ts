@@ -87,15 +87,25 @@ export function transformApiPostToPost(apiPost: ApiPost): Post {
     text: apiPost.content_text,
   } as unknown
 
-  // Add event data if it's an event post
-  if (apiPost.content_type === 'event' && apiPost.events) {
+  // Add event data when event join is available (regardless of content_type)
+  if (apiPost.events) {
     (content as Record<string, unknown>).event = createEventFromApi(apiPost.events)
   }
 
-  // Add poll data if it's a poll post
-  if (apiPost.content_type === 'poll' && apiPost.poll_question && apiPost.poll_options) {
-    const pollOptions = JSON.parse(apiPost.poll_options)
-    const pollVotesRaw = JSON.parse(apiPost.poll_votes || '{}') as Record<string, number>
+  // Add poll data when poll fields are present
+  if (apiPost.poll_question && apiPost.poll_options) {
+    let pollOptions: string[] = []
+    try {
+      pollOptions = JSON.parse(apiPost.poll_options)
+    } catch {
+      // keep empty if parsing fails
+    }
+    let pollVotesRaw: Record<string, number> = {}
+    try {
+      pollVotesRaw = JSON.parse(apiPost.poll_votes || '{}') as Record<string, number>
+    } catch {
+      // keep empty if parsing fails
+    }
     
     // Clean up poll votes - remove user vote tracking keys and keep only vote counts
     const pollVotes: Record<string, number> = {}
