@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,6 +16,11 @@ import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
 import { User } from "@/lib/types";
 import { ArrowLeft, Share2, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { useClub } from "@/lib/club-context";
+import { RSVPService, EventRegistration } from "@/lib/services/rsvp.service";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function EventDetailsPage() {
   const params = useParams();
@@ -31,6 +36,7 @@ export default function EventDetailsPage() {
   
   const { event, rsvps, posts, loading, error, loadEvent } = useEvent(eventId);
   const { getUserRSVP, updateRSVP, loadRSVPs } = useRSVP(eventId, currentUser.id);
+  const { selectedClub, isOwner } = useClub();
 
   // Load event and RSVPs on mount
   useEffect(() => {
@@ -41,6 +47,59 @@ export default function EventDetailsPage() {
   // Find user's RSVP status
   const userRSVP = getUserRSVP();
   const userRSVPStatus = userRSVP?.status || "not_responded";
+
+  // Determine owner management access
+  const canManage = !!(isOwner && selectedClub && event && String(selectedClub.id) === event.club_id);
+
+  // Owner RSVP management state
+  const [registrations, setRegistrations] = useState<EventRegistration[]>([]);
+  const [loadingRegistrations, setLoadingRegistrations] = useState(false);
+  const [updatingRsvpId, setUpdatingRsvpId] = useState<number | null>(null);
+  const [rsvpSearch, setRsvpSearch] = useState<string>("");
+
+  useEffect(() => {
+    if (!eventId || !canManage) return;
+    const fetchRegs = async () => {
+      try {
+        setLoadingRegistrations(true);
+        const regs = await RSVPService.getEventRSVPs(eventId);
+        setRegistrations(regs);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to load RSVPs");
+      } finally {
+        setLoadingRegistrations(false);
+      }
+    };
+    fetchRegs();
+  }, [eventId, canManage]);
+
+  const filteredRegistrations = useMemo(() => {
+    if (!rsvpSearch.trim()) return registrations;
+    const term = rsvpSearch.trim().toLowerCase();
+    return registrations.filter((reg) =>
+      `${reg.members.first_name} ${reg.members.last_name}`.toLowerCase().includes(term) ||
+      (reg.members.email?.toLowerCase() || '').includes(term)
+    );
+  }, [registrations, rsvpSearch]);
+
+  const updateMemberRsvp = async (
+    registrationId: number,
+    memberId: number,
+    status: 'registered' | 'confirmed' | 'canceled' | 'waitlisted' | 'attended'
+  ) => {
+    if (!eventId) return;
+    try {
+      setUpdatingRsvpId(registrationId);
+      await RSVPService.updateMemberRSVP(eventId, memberId, status);
+      toast.success("RSVP updated");
+      const regs = await RSVPService.getEventRSVPs(eventId);
+      setRegistrations(regs);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update RSVP");
+    } finally {
+      setUpdatingRsvpId(null);
+    }
+  };
 
   const handleBack = () => {
     router.back();
@@ -155,6 +214,7 @@ export default function EventDetailsPage() {
             
             <EventFeed 
               eventId={event.id}
+              clubId={parseInt(event.club_id)}
               className="mt-4"
             />
           </div>
@@ -166,6 +226,90 @@ export default function EventDetailsPage() {
         <Card>
           <CardContent className="py-6">
             <AttendeesTable rsvps={rsvps} />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Owner-only: Manage RSVPs */}
+      {canManage && (
+        <Card>
+          <CardContent className="py-6">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Manage RSVPs</h2>
+                <Input
+                  placeholder="Search by name or email"
+                  value={rsvpSearch}
+                  onChange={(e) => setRsvpSearch(e.target.value)}
+                  className="max-w-sm"
+                />
+              </div>
+              <div className="rounded-md border border-border overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs lg:text-sm">Member</TableHead>
+                      <TableHead className="text-xs lg:text-sm">Status</TableHead>
+                      <TableHead className="text-xs lg:text-sm">Responded</TableHead>
+                      <TableHead className="text-xs lg:text-sm text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredRegistrations.map((reg) => (
+                      <TableRow key={reg.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
+                              {(reg.members.first_name?.[0] || '👤')}
+                            </div>
+                            <div>
+                              <div className="font-medium">{reg.members.first_name} {reg.members.last_name}</div>
+                              <div className="text-xs text-muted-foreground">{reg.members.email}</div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="w-[220px]">
+                          <Select
+                            value={reg.status}
+                            onValueChange={(value) => updateMemberRsvp(
+                              reg.id,
+                              reg.members.id,
+                              value as 'registered' | 'confirmed' | 'canceled' | 'waitlisted' | 'attended'
+                            )}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="registered">Registered (Maybe)</SelectItem>
+                              <SelectItem value="confirmed">Confirmed (Going)</SelectItem>
+                              <SelectItem value="canceled">Canceled (Not going)</SelectItem>
+                              <SelectItem value="waitlisted">Waitlisted</SelectItem>
+                              <SelectItem value="attended">Attended</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {new Date(reg.registration_date).toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="outline" size="sm" disabled>
+                            —
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {filteredRegistrations.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
+                          {loadingRegistrations ? 'Loading RSVPs…' : 'No RSVPs found.'}
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}

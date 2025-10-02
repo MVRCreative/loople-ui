@@ -31,6 +31,7 @@ export interface PostsQueryParams {
   club_id?: number
   user_id?: string
   content_type?: string
+  event_id?: number
   page?: number
   limit?: number
   search?: string

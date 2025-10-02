@@ -32,15 +32,15 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
       });
 
       if (response.success && response.data) {
-        const comments = response.data;
+        const transformed = transformApiCommentsToComments(response.data as unknown as ApiComment[]);
         
         if (append) {
-          setComments(prev => [...prev, ...comments]);
+          setComments(prev => [...prev, ...transformed]);
         } else {
-          setComments(comments);
+          setComments(transformed);
         }
         
-        setHasMore(comments.length === 10);
+        setHasMore(transformed.length === 10);
       } else {
         toast.error(response.error || 'Failed to load comments');
       }
@@ -61,7 +61,8 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
       });
 
       if (response.success && response.data) {
-        setComments(prev => [...prev, response.data!]);
+        const [inserted] = transformApiCommentsToComments([response.data as unknown as ApiComment]);
+        setComments(prev => [...prev, inserted]);
         toast.success("Comment posted!");
       } else {
         toast.error(response.error || 'Failed to post comment');

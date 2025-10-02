@@ -14,7 +14,7 @@ import { useAuth } from "@/lib/auth-context"
 const navigation = [
   { name: "Home", href: "/", icon: Home },
   { name: "Programs", href: "#", icon: Users },
-  { name: "Events", href: "#", icon: Bell },
+  { name: "Events", href: "/events", icon: Bell },
   { name: "Messages", href: "/messages", icon: MessageSquare, badge: "3" },
   { name: "Notifications", href: "#", icon: Bell, badge: "5" },
   { name: "Profile", href: "/profile/ricardo-cooper", icon: User },

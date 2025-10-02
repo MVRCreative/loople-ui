@@ -50,8 +50,9 @@ export function useEvents() {
           const now = new Date();
           const startDate = new Date(event.start_date);
           const endDate = new Date(event.end_date);
-          
-          
+          const isPast = endDate < now;
+          const isUpcoming = !isPast; // includes ongoing and future
+
           return {
             id: event.id.toString(),
             title: event.title,
@@ -81,8 +82,8 @@ export function useEvents() {
             created_by: '', // Not available in current API
             created_at: event.created_at,
             updated_at: event.updated_at,
-            is_upcoming: startDate > now,
-            is_past: startDate < now,
+            is_upcoming: isUpcoming,
+            is_past: isPast,
             rsvp_count: {
               going: event.event_registrations?.filter((r: { status: string }) => r.status === 'confirmed').length || 0,
               maybe: event.event_registrations?.filter((r: { status: string }) => r.status === 'registered').length || 0,
@@ -148,6 +149,8 @@ export function useEvent(eventId: string) {
         const now = new Date();
         const startDate = new Date(apiEvent.start_date || now);
         const endDate = new Date(apiEvent.end_date || now);
+        const isPast = endDate < now;
+        const isUpcoming = !isPast; // includes ongoing and future
         
         const transformedEvent: EventDetail = {
           id: apiEvent.id?.toString() || '',
@@ -178,8 +181,8 @@ export function useEvent(eventId: string) {
           created_by: '', // Not available in current API
           created_at: apiEvent.created_at || new Date().toISOString(),
           updated_at: apiEvent.updated_at || new Date().toISOString(),
-          is_upcoming: startDate > now,
-          is_past: startDate < now,
+          is_upcoming: isUpcoming,
+          is_past: isPast,
           rsvp_count: {
             going: apiEvent.event_registrations?.filter((r: { status: string }) => r.status === 'confirmed').length || 0,
             maybe: apiEvent.event_registrations?.filter((r: { status: string }) => r.status === 'registered').length || 0,

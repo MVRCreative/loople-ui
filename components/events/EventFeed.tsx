@@ -3,21 +3,23 @@
 import { useEffect, useState } from "react";
 import { PostForm } from "@/components/newsfeed/post-form";
 import { PostCard } from "@/components/newsfeed/post-card";
-import { Post, User } from "@/lib/types";
+import { Post, User, ApiPost } from "@/lib/types";
 import { EventPost } from "@/lib/events/types";
 import { useAuth } from "@/lib/auth-context";
 import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
-import { getPostsByEventId } from "@/lib/mocks/events";
+import { postsService } from "@/lib/services/posts.service";
+import { transformApiPostsToPosts } from "@/lib/utils/posts.utils";
 import { toast } from "sonner";
 
 interface EventFeedProps {
   eventId: string;
+  clubId?: number;
   className?: string;
 }
 
-export function EventFeed({ eventId, className }: EventFeedProps) {
+export function EventFeed({ eventId, clubId, className }: EventFeedProps) {
   const { user: authUser, isAuthenticated } = useAuth();
-  const [posts, setPosts] = useState<EventPost[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -31,50 +33,23 @@ export function EventFeed({ eventId, className }: EventFeedProps) {
     const loadPosts = async () => {
       setLoading(true);
       setError(null);
-      
       try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 300));
-        setPosts(getPostsByEventId(eventId));
+        const response = await postsService.getPosts({ event_id: parseInt(eventId), sort_by: 'created_at', sort_order: 'desc', limit: 20 });
+        if (response.success && response.data) {
+          setPosts(transformApiPostsToPosts(response.data as unknown as ApiPost[]));
+        } else {
+          setPosts([]);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load posts");
       } finally {
         setLoading(false);
       }
     };
-
-    loadPosts();
+    if (eventId) loadPosts();
   }, [eventId]);
 
-  // Transform event posts to match PostCard expectations
-  const [transformedPosts, setTransformedPosts] = useState<Post[]>([]);
-
-  useEffect(() => {
-    if (posts && posts.length > 0) {
-      const transformed = posts.map((eventPost): Post => ({
-        id: eventPost.post.id,
-        user: {
-          id: eventPost.post.user.id,
-          name: eventPost.post.user.name,
-          role: eventPost.post.user.role,
-          avatar: eventPost.post.user.avatar,
-          isAdmin: false, // TODO: Determine from user data
-        },
-        content: {
-          type: eventPost.post.content_type as "text" | "event" | "poll",
-          text: eventPost.post.content,
-        },
-        timestamp: new Date(eventPost.post.created_at).toLocaleString(),
-        reactions: 0, // TODO: Get from post data
-        comments: 0, // TODO: Get from post data
-        isLiked: false, // TODO: Get from user's reaction data
-      }));
-      
-      setTransformedPosts(transformed);
-    } else {
-      setTransformedPosts([]);
-    }
-  }, [posts]);
+  const transformedPosts = posts;
 
   const handleCreatePost = async (content: string, type: "text" | "event" | "poll") => {
     if (!isAuthenticated) {
@@ -83,30 +58,38 @@ export function EventFeed({ eventId, className }: EventFeedProps) {
     }
 
     try {
-      // TODO: Implement real API call to create event post
-      // For now, create a mock post
-      const mockPost: EventPost = {
-        id: `event-post-${Date.now()}`,
-        event_id: eventId,
-        post_id: `post-${Date.now()}`,
-        created_at: new Date().toISOString(),
-        post: {
-          id: `post-${Date.now()}`,
-          content,
-          content_type: type,
-          user_id: currentUser.id,
-          created_at: new Date().toISOString(),
-          user: {
-            id: currentUser.id,
-            name: currentUser.name,
-            avatar: currentUser.avatar,
-            role: currentUser.role,
-          },
-        },
-      };
+      // Prepare payload; polls require poll_question/poll_options fields on the backend
+      let contentText = content;
+      let pollQuestion: string | undefined;
+      let pollOptions: string[] | undefined;
 
-      setPosts(prev => [...prev, mockPost]);
-      toast.success("Post created successfully!");
+      if (type === 'poll') {
+        try {
+          const parsed = JSON.parse(content) as { text?: string; poll?: { question?: string; options?: string[] } };
+          contentText = parsed.text || '';
+          pollQuestion = parsed.poll?.question;
+          pollOptions = parsed.poll?.options;
+        } catch {
+          // If parsing fails, keep defaults; backend will validate and return error
+        }
+      }
+
+      const createRes = await postsService.createPost({
+        club_id: clubId || 0,
+        content_type: type,
+        content_text: contentText,
+        event_id: parseInt(eventId),
+        ...(type === 'poll' && pollQuestion && pollOptions && pollOptions.length >= 2
+          ? { poll_question: pollQuestion, poll_options: pollOptions }
+          : {})
+      });
+      if (createRes.success && createRes.data) {
+        const newPost = transformApiPostsToPosts([createRes.data as unknown as ApiPost])[0];
+        setPosts(prev => [newPost, ...prev]);
+        toast.success("Post created successfully!");
+      } else {
+        throw new Error(createRes.error || 'Failed to create post');
+      }
     } catch (error) {
       console.error('Error creating post:', error);
       toast.error('Failed to create post');
@@ -114,9 +97,16 @@ export function EventFeed({ eventId, className }: EventFeedProps) {
   };
 
   const handleReaction = async (postId: string) => {
-    // TODO: Implement reaction functionality for event posts
-    console.log('Reaction for post:', postId);
-    toast.info("Reaction functionality coming soon!");
+    try {
+      // Optimistic UI is handled by PostActions; here we persist the reaction
+      await postsService.createReaction(parseInt(postId), {
+        post_id: parseInt(postId),
+        reaction_type: 'like'
+      });
+    } catch (error) {
+      console.error('Error reacting to post:', error);
+      toast.error('Failed to react to post');
+    }
   };
 
   const handleComment = (postId: string) => {
@@ -145,7 +135,7 @@ export function EventFeed({ eventId, className }: EventFeedProps) {
   };
 
   const handlePostDelete = (postId: string) => {
-    setPosts(prev => prev.filter(post => post.post_id !== postId));
+    setPosts(prev => prev.filter(post => post.id !== postId));
     toast.success("Post deleted successfully");
   };
 

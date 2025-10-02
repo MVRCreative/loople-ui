@@ -13,6 +13,8 @@ import { useClub } from "@/lib/club-context";
 import { useEffect, useState } from "react";
 import NextImage from "next/image";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 interface PostCardProps {
   post: Post;
@@ -162,6 +164,9 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
               <Badge variant="secondary" className="text-xs">
                 {post.user.role}
               </Badge>
+              {Boolean(post.content.event) && (
+                <Badge variant="outline" className="text-xs">Event</Badge>
+              )}
             </div>
             <span className="text-sm text-muted-foreground">
               {post.timestamp}
@@ -174,12 +179,14 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
           </p>
         
           {/* Event Card */}
-          {post.content.type === "event" && post.content.event && (
-            <EventCard event={post.content.event} />
+          {post.content.event && (
+            <>
+              <EventCard event={post.content.event} />
+            </>
           )}
           
           {/* Poll Voting */}
-          {post.content.type === "poll" && post.content.poll && (
+          {post.content.poll && (
             <PollVoting
               postId={post.id}
               pollQuestion={post.content.poll.question}
