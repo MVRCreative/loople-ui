@@ -121,6 +121,7 @@ export default function ClubManagementPage() {
   const [showEditForm, setShowEditForm] = useState<Club | null>(null);
   const [search, setSearch] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const enableDelete = false; // TEMP: hide delete feature
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -288,9 +289,11 @@ export default function ClubManagementPage() {
                   <Button variant="secondary" size="sm" onClick={() => setShowEditForm(c)}>
                     <Pencil className="h-4 w-4 mr-1" /> Edit
                   </Button>
-                  <Button variant="destructive" size="sm" onClick={(e) => { e.preventDefault(); setDeletingId(c.id); }} disabled={deletingId === c.id}>
-                    <Trash2 className="h-4 w-4 mr-1" /> Delete
-                  </Button>
+                  {enableDelete && (
+                    <Button variant="destructive" size="sm" onClick={(e) => { e.preventDefault(); setDeletingId(c.id); }} disabled={deletingId === c.id}>
+                      <Trash2 className="h-4 w-4 mr-1" /> Delete
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -314,29 +317,31 @@ export default function ClubManagementPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Confirm Delete Dialog */}
-      <Dialog open={!!deletingId} onOpenChange={(open) => { if (!open) setDeletingId(null); }}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete Club</DialogTitle>
-          </DialogHeader>
-          <div className="text-sm text-muted-foreground">
-            Are you sure you want to delete this club? This action cannot be undone.
-          </div>
-          <div className="flex justify-end gap-2 pt-4">
-            <Button variant="outline" onClick={() => setDeletingId(null)}>Cancel</Button>
-            <Button variant="destructive" onClick={async () => {
-              if (!deletingId) return;
-              try {
-                await ClubsService.deleteClub(deletingId);
-                await refreshClubs();
-              } finally {
-                setDeletingId(null);
-              }
-            }}>Delete</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Confirm Delete Dialog (hidden while enableDelete is false) */}
+      {enableDelete && (
+        <Dialog open={!!deletingId} onOpenChange={(open) => { if (!open) setDeletingId(null); }}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Delete Club</DialogTitle>
+            </DialogHeader>
+            <div className="text-sm text-muted-foreground">
+              Are you sure you want to delete this club? This action cannot be undone.
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setDeletingId(null)}>Cancel</Button>
+              <Button variant="destructive" onClick={async () => {
+                if (!deletingId) return;
+                try {
+                  await ClubsService.deleteClub(deletingId);
+                  await refreshClubs();
+                } finally {
+                  setDeletingId(null);
+                }
+              }}>Delete</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Edit Club Dialog */}
       <Dialog open={!!showEditForm} onOpenChange={(open) => { if (!open) setShowEditForm(null); }}>

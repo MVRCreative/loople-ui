@@ -201,13 +201,13 @@ export class ClubsService {
   static async deleteClub(clubId: string): Promise<void> {
     try {
       // Prefer secure path: call edge function DELETE when available, else fallback
-      // First try Edge Function with path parameter semantics
-      const edgeUrl = typeof window !== 'undefined' ? `${window.location.origin}` : '';
-      const { data: fnResp, error: fnErr } = await supabase.functions.invoke('clubs', {
-        method: 'DELETE' as any,
+      // First try Edge Function with path parameter semantics. Cast options to avoid strict method typing.
+      const invokeOptions = ({
+        method: 'DELETE',
         body: { id: clubId },
         headers: { 'Content-Type': 'application/json' },
-      } as any);
+      } as unknown) as Parameters<typeof supabase.functions.invoke>[1];
+      const { error: fnErr } = await supabase.functions.invoke('clubs', invokeOptions);
 
       if (fnErr) {
         console.warn('Edge delete failed or not available, falling back to direct delete:', fnErr);

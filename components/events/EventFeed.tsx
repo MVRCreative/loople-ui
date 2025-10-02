@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { PostForm } from "@/components/newsfeed/post-form";
 import { PostCard } from "@/components/newsfeed/post-card";
-import { Post, User } from "@/lib/types";
+import { Post, User, ApiPost } from "@/lib/types";
 import { EventPost } from "@/lib/events/types";
 import { useAuth } from "@/lib/auth-context";
 import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
@@ -36,7 +36,7 @@ export function EventFeed({ eventId, clubId, className }: EventFeedProps) {
       try {
         const response = await postsService.getPosts({ event_id: parseInt(eventId), sort_by: 'created_at', sort_order: 'desc', limit: 20 });
         if (response.success && response.data) {
-          setPosts(transformApiPostsToPosts(response.data as unknown as any[]));
+          setPosts(transformApiPostsToPosts(response.data as unknown as ApiPost[]));
         } else {
           setPosts([]);
         }
@@ -84,7 +84,7 @@ export function EventFeed({ eventId, clubId, className }: EventFeedProps) {
           : {})
       });
       if (createRes.success && createRes.data) {
-        const newPost = transformApiPostsToPosts([createRes.data as unknown as any])[0];
+        const newPost = transformApiPostsToPosts([createRes.data as unknown as ApiPost])[0];
         setPosts(prev => [newPost, ...prev]);
         toast.success("Post created successfully!");
       } else {

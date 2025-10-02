@@ -47,7 +47,7 @@ export default function AdminUsersPage() {
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
           <p className="text-lg font-medium text-destructive">Access Denied</p>
-          <p className="text-sm text-muted-foreground mt-2">You don\'t have permission to access this page.</p>
+          <p className="text-sm text-muted-foreground mt-2">You don&apos;t have permission to access this page.</p>
         </div>
       </div>
     );
