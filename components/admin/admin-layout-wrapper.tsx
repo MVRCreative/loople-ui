@@ -21,6 +21,7 @@ import { adminNavigation, adminSecondaryNavigation } from "./admin-navigation"
 import { useAuth } from "@/lib/auth-context"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { ClubSwitcher } from "@/components/club-switcher"
 
 interface AdminLayoutWrapperProps {
   children: React.ReactNode
@@ -47,6 +48,9 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
                 height={32}
                 className="h-8 w-auto"
               />
+            </div>
+            <div className="px-3 pb-3">
+              <ClubSwitcher ownerOnly className="w-full" />
             </div>
           </SidebarHeader>
           

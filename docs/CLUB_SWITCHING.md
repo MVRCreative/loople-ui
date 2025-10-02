@@ -55,13 +55,13 @@ interface ClubContextType {
 The club switcher dropdown:
 - Shows all clubs where the user is a member or owner
 - Displays user's role in each club (owner, admin, member)
-- Includes a "Club Management" button that navigates to `/club-management`
+- Includes a "Club Management" button that navigates to `/admin/club-management`
 - Includes a "Create New Club" button for creating new clubs
 - Persists selected club in localStorage
 
 ### 4. Integration with Club Management
 
-The club management page (`app/club-management/page.tsx`):
+The club management page (`app/admin/club-management/page.tsx`):
 - Uses the selected club from context
 - Shows permission-based UI (read-only for non-owners/admins)
 - Displays club-specific data

@@ -17,12 +17,13 @@ import { Club } from "@/lib/services/clubs.service";
 
 interface ClubSwitcherProps {
   className?: string;
+  ownerOnly?: boolean;
 }
 
-export function ClubSwitcher({ className }: ClubSwitcherProps) {
+export function ClubSwitcher({ className, ownerOnly }: ClubSwitcherProps) {
   const router = useRouter();
   const { clubs, selectedClub, loading, selectClub, isOwner, isAdmin } = useClub();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const [isOpen, setIsOpen] = React.useState(false);
   const [isClient, setIsClient] = React.useState(false);
 
@@ -64,8 +65,11 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
     router.push("/admin/club-management?action=create");
   };
 
-  // Show club management links when no clubs or clubs is not an array
-  if (!Array.isArray(clubs) || clubs.length === 0) {
+  const clubsArray = Array.isArray(clubs) ? clubs : [];
+  const visibleClubs = ownerOnly ? clubsArray.filter((c) => c.owner_id === user?.id) : clubsArray;
+
+  // Show club management links when no clubs available after filtering
+  if (!Array.isArray(visibleClubs) || visibleClubs.length === 0) {
     return (
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
@@ -135,7 +139,7 @@ export function ClubSwitcher({ className }: ClubSwitcherProps) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-64">
         {/* Club List */}
-        {Array.isArray(clubs) && clubs.map((club) => (
+        {Array.isArray(visibleClubs) && visibleClubs.map((club) => (
           <DropdownMenuItem
             key={club.id}
             onClick={() => handleClubSwitch(club)}

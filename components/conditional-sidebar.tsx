@@ -28,7 +28,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const isRootRoute = pathname === "/";
   const isAdminRoute = pathname.startsWith("/admin");
   // const _isFeedPage = pathname === "/";
-  // const _isClubManagementPage = pathname.startsWith("/club-management");
+  // const _isClubManagementPage = pathname.startsWith("/admin/club-management");
 
   // Redirect to login if not authenticated and trying to access protected routes
   useEffect(() => {
@@ -38,7 +38,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, loading, isAuthRoute, isRootRoute, router]);
 
-  const isClubManagementPage = pathname.startsWith("/club-management");
+  const isClubManagementPage = pathname.startsWith("/admin/club-management");
   // Show auth pages without sidebar (these pages manage their own loading/errors)
   if (isAuthRoute) {
     return (

@@ -171,6 +171,67 @@ export class ClubsService {
   }
 
   /**
+   * Update club details
+   */
+  static async updateClub(clubId: string, updates: Partial<CreateClubData>): Promise<Club> {
+    try {
+      // Prefer Edge Function to enforce owner authorization
+      const { data, error } = await supabase.functions.invoke('clubs', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: { id: clubId, ...updates },
+      });
+
+      if (error) {
+        console.error('Error updating club:', error);
+        throw error;
+      }
+
+      // Edge Function returns the updated club directly
+      return (Array.isArray(data) ? data[0] : data) as Club;
+    } catch (error) {
+      console.error('Error in updateClub:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Delete a club by id
+   */
+  static async deleteClub(clubId: string): Promise<void> {
+    try {
+      // Prefer secure path: call edge function DELETE when available, else fallback
+      // First try Edge Function with path parameter semantics
+      const edgeUrl = typeof window !== 'undefined' ? `${window.location.origin}` : '';
+      const { data: fnResp, error: fnErr } = await supabase.functions.invoke('clubs', {
+        method: 'DELETE' as any,
+        body: { id: clubId },
+        headers: { 'Content-Type': 'application/json' },
+      } as any);
+
+      if (fnErr) {
+        console.warn('Edge delete failed or not available, falling back to direct delete:', fnErr);
+        const idFilter = /^\d+$/.test(String(clubId)) ? Number(clubId) : clubId;
+        const { data, error } = await supabase
+          .from('clubs')
+          .delete()
+          .eq('id', idFilter)
+          .select();
+        if (error) {
+          console.error('Error deleting club:', error);
+          throw error;
+        }
+        if (!data || (Array.isArray(data) && data.length === 0)) {
+          throw new Error('Delete failed: not found or not authorized');
+        }
+      }
+    } catch (error) {
+      console.error('Error in deleteClub:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Join a club
    */
   static async joinClub(joinData: JoinClubData): Promise<unknown> {
