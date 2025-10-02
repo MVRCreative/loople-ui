@@ -102,4 +102,41 @@ export class RSVPService {
       throw error;
     }
   }
+
+  /**
+   * Update RSVP status for a specific member (admin/owner only)
+   */
+  static async updateMemberRSVP(eventId: string, memberId: number, status: RSVPStatus['status']): Promise<EventRegistration> {
+    try {
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
+
+      const url = `${getFunctionsUrl()}/events/${eventId}/rsvp`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          apikey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status, member_id: memberId })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text().catch(() => '');
+        throw new Error(errorText || `Failed to update member RSVP: ${response.status}`);
+      }
+
+      const json = await response.json().catch(() => null);
+      
+      if (json && json.success && json.data) {
+        return json.data as EventRegistration;
+      }
+      
+      throw new Error('Invalid response format');
+    } catch (error) {
+      console.error('Error in updateMemberRSVP:', error);
+      throw error;
+    }
+  }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,10 @@ import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
 import { User } from "@/lib/types";
 import { ArrowLeft, Edit, Eye, Share2, Users, BarChart3 } from "lucide-react";
 import { toast } from "sonner";
+import { RSVPService, EventRegistration } from "@/lib/services/rsvp.service";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function AdminEventDetailsPage() {
   const params = useParams();
@@ -72,6 +76,57 @@ export default function AdminEventDetailsPage() {
   const handleModeratePosts = () => {
     // TODO: Implement post moderation functionality
     toast.info("Post moderation functionality coming soon!");
+  };
+
+  // RSVP Management
+  const [registrations, setRegistrations] = useState<EventRegistration[]>([]);
+  const [loadingRegistrations, setLoadingRegistrations] = useState(false);
+  const [updatingRsvpId, setUpdatingRsvpId] = useState<number | null>(null);
+  const [rsvpSearch, setRsvpSearch] = useState<string>("");
+
+  useEffect(() => {
+    if (!eventId) return;
+    const fetchRegistrations = async () => {
+      try {
+        setLoadingRegistrations(true);
+        const regs = await RSVPService.getEventRSVPs(eventId);
+        setRegistrations(regs);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Failed to load RSVPs");
+      } finally {
+        setLoadingRegistrations(false);
+      }
+    };
+    fetchRegistrations();
+  }, [eventId]);
+
+  const filteredRegistrations = useMemo(() => {
+    const term = rsvpSearch.trim().toLowerCase();
+    if (!term) return registrations;
+    return registrations.filter((r) =>
+      `${r.members.first_name} ${r.members.last_name}`.toLowerCase().includes(term) ||
+      (r.members.email?.toLowerCase() || '').includes(term)
+    );
+  }, [registrations, rsvpSearch]);
+
+  const updateMemberRsvp = async (
+    registrationId: number,
+    memberId: number,
+    status: 'registered' | 'confirmed' | 'canceled' | 'waitlisted' | 'attended'
+  ) => {
+    if (!eventId) return;
+    try {
+      setUpdatingRsvpId(registrationId);
+      await RSVPService.updateMemberRSVP(eventId, memberId, status);
+      toast.success("RSVP updated");
+      // Reload registrations to reflect changes
+      const regs = await RSVPService.getEventRSVPs(eventId);
+      setRegistrations(regs);
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to update RSVP");
+    } finally {
+      setUpdatingRsvpId(null);
+    }
   };
 
   if (!isAdmin) {
@@ -232,6 +287,90 @@ export default function AdminEventDetailsPage() {
               <Edit className="h-4 w-4" />
               Edit Event
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Manage RSVPs */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Manage RSVPs</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center gap-2">
+              <Input
+                placeholder="Search by name or role"
+                value={rsvpSearch}
+                onChange={(e) => setRsvpSearch(e.target.value)}
+                className="max-w-sm"
+              />
+            </div>
+            <div className="rounded-md border border-border overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs lg:text-sm">Member</TableHead>
+                    <TableHead className="text-xs lg:text-sm">Status</TableHead>
+                    <TableHead className="text-xs lg:text-sm">Responded</TableHead>
+                    <TableHead className="text-xs lg:text-sm text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredRegistrations.map((reg) => (
+                    <TableRow key={reg.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-medium">
+                            {(reg.members.first_name?.[0] || '👤')}
+                          </div>
+                          <div>
+                            <div className="font-medium">{reg.members.first_name} {reg.members.last_name}</div>
+                            <div className="text-xs text-muted-foreground">{reg.members.email}</div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="w-[220px]">
+                        <Select
+                          value={reg.status}
+                          onValueChange={(value) => updateMemberRsvp(
+                            reg.id,
+                            reg.members.id,
+                            value as 'registered' | 'confirmed' | 'canceled' | 'waitlisted' | 'attended'
+                          )}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="registered">Registered (Maybe)</SelectItem>
+                            <SelectItem value="confirmed">Confirmed (Going)</SelectItem>
+                            <SelectItem value="canceled">Canceled (Not going)</SelectItem>
+                            <SelectItem value="waitlisted">Waitlisted</SelectItem>
+                            <SelectItem value="attended">Attended</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(reg.registration_date).toLocaleString()}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="outline" size="sm" disabled>
+                          —
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredRegistrations.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
+                        {loadingRegistrations ? 'Loading RSVPs…' : 'No RSVPs found.'}
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         </CardContent>
       </Card>
