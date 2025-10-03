@@ -8,6 +8,7 @@ import { EventDetailHeader } from "@/components/events/EventDetailHeader";
 import { AdminEventStats } from "@/components/events/AdminEventStats";
 import { EventMeta } from "@/components/events/EventMeta";
 import { useEvent } from "@/lib/events/hooks";
+import { useClub } from "@/lib/club-context";
 import { useAuth } from "@/lib/auth-context";
 import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
 import { User } from "@/lib/types";
@@ -27,6 +28,7 @@ export default function AdminEventDetailsPage() {
   
   const eventId = typeof params?.eventId === "string" ? params.eventId : "";
   const { event, rsvps, posts, loading, error, loadEvent } = useEvent(eventId);
+  const { loading: clubLoading } = useClub();
   
   // Convert auth user to frontend User type
   const currentUser: User = authUser 
@@ -222,6 +224,17 @@ export default function AdminEventDetailsPage() {
       setUpdatingRsvpId(null);
     }
   };
+
+  if (clubLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-lg text-muted-foreground">Loading club...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return (

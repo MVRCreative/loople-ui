@@ -20,16 +20,22 @@ export function useEvents() {
   const [events, setEvents] = useState<EventDetail[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { selectedClub } = useClub();
+  const { selectedClub, loading: clubLoading } = useClub();
 
   const loadEvents = useCallback(async () => {
-    if (!selectedClub) {
-      setEvents([]);
-      return;
-    }
-
     setLoading(true);
     setError(null);
+
+    if (!selectedClub) {
+      // If club context is still loading, keep the spinner visible
+      if (clubLoading) {
+        return;
+      }
+      // No club available to filter by; finish with empty list without flashing content
+      setEvents([]);
+      setLoading(false);
+      return;
+    }
     
     try {
       if (USE_MOCK_EVENTS) {
@@ -101,7 +107,7 @@ export function useEvents() {
     } finally {
       setLoading(false);
     }
-  }, [selectedClub]);
+  }, [selectedClub, clubLoading]);
 
   return { events, loading, error, loadEvents };
 }

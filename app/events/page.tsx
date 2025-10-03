@@ -33,7 +33,7 @@ const transformToEventListItem = (event: EventDetail): EventListItem => ({
 
 export default function EventsPage() {
   const { events, loading, error, loadEvents } = useEvents();
-  const { selectedClub, isOwner } = useClub();
+  const { selectedClub, isOwner, loading: clubLoading } = useClub();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTab, setSelectedTab] = useState("upcoming");
@@ -146,7 +146,7 @@ export default function EventsPage() {
     }
   };
 
-  if (loading) {
+  if (loading || clubLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
