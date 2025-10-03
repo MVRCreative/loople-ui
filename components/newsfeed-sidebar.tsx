@@ -36,7 +36,7 @@ export function NewsfeedSidebar() {
   }
 
   return (
-    <div className="flex h-screen w-[240px] sm:w-[280px] flex-col bg-background border-r border-border sticky top-0 overflow-y-auto">
+    <div className="flex h-screen w-[275px] flex-col bg-background border-r border-border sticky top-0 overflow-y-auto">
       {/* Logo */}
       <div className="flex h-12 sm:h-14 md:h-16 w-full items-center px-2 sm:px-3 md:px-4 border-b border-border">
         <Link href="/" className="flex items-center">

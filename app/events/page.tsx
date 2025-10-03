@@ -175,7 +175,7 @@ export default function EventsPage() {
     <div className="flex flex-1 flex-col overflow-hidden">
       <div className="space-y-6">
       {/* Header */}
-      <div className="space-y-4">
+      <div className="space-y-4 px-4 lg:px-6 xl:px-8">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Events</h1>
