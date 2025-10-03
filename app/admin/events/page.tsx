@@ -11,6 +11,7 @@ import { useEvents } from "@/lib/events/hooks";
 import { formatEventDateTime, formatEventLocation, getEventStatusText } from "@/lib/events/selectors";
 import { Search, Plus, Eye, BarChart3, Filter, Calendar, Users, Edit } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { useClub } from "@/lib/club-context";
 import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
 import { User } from "@/lib/types";
 
@@ -18,6 +19,7 @@ export default function AdminEventsPage() {
   const router = useRouter();
   const { events, loading, error, loadEvents } = useEvents();
   const { user: authUser } = useAuth();
+  const { loading: clubLoading } = useClub();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -76,11 +78,11 @@ export default function AdminEventsPage() {
   };
 
   const handleEditEvent = (eventId: string) => {
-    router.push(`/admin/events/create?edit=${eventId}`);
+    router.push(`/admin/events/${eventId}/edit`);
   };
 
   const handleEventDetails = (eventId: string) => {
-    router.push(`/admin/event/${eventId}-details`);
+    router.push(`/admin/events/${eventId}`);
   };
 
   const getStatusVariant = (status: string) => {
@@ -97,6 +99,17 @@ export default function AdminEventsPage() {
         return "default";
     }
   };
+
+  if (clubLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-lg text-muted-foreground">Loading club...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return (

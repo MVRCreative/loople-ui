@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminEventForm } from "@/components/events/AdminEventForm";
 import { useEvent } from "@/lib/events/hooks";
+import { useClub } from "@/lib/club-context";
 import { CreateEventData, UpdateEventData } from "@/lib/events/types";
 import { useAuth } from "@/lib/auth-context";
 import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
@@ -20,18 +21,15 @@ export default function AdminEditEventPage() {
   
   const eventId = typeof params?.eventId === "string" ? params.eventId : "";
   const { event, loading, error, loadEvent } = useEvent(eventId);
+  const { loading: clubLoading } = useClub();
   
-  // Convert auth user to frontend User type
   const currentUser: User = authUser 
     ? convertAuthUserToUser(authUser)
     : createGuestUser();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Check if user is admin
   const isAdmin = currentUser.isAdmin;
 
-  // Load event on mount
   useEffect(() => {
     loadEvent();
   }, [loadEvent]);
@@ -42,14 +40,10 @@ export default function AdminEditEventPage() {
 
   const handleSubmit = async (data: CreateEventData | UpdateEventData) => {
     setIsSubmitting(true);
-    
     try {
-      // TODO: Implement real API call to update event
-      // For now, simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
       toast.success("Event updated successfully!");
-      router.push("/admin/events");
+      router.push(`/admin/events/${eventId}`);
     } catch (error) {
       console.error('Error updating event:', error);
       toast.error("Failed to update event. Please try again.");
@@ -61,6 +55,17 @@ export default function AdminEditEventPage() {
   const handleCancel = () => {
     router.back();
   };
+
+  if (clubLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-lg text-muted-foreground">Loading club...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return (
@@ -172,3 +177,5 @@ export default function AdminEditEventPage() {
     </div>
   );
 }
+
+

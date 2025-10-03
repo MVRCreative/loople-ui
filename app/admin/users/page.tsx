@@ -16,8 +16,9 @@ import { UserPlus, Plus } from "lucide-react";
 
 export default function AdminUsersPage() {
   const { user: authUser } = useAuth();
-  const { selectedClub } = useClub();
+  const { selectedClub, loading: clubLoading } = useClub();
   const [members, setMembers] = useState<Member[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
   const [showInviteMember, setShowInviteMember] = useState(false);
   const [showCreateMember, setShowCreateMember] = useState(false);
@@ -30,6 +31,7 @@ export default function AdminUsersPage() {
     const loadMembers = async () => {
       if (!selectedClub) return;
       try {
+        setMembersLoading(true);
         setMembersError(null);
         const data = await MembersService.getClubMembers(selectedClub.id);
         const membersData = Array.isArray(data) ? data : [];
@@ -37,10 +39,23 @@ export default function AdminUsersPage() {
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : 'Failed to load members';
         setMembersError(message);
+      } finally {
+        setMembersLoading(false);
       }
     };
     loadMembers();
   }, [selectedClub]);
+
+  if (clubLoading || membersLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-lg text-muted-foreground">Loading members...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAdmin) {
     return (
@@ -118,6 +133,9 @@ export default function AdminUsersPage() {
       {/* Edit Member Dialog */}
       <Dialog open={!!editingMember} onOpenChange={(open) => { if (!open) setEditingMember(null); }}>
         <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Member</DialogTitle>
+          </DialogHeader>
           {editingMember && (
             <EditMemberForm member={editingMember} onSuccess={async () => {
               setEditingMember(null);

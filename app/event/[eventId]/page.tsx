@@ -36,7 +36,7 @@ export default function EventDetailsPage() {
   
   const { event, rsvps, posts, loading, error, loadEvent } = useEvent(eventId);
   const { getUserRSVP, updateRSVP, loadRSVPs } = useRSVP(eventId, currentUser.id);
-  const { selectedClub, isOwner } = useClub();
+  const { selectedClub, isOwner, loading: clubLoading } = useClub();
 
   // Load event and RSVPs on mount
   useEffect(() => {
@@ -141,7 +141,7 @@ export default function EventDetailsPage() {
     updateRSVP(status as EventRSVPStatus);
   };
 
-  if (loading) {
+  if (loading || clubLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
