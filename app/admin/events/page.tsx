@@ -76,11 +76,11 @@ export default function AdminEventsPage() {
   };
 
   const handleEditEvent = (eventId: string) => {
-    router.push(`/admin/events/create?edit=${eventId}`);
+    router.push(`/admin/events/${eventId}/edit`);
   };
 
   const handleEventDetails = (eventId: string) => {
-    router.push(`/admin/event/${eventId}-details`);
+    router.push(`/admin/events/${eventId}`);
   };
 
   const getStatusVariant = (status: string) => {

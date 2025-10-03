@@ -11,12 +11,14 @@ import { useEvent } from "@/lib/events/hooks";
 import { useAuth } from "@/lib/auth-context";
 import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
 import { User } from "@/lib/types";
-import { ArrowLeft, Edit, Eye, Share2, Users, BarChart3 } from "lucide-react";
+import { ArrowLeft, Edit, Eye, Share2, Users, BarChart3, Trash2, CheckCircle2, Ban, Download } from "lucide-react";
 import { toast } from "sonner";
 import { RSVPService, EventRegistration } from "@/lib/services/rsvp.service";
+import { EventRSVP } from "@/lib/events/types";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EventsService } from "@/lib/services/events.service";
 
 export default function AdminEventDetailsPage() {
   const params = useParams();
@@ -44,11 +46,43 @@ export default function AdminEventDetailsPage() {
   };
 
   const handleEdit = () => {
-    router.push(`/admin/events/edit-${eventId}`);
+    router.push(`/admin/events/${eventId}/edit`);
   };
 
   const handleView = () => {
     router.push(`/event/${eventId}`);
+  };
+
+  const [isUpdatingEvent, setIsUpdatingEvent] = useState(false);
+
+  const handleDelete = async () => {
+    if (!eventId) return;
+    if (!confirm("Delete this event? This cannot be undone.")) return;
+    try {
+      setIsUpdatingEvent(true);
+      await EventsService.deleteEvent(eventId);
+      toast.success("Event deleted");
+      router.push("/admin/events");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to delete event");
+    } finally {
+      setIsUpdatingEvent(false);
+    }
+  };
+
+  const handleTogglePublish = async () => {
+    if (!eventId || !event) return;
+    try {
+      setIsUpdatingEvent(true);
+      const targetActive = event.status !== "published";
+      await EventsService.updateEvent(eventId, { is_active: targetActive } as unknown as Record<string, unknown>);
+      await loadEvent();
+      toast.success(targetActive ? "Event published" : "Event unpublished");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to update event status");
+    } finally {
+      setIsUpdatingEvent(false);
+    }
   };
 
   const handleShare = async () => {
@@ -68,21 +102,45 @@ export default function AdminEventDetailsPage() {
     }
   };
 
-  const handleExportRSVPs = () => {
-    // TODO: Implement CSV export functionality
-    toast.info("CSV export functionality coming soon!");
-  };
-
-  const handleModeratePosts = () => {
-    // TODO: Implement post moderation functionality
-    toast.info("Post moderation functionality coming soon!");
-  };
-
-  // RSVP Management
   const [registrations, setRegistrations] = useState<EventRegistration[]>([]);
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
   const [updatingRsvpId, setUpdatingRsvpId] = useState<number | null>(null);
   const [rsvpSearch, setRsvpSearch] = useState<string>("");
+
+  const handleExportRSVPs = () => {
+    try {
+      const rows = [
+        ["registration_id","member_id","first_name","last_name","email","status","registration_date"],
+        ...registrations.map(r => [
+          String(r.id),
+          String(r.members.id),
+          r.members.first_name || "",
+          r.members.last_name || "",
+          r.members.email || "",
+          r.status,
+          r.registration_date
+        ])
+      ];
+      const csv = rows.map(r => r.map(v => {
+        const s = String(v ?? "");
+        const needsWrap = s.includes(',') || s.includes('"') || s.includes('\n');
+        const escaped = '"' + s.replace(/"/g, '""') + '"';
+        return needsWrap ? escaped : s;
+      }).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${event?.title?.replace(/\s+/g,'_') || 'event'}_rsvps.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("RSVPs exported");
+    } catch (e) {
+      toast.error("Failed to export RSVPs");
+    }
+  };
 
   useEffect(() => {
     if (!eventId) return;
@@ -109,6 +167,43 @@ export default function AdminEventDetailsPage() {
     );
   }, [registrations, rsvpSearch]);
 
+  const mapRegistrationToRSVP = (reg: EventRegistration): EventRSVP => {
+    const mapStatus = (s: string): EventRSVP["status"] => {
+      switch (s) {
+        case 'confirmed':
+          return 'going';
+        case 'registered':
+        case 'waitlisted':
+          return 'maybe';
+        case 'canceled':
+          return 'not_going';
+        case 'attended':
+          return 'going';
+        default:
+          return 'not_responded';
+      }
+    };
+    return {
+      id: String(reg.id),
+      event_id: String(reg.event_id),
+      user_id: reg.members.user_id,
+      status: mapStatus(reg.status),
+      responded_at: reg.registration_date,
+      created_at: reg.created_at,
+      updated_at: reg.updated_at,
+      user: {
+        id: reg.members.user_id,
+        name: `${reg.members.first_name} ${reg.members.last_name}`.trim(),
+        avatar: "👤",
+        role: "Member",
+      },
+    };
+  };
+
+  const rsvpsForStats = useMemo<EventRSVP[]>(() => {
+    return registrations.map(mapRegistrationToRSVP);
+  }, [registrations]);
+
   const updateMemberRsvp = async (
     registrationId: number,
     memberId: number,
@@ -119,7 +214,6 @@ export default function AdminEventDetailsPage() {
       setUpdatingRsvpId(registrationId);
       await RSVPService.updateMemberRSVP(eventId, memberId, status);
       toast.success("RSVP updated");
-      // Reload registrations to reflect changes
       const regs = await RSVPService.getEventRSVPs(eventId);
       setRegistrations(regs);
     } catch (e: unknown) {
@@ -228,73 +322,68 @@ export default function AdminEventDetailsPage() {
           <Button
             variant="outline"
             size="sm"
+            onClick={handleTogglePublish}
+            disabled={isUpdatingEvent}
+            title={event.status === "published" ? "Unpublish" : "Publish"}
+          >
+            {event.status === "published" ? (
+              <Ban className="h-4 w-4 mr-1" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4 mr-1" />
+            )}
+            {event.status === "published" ? "Unpublish" : "Publish"}
+          </Button>
+          
+          <Button
+            variant="outline"
+            size="sm"
             onClick={handleShare}
           >
             <Share2 className="h-4 w-4 mr-1" />
             Share
           </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDelete}
+            disabled={isUpdatingEvent}
+          >
+            <Trash2 className="h-4 w-4 mr-1" />
+            Delete
+          </Button>
         </div>
       </div>
 
       {/* Event Details */}
-      <EventDetailHeader event={event} onShare={handleShare} />
+      <Card>
+        <CardContent className="p-0">
+          <EventDetailHeader event={event} onShare={handleShare} />
+        </CardContent>
+      </Card>
 
       {/* Admin Stats */}
       <AdminEventStats 
         event={event} 
-        rsvps={rsvps}
+        rsvps={rsvpsForStats}
       />
 
-      {/* Quick Actions */}
+      
+
+      {/* Manage RSVPs */}
       <Card>
         <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="flex items-center justify-between">
+            <CardTitle>Manage RSVPs</CardTitle>
             <Button
               variant="outline"
               onClick={handleExportRSVPs}
               className="flex items-center gap-2"
             >
-              <Users className="h-4 w-4" />
-              Export RSVPs
-            </Button>
-            
-            <Button
-              variant="outline"
-              onClick={handleModeratePosts}
-              className="flex items-center gap-2"
-            >
-              <BarChart3 className="h-4 w-4" />
-              Moderate Posts
-            </Button>
-            
-            <Button
-              variant="outline"
-              onClick={() => window.open(`/event/${event.id}`, '_blank')}
-              className="flex items-center gap-2"
-            >
-              <Eye className="h-4 w-4" />
-              Preview Event
-            </Button>
-            
-            <Button
-              variant="outline"
-              onClick={handleEdit}
-              className="flex items-center gap-2"
-            >
-              <Edit className="h-4 w-4" />
-              Edit Event
+              <Download className="h-4 w-4" />
+              Export CSV
             </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Manage RSVPs */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Manage RSVPs</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col gap-3">

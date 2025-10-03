@@ -120,7 +120,7 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
         <aside className="hidden xl:block">
           <NewsfeedSidebar />
         </aside>
-        <main className="relative px-4">
+        <main className="relative">
           {children}
         </main>
         {/* Only show right sidebar on non-club-management pages */}

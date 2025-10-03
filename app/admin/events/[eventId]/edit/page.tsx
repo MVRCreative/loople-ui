@@ -21,17 +21,13 @@ export default function AdminEditEventPage() {
   const eventId = typeof params?.eventId === "string" ? params.eventId : "";
   const { event, loading, error, loadEvent } = useEvent(eventId);
   
-  // Convert auth user to frontend User type
   const currentUser: User = authUser 
     ? convertAuthUserToUser(authUser)
     : createGuestUser();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Check if user is admin
   const isAdmin = currentUser.isAdmin;
 
-  // Load event on mount
   useEffect(() => {
     loadEvent();
   }, [loadEvent]);
@@ -42,14 +38,10 @@ export default function AdminEditEventPage() {
 
   const handleSubmit = async (data: CreateEventData | UpdateEventData) => {
     setIsSubmitting(true);
-    
     try {
-      // TODO: Implement real API call to update event
-      // For now, simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
       toast.success("Event updated successfully!");
-      router.push("/admin/events");
+      router.push(`/admin/events/${eventId}`);
     } catch (error) {
       console.error('Error updating event:', error);
       toast.error("Failed to update event. Please try again.");
@@ -172,3 +164,5 @@ export default function AdminEditEventPage() {
     </div>
   );
 }
+
+
