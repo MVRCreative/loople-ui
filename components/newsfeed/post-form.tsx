@@ -132,7 +132,7 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
   };
 
   return (
-    <div className="bg-card p-4 relative border-border border-l">
+    <div className="bg-card p-4 relative border-border">
       {/* Loading Overlay */}
       {isLoading && (
         <div className="absolute inset-0 bg-background/20 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
