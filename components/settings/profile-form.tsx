@@ -6,14 +6,19 @@ import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Image as ImageIcon, UserRound, ChevronDown } from "lucide-react"
+import { UsersService, UpdateUserProfileData, UpdateUserPreferencesData } from "@/lib/services/users.service"
+import { AvatarUpload } from "@/components/ui/avatar-upload"
+import { CoverUpload } from "@/components/ui/cover-upload"
 
 export interface ProfileFormValues {
   // persisted fields
   email: string
   avatar_url?: string
+  cover_url?: string
   first_name?: string
   last_name?: string
-  // non-persisted demo fields
+  phone?: string
+  // newly persisted fields
   username?: string
   about?: string
   country?: string
@@ -32,6 +37,11 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
   const [message, setMessage] = React.useState<string | null>(null)
 
   const [derivedFirst, derivedLast] = React.useMemo(() => {
+    const providedFirst = initialData.first_name?.trim()
+    const providedLast = initialData.last_name?.trim()
+    if (providedFirst || providedLast) {
+      return [providedFirst || "", providedLast || ""] as const
+    }
     const full = (initialData as { full_name?: string }).full_name || ""
     const parts = full.trim().split(" ")
     if (parts.length === 0) return ["", ""] as const
@@ -43,25 +53,61 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
   const [formData, setFormData] = React.useState<ProfileFormValues>({
     email: initialData.email,
     avatar_url: initialData.avatar_url ?? "",
+    cover_url: initialData.cover_url ?? "",
     first_name: derivedFirst,
     last_name: derivedLast,
-    username: "",
-    about: "",
-    country: "United States",
-    street_address: "",
-    city: "",
-    region: "",
-    postal_code: "",
-    notify_comments: true,
-    notify_candidates: false,
-    notify_offers: false,
-    push_notifications: "everything",
+    phone: initialData.phone ?? "",
+    username: initialData.username ?? "",
+    about: initialData.about ?? "",
+    country: initialData.country ?? "",
+    street_address: initialData.street_address ?? "",
+    city: initialData.city ?? "",
+    region: initialData.region ?? "",
+    postal_code: initialData.postal_code ?? "",
+    notify_comments: initialData.notify_comments ?? true,
+    notify_candidates: initialData.notify_candidates ?? false,
+    notify_offers: initialData.notify_offers ?? false,
+    push_notifications: initialData.push_notifications ?? "everything",
   })
+
+  // Sync form with new initialData when it changes (e.g., data arriving after first render)
+  React.useEffect(() => {
+    if (status !== "idle") return
+    setFormData(prev => ({
+      ...prev,
+      email: initialData.email,
+      avatar_url: initialData.avatar_url ?? prev.avatar_url ?? "",
+      cover_url: initialData.cover_url ?? prev.cover_url ?? "",
+      first_name: derivedFirst,
+      last_name: derivedLast,
+      phone: initialData.phone ?? prev.phone ?? "",
+      username: initialData.username ?? prev.username ?? "",
+      about: initialData.about ?? prev.about ?? "",
+      country: initialData.country ?? prev.country ?? "",
+      street_address: initialData.street_address ?? prev.street_address ?? "",
+      city: initialData.city ?? prev.city ?? "",
+      region: initialData.region ?? prev.region ?? "",
+      postal_code: initialData.postal_code ?? prev.postal_code ?? "",
+      notify_comments: initialData.notify_comments ?? prev.notify_comments ?? true,
+      notify_candidates: initialData.notify_candidates ?? prev.notify_candidates ?? false,
+      notify_offers: initialData.notify_offers ?? prev.notify_offers ?? false,
+      push_notifications: initialData.push_notifications ?? prev.push_notifications ?? "everything",
+    }))
+  }, [initialData, derivedFirst, derivedLast, status])
 
   const [errors, setErrors] = React.useState<Partial<Record<keyof ProfileFormValues, string>>>({})
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof ProfileFormValues, string>> = {}
+    // Username validation (optional but if present must be valid)
+    if (formData.username && !/^[A-Za-z0-9_\.\-]{3,30}$/.test(formData.username)) {
+      newErrors.username = "3-30 chars: letters, numbers, underscore, dot, hyphen"
+    }
+
+    // Bio length guard
+    if (formData.about && formData.about.length > 300) {
+      newErrors.about = "Bio must be 300 characters or fewer"
+    }
     
     // Email validation
     if (!formData.email) {
@@ -73,6 +119,16 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
     // Avatar URL validation
     if (formData.avatar_url && !/^https?:\/\/.+/.test(formData.avatar_url)) {
       newErrors.avatar_url = "Please enter a valid URL"
+    }
+
+    // Cover URL validation
+    if (formData.cover_url && !/^https?:\/\/.+/.test(formData.cover_url)) {
+      newErrors.cover_url = "Please enter a valid URL"
+    }
+    
+    // Phone validation
+    if (formData.phone && !/^\(\d{3}\) \d{3}-\d{4}$/.test(formData.phone)) {
+      newErrors.phone = "Please enter a valid phone number in format: (XXX) XXX-XXXX"
     }
     
     setErrors(newErrors)
@@ -98,14 +154,61 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
     setMessage(null)
     
     try {
-      // Mock save - simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
+      // Update profile data
+      const profileData: UpdateUserProfileData = {
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+        phone: formData.phone,
+        avatar_url: formData.avatar_url,
+        username: (formData.username || "").trim() === "" ? null : formData.username,
+        bio: (formData.about || "").trim() === "" ? null : formData.about,
+        cover_url: (formData.cover_url || "").trim() === "" ? null : formData.cover_url,
+        country: (formData.country || "").trim() === "" ? null : formData.country,
+        street_address: (formData.street_address || "").trim() === "" ? null : formData.street_address,
+        city: (formData.city || "").trim() === "" ? null : formData.city,
+        region: (formData.region || "").trim() === "" ? null : formData.region,
+        postal_code: (formData.postal_code || "").trim() === "" ? null : formData.postal_code,
+      }
+      
+      await UsersService.updateUserProfile(profileData)
+      
+      // Update preferences
+      const preferencesData: UpdateUserPreferencesData = {
+        notify_comments: formData.notify_comments,
+        notify_candidates: formData.notify_candidates,
+        notify_offers: formData.notify_offers,
+        push_notifications: formData.push_notifications,
+      }
+      
+      await UsersService.updateUserPreferences(preferencesData)
       
       setStatus("saved")
-      setMessage("Profile updated.")
-    } catch {
+      setMessage("Profile updated successfully.")
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      // Detect username conflict and surface a friendly inline error
+      const errText = (() => {
+        try {
+          const raw = (error as any)?.message || (error as any)?.error || String(error)
+          return String(raw).toLowerCase()
+        } catch { return '' }
+      })()
+
+      const isUsernameConflict =
+        errText.includes('users_username_lower_unique') ||
+        (errText.includes('duplicate key') && errText.includes('username')) ||
+        (errText.includes('unique') && errText.includes('username')) ||
+        (error as any)?.status === 409
+
+      if (isUsernameConflict) {
+        setErrors(prev => ({ ...prev, username: 'This username is already taken. Please choose another.' }))
+        setStatus('error')
+        setMessage('Please choose a different username and try again.')
+        return
+      }
+
       setStatus("error")
-      setMessage("Failed to update profile. Please try again.")
+      setMessage(error instanceof Error ? error.message : "Failed to update profile. Please try again.")
     }
   }
 
@@ -115,6 +218,7 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
       avatar_url: initialData.avatar_url ?? "",
       first_name: derivedFirst,
       last_name: derivedLast,
+      phone: initialData.phone ?? "",
       username: "",
       about: "",
       country: "United States",
@@ -122,10 +226,10 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
       city: "",
       region: "",
       postal_code: "",
-      notify_comments: true,
-      notify_candidates: false,
-      notify_offers: false,
-      push_notifications: "everything",
+      notify_comments: initialData.notify_comments ?? true,
+      notify_candidates: initialData.notify_candidates ?? false,
+      notify_offers: initialData.notify_offers ?? false,
+      push_notifications: initialData.push_notifications ?? "everything",
     })
     setStatus("idle")
     setMessage(null)
@@ -157,6 +261,9 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
                     className="block min-w-0 grow bg-background py-1.5 pr-3 pl-1 text-base text-foreground placeholder:text-muted-foreground focus:outline-none sm:text-sm"
                   />
                 </div>
+                {errors.username && (
+                  <p className="mt-1 text-sm text-destructive">{errors.username}</p>
+                )}
               </div>
             </div>
 
@@ -176,29 +283,23 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
 
             <div className="col-span-full">
               <Label htmlFor="photo" className="block">Photo</Label>
-              <div className="mt-2 flex items-center gap-x-3">
-                <Avatar className="h-12 w-12 rounded-lg">
-                  <AvatarImage src={formData.avatar_url || ""} alt="Avatar preview" />
-                  <AvatarFallback className="rounded-lg"><UserRound className="h-6 w-6" /></AvatarFallback>
-                </Avatar>
-                <Button type="button" variant="outline">Change</Button>
+              <div className="mt-2">
+                <AvatarUpload
+                  currentAvatarUrl={formData.avatar_url}
+                  onAvatarChange={(url) => handleInputChange("avatar_url", url)}
+                  disabled={status === "saving"}
+                />
               </div>
             </div>
 
             <div className="col-span-full">
               <Label htmlFor="cover-photo" className="block">Cover photo</Label>
-              <div className="mt-2 flex justify-center rounded-lg border border-dashed border-border px-6 py-10">
-                <div className="text-center">
-                  <ImageIcon aria-hidden className="mx-auto h-12 w-12 text-muted-foreground" />
-                  <div className="mt-4 flex text-sm text-muted-foreground items-center justify-center gap-1">
-                    <label htmlFor="file-upload" className="relative cursor-pointer rounded-md font-semibold text-primary hover:opacity-90">
-                      <span>Upload a file</span>
-                      <input id="file-upload" name="file-upload" type="file" className="sr-only" />
-                    </label>
-                    <p>or drag and drop</p>
-                  </div>
-                  <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
-                </div>
+              <div className="mt-2">
+                <CoverUpload
+                  currentCoverUrl={formData.cover_url}
+                  onCoverChange={(url) => handleInputChange("cover_url", url)}
+                  disabled={status === "saving"}
+                />
               </div>
             </div>
           </div>
@@ -248,6 +349,24 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
                 />
                 {errors.email && (
                   <p className="mt-1 text-sm text-destructive">{errors.email}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="sm:col-span-3">
+              <Label htmlFor="phone" className="block">Phone number</Label>
+              <div className="mt-2">
+                <Input 
+                  id="phone" 
+                  type="tel" 
+                  autoComplete="tel" 
+                  value={formData.phone || ""}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  placeholder="(555) 123-4567"
+                  className={errors.phone ? "border-destructive" : ""}
+                />
+                {errors.phone && (
+                  <p className="mt-1 text-sm text-destructive">{errors.phone}</p>
                 )}
               </div>
             </div>
