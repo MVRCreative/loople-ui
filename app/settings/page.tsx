@@ -7,6 +7,7 @@ import { UsersService, ClubsService } from "@/lib/services"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
+import { UserPreferences } from "@/lib/services/users.service"
 
 export default function Page() {
   const { user, isAuthenticated, loading } = useAuth()
@@ -15,7 +16,18 @@ export default function Page() {
     email: string;
     first_name?: string;
     last_name?: string;
+    phone?: string;
+    avatar_url?: string;
+    username?: string | null;
+    bio?: string | null;
+    cover_url?: string | null;
+    country?: string | null;
+    street_address?: string | null;
+    city?: string | null;
+    region?: string | null;
+    postal_code?: string | null;
   } | null>(null)
+  const [userPreferences, setUserPreferences] = useState<UserPreferences | null>(null)
   const [clubsData, setClubsData] = useState<{
     id: string;
     name: string;
@@ -36,10 +48,25 @@ export default function Page() {
       const loadUserData = async () => {
         try {
           setIsLoading(true)
-          const userRecord = await UsersService.getUserById(user.id)
+          const userProfile = await UsersService.getUserProfile()
           const clubs = await ClubsService.getUserClubs()
           
-          setUserData(userRecord)
+          setUserData({
+            email: userProfile.email,
+            first_name: userProfile.first_name,
+            last_name: userProfile.last_name,
+            phone: userProfile.phone,
+            avatar_url: userProfile.avatar_url,
+            username: userProfile.username ?? null,
+            bio: userProfile.bio ?? null,
+            cover_url: userProfile.cover_url ?? null,
+            country: userProfile.country ?? null,
+            street_address: userProfile.street_address ?? null,
+            city: userProfile.city ?? null,
+            region: userProfile.region ?? null,
+            postal_code: userProfile.postal_code ?? null,
+          })
+          setUserPreferences(userProfile.preferences)
           setClubsData(clubs || [])
         } catch (error) {
           console.error('Error loading user data:', error)
@@ -71,14 +98,10 @@ export default function Page() {
     return null
   }
 
-  // Transform user data to match expected format
-  const processedUserData = userData
-    ? {
-      email: userData.email,
-      full_name: `${userData.first_name ?? ""} ${userData.last_name ?? ""}`.trim(),
-      avatar_url: "",
-    }
-    : null
+  // Names derived directly from loaded profile
+  const firstName = userData?.first_name ?? ""
+  const lastName = userData?.last_name ?? ""
+  const fullName = `${firstName} ${lastName}`.trim()
 
   // Transform clubs data to match expected format
   type ClubsServiceClub = {
@@ -95,45 +118,20 @@ export default function Page() {
     }))
     .filter((club) => Boolean(club.id) && Boolean(club.name))
   
-  // Split full_name into first_name and last_name
-  const fullName = processedUserData?.full_name ?? ""
-  const nameParts = fullName.trim().split(" ")
-  const firstName = nameParts[0] ?? ""
-  const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : ""
+  // (removed derived split from full_name)
 
-  // Client-side console logs
-  console.log("=== CLIENT: USER INFORMATION ===")
-  console.log("UUID:", user.id)
-  console.log("Email:", processedUserData?.email ?? user.email ?? "Not available")
-  console.log("First Name:", firstName)
-  console.log("Last Name:", lastName)
-  console.log("Full Name:", fullName)
-  console.log("Avatar URL:", processedUserData?.avatar_url ?? "Not available")
-  console.log("=================================")
-
-  // Client-side console logs for clubs
-  console.log("=== CLIENT: CLUBS INFORMATION ===")
-  console.log("Number of clubs:", clubs.length)
-  clubs.forEach((club, index) => {
-    console.log(`Club ${index + 1}:`, {
-      id: club.id,
-      name: club.name,
-      subdomain: club.subdomain,
-      member_type: club.member_type
-    })
-  })
-  console.log("=================================")
+  // Remove noisy console logs
 
   return (
     <>
       <UserInfoLogger 
         userInfo={{
           uuid: user.id,
-          email: processedUserData?.email ?? user.email ?? "Not available",
+          email: userData?.email ?? user.email ?? "Not available",
           firstName,
           lastName,
           fullName,
-          avatarUrl: processedUserData?.avatar_url ?? "Not available"
+          avatarUrl: userData?.avatar_url ?? "Not available"
         }}
       />
       
@@ -148,10 +146,23 @@ export default function Page() {
             {/* Profile Section */}
             <ProfileForm
               initialData={{
-                email: processedUserData?.email ?? user.email ?? "",
+                email: userData?.email ?? user.email ?? "",
                 first_name: firstName,
                 last_name: lastName,
-                avatar_url: processedUserData?.avatar_url ?? "",
+                avatar_url: userData?.avatar_url ?? "",
+                cover_url: userData?.cover_url ?? "",
+                phone: userData?.phone ?? "",
+                username: userData?.username ?? "",
+                about: userData?.bio ?? "",
+                country: userData?.country ?? "",
+                street_address: userData?.street_address ?? "",
+                city: userData?.city ?? "",
+                region: userData?.region ?? "",
+                postal_code: userData?.postal_code ?? "",
+                notify_comments: userPreferences?.notify_comments ?? true,
+                notify_candidates: userPreferences?.notify_candidates ?? false,
+                notify_offers: userPreferences?.notify_offers ?? false,
+                push_notifications: userPreferences?.push_notifications ?? "everything",
               }}
             />
             

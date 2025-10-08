@@ -1,5 +1,13 @@
 import { supabase } from '../supabase';
 
+export interface Role {
+  id: string;
+  name: string;
+  permissions: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface User {
   id: string;
   club_id: string;
@@ -7,6 +15,16 @@ export interface User {
   email: string;
   first_name: string;
   last_name: string;
+  phone?: string;
+  avatar_url?: string;
+  username?: string | null;
+  bio?: string | null;
+  cover_url?: string | null;
+  country?: string | null;
+  street_address?: string | null;
+  city?: string | null;
+  region?: string | null;
+  postal_code?: string | null;
   created_at: string;
   updated_at: string;
   role?: {
@@ -24,12 +42,37 @@ export interface CreateUserData {
   last_name: string;
 }
 
-export interface Role {
-  id: string;
-  name: string;
-  permissions: string[];
-  created_at: string;
-  updated_at: string;
+export interface UserPreferences {
+  id?: number;
+  user_id: string;
+  notify_comments: boolean;
+  notify_candidates: boolean;
+  notify_offers: boolean;
+  push_notifications: 'everything' | 'same_as_email' | 'none';
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface UpdateUserProfileData {
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  avatar_url?: string;
+  username?: string | null;
+  bio?: string | null;
+  cover_url?: string | null;
+  country?: string | null;
+  street_address?: string | null;
+  city?: string | null;
+  region?: string | null;
+  postal_code?: string | null;
+}
+
+export interface UpdateUserPreferencesData {
+  notify_comments?: boolean;
+  notify_candidates?: boolean;
+  notify_offers?: boolean;
+  push_notifications?: 'everything' | 'same_as_email' | 'none';
 }
 
 export class UsersService {
@@ -189,6 +232,89 @@ export class UsersService {
       return data || [];
     } catch (error) {
       console.error('Error in getAllRoles:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get user profile with preferences
+   */
+  static async getUserProfile(): Promise<User & { preferences: UserPreferences }> {
+    try {
+      const { data, error } = await supabase.functions.invoke('users', {
+        method: 'GET'
+      });
+      
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        throw error;
+      }
+      // Edge function returns { success, data }
+      type EdgeFunctionResponse<T> = { success?: boolean; data?: T; error?: unknown }
+      const payload = data as EdgeFunctionResponse<User & { preferences: UserPreferences }>
+      if (payload?.success && payload.data) {
+        return payload.data
+      }
+      const message = payload?.error ? String(payload.error) : 'Failed to load user profile'
+      throw new Error(message)
+    } catch (error) {
+      console.error('Error in getUserProfile:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update user profile
+   */
+  static async updateUserProfile(updates: UpdateUserProfileData): Promise<User> {
+    try {
+      const { data, error } = await supabase.functions.invoke('users', {
+        method: 'PUT',
+        body: updates
+      });
+      
+      if (error) {
+        console.error('Error updating user profile:', error);
+        throw error;
+      }
+      type EdgeFunctionResponse<T> = { success?: boolean; data?: T; error?: unknown }
+      const payload = data as EdgeFunctionResponse<User>
+      if (payload?.success && payload.data) {
+        return payload.data
+      }
+      const message = payload?.error ? String(payload.error) : 'Failed to update user profile'
+      const err = new Error(message) as Error & { status?: number }
+      err.status = 400
+      throw err
+    } catch (error) {
+      console.error('Error in updateUserProfile:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Update user preferences
+   */
+  static async updateUserPreferences(preferences: UpdateUserPreferencesData): Promise<UserPreferences> {
+    try {
+      const { data, error } = await supabase.functions.invoke('users', {
+        method: 'PATCH',
+        body: preferences
+      });
+      
+      if (error) {
+        console.error('Error updating user preferences:', error);
+        throw error;
+      }
+      type EdgeFunctionResponse<T> = { success?: boolean; data?: T; error?: unknown }
+      const payload = data as EdgeFunctionResponse<UserPreferences>
+      if (payload?.success && payload.data) {
+        return payload.data
+      }
+      const message = payload?.error ? String(payload.error) : 'Failed to update user preferences'
+      throw new Error(message)
+    } catch (error) {
+      console.error('Error in updateUserPreferences:', error);
       throw error;
     }
   }
