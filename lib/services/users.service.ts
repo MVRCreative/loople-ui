@@ -250,11 +250,13 @@ export class UsersService {
         throw error;
       }
       // Edge function returns { success, data }
-      const payload = data as { success?: boolean; data?: any; error?: any }
-      if (payload && payload.success && payload.data) {
-        return payload.data as User & { preferences: UserPreferences };
+      type EdgeFunctionResponse<T> = { success?: boolean; data?: T; error?: unknown }
+      const payload = data as EdgeFunctionResponse<User & { preferences: UserPreferences }>
+      if (payload?.success && payload.data) {
+        return payload.data
       }
-      throw new Error(payload?.error || 'Failed to load user profile');
+      const message = payload?.error ? String(payload.error) : 'Failed to load user profile'
+      throw new Error(message)
     } catch (error) {
       console.error('Error in getUserProfile:', error);
       throw error;
@@ -275,13 +277,15 @@ export class UsersService {
         console.error('Error updating user profile:', error);
         throw error;
       }
-      const payload = data as { success?: boolean; data?: any; error?: any }
-      if (payload && payload.success && payload.data) {
-        return payload.data as User;
+      type EdgeFunctionResponse<T> = { success?: boolean; data?: T; error?: unknown }
+      const payload = data as EdgeFunctionResponse<User>
+      if (payload?.success && payload.data) {
+        return payload.data
       }
-      const e = new Error(payload?.error || 'Failed to update user profile') as any
-      ;(e as any).status = 400
-      throw e
+      const message = payload?.error ? String(payload.error) : 'Failed to update user profile'
+      const err = new Error(message) as Error & { status?: number }
+      err.status = 400
+      throw err
     } catch (error) {
       console.error('Error in updateUserProfile:', error);
       throw error;
@@ -302,11 +306,13 @@ export class UsersService {
         console.error('Error updating user preferences:', error);
         throw error;
       }
-      const payload = data as { success?: boolean; data?: any; error?: any }
-      if (payload && payload.success && payload.data) {
-        return payload.data as UserPreferences;
+      type EdgeFunctionResponse<T> = { success?: boolean; data?: T; error?: unknown }
+      const payload = data as EdgeFunctionResponse<UserPreferences>
+      if (payload?.success && payload.data) {
+        return payload.data
       }
-      throw new Error(payload?.error || 'Failed to update user preferences')
+      const message = payload?.error ? String(payload.error) : 'Failed to update user preferences'
+      throw new Error(message)
     } catch (error) {
       console.error('Error in updateUserPreferences:', error);
       throw error;

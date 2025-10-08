@@ -189,7 +189,8 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
       // Detect username conflict and surface a friendly inline error
       const errText = (() => {
         try {
-          const raw = (error as any)?.message || (error as any)?.error || String(error)
+          const maybeErr = error as unknown as { message?: unknown; error?: unknown }
+          const raw = (maybeErr?.message ?? maybeErr?.error ?? String(error))
           return String(raw).toLowerCase()
         } catch { return '' }
       })()
@@ -198,7 +199,7 @@ export default function ProfileForm({ initialData }: { initialData: ProfileFormV
         errText.includes('users_username_lower_unique') ||
         (errText.includes('duplicate key') && errText.includes('username')) ||
         (errText.includes('unique') && errText.includes('username')) ||
-        (error as any)?.status === 409
+        (error as unknown as { status?: number })?.status === 409
 
       if (isUsernameConflict) {
         setErrors(prev => ({ ...prev, username: 'This username is already taken. Please choose another.' }))
