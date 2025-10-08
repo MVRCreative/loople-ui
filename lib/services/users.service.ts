@@ -1,5 +1,13 @@
 import { supabase } from '../supabase';
 
+export interface Role {
+  id: string;
+  name: string;
+  permissions: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface User {
   id: string;
   club_id: string;
