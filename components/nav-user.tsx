@@ -56,7 +56,7 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { user: authUser, signOut } = useAuth()
   const router = useRouter()
-  const [userProfile, setUserProfile] = useState<{ username?: string | null } | null>(null)
+  const [userProfile, setUserProfile] = useState<{ username?: string | null; avatar_url?: string | null } | null>(null)
   const [showUsernameDialog, setShowUsernameDialog] = useState(false)
   
   // Use real auth user data if available, fallback to prop user
@@ -64,9 +64,9 @@ export function NavUser({
     ? `${authUser.user_metadata.first_name} ${authUser.user_metadata.last_name}`
     : authUser?.email || user.name
   const displayEmail = authUser?.email || user.email
-  const displayAvatar = user.avatar // Keep using the prop avatar for now
+  const displayAvatar = userProfile?.avatar_url || user.avatar
 
-  // Load user profile to get username
+  // Load user profile to get username and avatar
   useEffect(() => {
     if (authUser) {
       const loadUserProfile = async () => {

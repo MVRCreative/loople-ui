@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Image, FileImage, List, Smile, Bold, Italic, X } from "lucide-react";
 import { User } from "@/lib/types";
 import { toast } from "sonner";
@@ -147,9 +147,10 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
       <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
         <div className="flex gap-3">
           <Avatar className="h-10 w-10">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-lg">
+            <AvatarImage src={currentUser.avatar_url || ''} alt={currentUser.name} />
+            <AvatarFallback className="bg-primary/10 text-lg">
               {currentUser.avatar}
-            </div>
+            </AvatarFallback>
           </Avatar>
           
           <div className="flex-1">

@@ -64,20 +64,8 @@ export function ProfilePosts({ userId, currentUser }: ProfilePostsProps) {
 
   return (
     <div className="w-full">
-      {/* Posts Header */}
-      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-sm border-b border-border">
-        <div className="px-4 py-3">
-          <h2 className="text-xl font-bold text-foreground">Posts</h2>
-          <p className="text-sm text-muted-foreground">
-            {isLoading ? "Loading posts..." : 
-             error ? "Error loading posts" :
-             `${posts.length} post${posts.length !== 1 ? 's' : ''} by ${currentUser.name}`}
-          </p>
-        </div>
-      </div>
-
       {/* Posts List */}
-      <div className="divide-y divide-border">
+      <div>
         {isLoading ? (
           <div className="p-8 text-center">
             <div className="text-muted-foreground">
@@ -94,15 +82,14 @@ export function ProfilePosts({ userId, currentUser }: ProfilePostsProps) {
           </div>
         ) : posts.length > 0 ? (
           posts.map((post) => (
-            <div key={post.id} className="">
-              <PostCard
-                post={post}
-                currentUser={currentUser}
-                onReaction={handleReaction}
-                onComment={handleComment}
-                onShare={handleShare}
-              />
-            </div>
+            <PostCard
+              key={post.id}
+              post={post}
+              currentUser={currentUser}
+              onReaction={handleReaction}
+              onComment={handleComment}
+              onShare={handleShare}
+            />
           ))
         ) : (
           <div className="p-8 text-center">

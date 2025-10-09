@@ -47,6 +47,18 @@ export function createUserFromApi(apiUser: Record<string, unknown>): User {
     || (rawMeta.email as string)
     || (apiUser.user_email as string)
     || ''
+  
+  const username = (apiUser.username as string | undefined) || undefined
+  
+  // Debug log to see what data we're receiving
+  console.log('Creating user from API data:', { 
+    id: apiUser.id, 
+    username, 
+    firstName, 
+    lastName, 
+    email,
+    rawApiUser: apiUser 
+  })
 
   const displayName = (firstName || lastName)
     ? `${firstName} ${lastName}`.trim()
@@ -55,11 +67,15 @@ export function createUserFromApi(apiUser: Record<string, unknown>): User {
   const avatarInitialSource = firstName || fullNameFromMeta || email || 'U'
   const avatarInitial = avatarInitialSource.charAt(0).toUpperCase()
   
+  const avatarUrl = (apiUser.avatar_url as string | undefined) || undefined
+  
   return {
     id: (apiUser.id as string) || (apiUser.user_id as string) || '',
     name: displayName,
+    username,
     role: 'Member', // Default role, could be enhanced with actual role data
     avatar: avatarInitial,
+    avatar_url: avatarUrl,
     isAdmin: false, // Default, could be enhanced with actual admin status
   }
 }

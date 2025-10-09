@@ -5,7 +5,6 @@ import { Home, Bell, User, Settings, LogOut, Users, MessageSquare, MoreVertical,
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
-import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/lib/auth-context"
 import { UsersService } from "@/lib/services/users.service"
@@ -18,7 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useClub } from "@/lib/club-context"
-import { Avatar } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,20 +48,15 @@ export function NewsfeedSidebar() {
   const { clubs, selectedClub, selectClub } = useClub()
   const pathname = usePathname()
   const router = useRouter()
-  const { theme, resolvedTheme } = useTheme()
-  const [userProfile, setUserProfile] = useState<{ username?: string | null } | null>(null)
+  const [userProfile, setUserProfile] = useState<{ username?: string | null; avatar_url?: string | null } | null>(null)
   const [showUsernameDialog, setShowUsernameDialog] = useState(false)
   
   // Use real auth user data if available
   const displayName = user?.user_metadata?.first_name && user?.user_metadata?.last_name 
     ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
     : user?.email || "Guest"
-
-  // Determine which logo to show based on theme
-  const currentTheme = theme === 'system' ? resolvedTheme : theme
-  const logoSrc = currentTheme === 'dark' ? '/loople-logo-white.svg' : '/loople logo3.svg'
   
-  // Load user profile to get username
+  // Load user profile to get username and avatar
   useEffect(() => {
     if (isAuthenticated && user) {
       const loadUserProfile = async () => {
@@ -134,12 +128,21 @@ export function NewsfeedSidebar() {
       {/* Logo */}
       <div className="flex h-12 sm:h-14 md:h-16 w-full items-center px-1 sm:px-2 md:px-3">
         <Link href="/" className="flex items-center">
+          {/* Light mode logo */}
           <Image 
-            src={logoSrc} 
+            src="/loople logo3.svg" 
             alt="Loople Logo" 
             width={32}
             height={32}
-            className="h-6 w-auto sm:h-7 md:h-8"
+            className="h-6 w-auto sm:h-7 md:h-8 dark:hidden"
+          />
+          {/* Dark mode logo */}
+          <Image 
+            src="/loople-logo-white.svg" 
+            alt="Loople Logo" 
+            width={32}
+            height={32}
+            className="hidden h-6 w-auto sm:h-7 md:h-8 dark:block"
           />
         </Link>
       </div>
@@ -214,9 +217,10 @@ export function NewsfeedSidebar() {
                 <div className="flex items-center gap-2 w-full">
                   {/* Avatar - spans height of username + club */}
                   <Avatar className="h-10 w-10 shrink-0">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-lg">
+                    <AvatarImage src={userProfile?.avatar_url || ''} alt={displayName} />
+                    <AvatarFallback className="bg-primary/10 text-lg">
                       {displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                    </div>
+                    </AvatarFallback>
                   </Avatar>
                   
                   {/* Username and Club stacked */}

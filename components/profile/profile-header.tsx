@@ -2,15 +2,22 @@
 
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Dialog, DialogContent, DialogOverlay } from "@/components/ui/dialog"
 import NextImage from "next/image"
+import Link from "next/link"
 import { User } from "@/lib/services/users.service"
 import { formatUserDisplayName, getUserAvatarInitials } from "@/lib/utils/profile.utils"
+import { useState } from "react"
 
 interface ProfileHeaderProps {
   user: User
+  isOwnProfile?: boolean
 }
 
-export function ProfileHeader({ user }: ProfileHeaderProps) {
+export function ProfileHeader({ user, isOwnProfile = false }: ProfileHeaderProps) {
+  const [imageModalOpen, setImageModalOpen] = useState(false)
+  const [modalImageUrl, setModalImageUrl] = useState<string>("")
+  
   // Format user data for display
   const fullName = formatUserDisplayName(user)
   const displayName = user.username ? `@${user.username}` : user.email.split('@')[0]
@@ -38,18 +45,30 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
     followers: 0, // TODO: Implement followers system
     posts: 0, // TODO: Get actual post count
   }
+  
+  const handleImageClick = (imageUrl: string) => {
+    setModalImageUrl(imageUrl)
+    setImageModalOpen(true)
+  }
   return (
     <div className="w-full">
       {/* Cover Image */}
-      <div className="h-32 w-full lg:h-48 relative overflow-hidden">
+      <div className="h-32 w-full lg:h-48 relative overflow-hidden group">
         {user.cover_url ? (
-          <NextImage 
-            alt="" 
-            src={user.cover_url} 
-            width={1200}
-            height={192}
-            className="h-full w-full object-cover" 
-          />
+          <button 
+            onClick={() => handleImageClick(user.cover_url!)}
+            className="h-full w-full cursor-pointer transition-opacity hover:opacity-90"
+            type="button"
+            aria-label="View cover photo"
+          >
+            <NextImage 
+              alt="Cover photo" 
+              src={user.cover_url} 
+              width={1200}
+              height={192}
+              className="h-full w-full object-cover" 
+            />
+          </button>
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 relative">
             {/* Animated background pattern */}
@@ -69,12 +88,20 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
         <div className="-mt-12 sm:-mt-16 sm:flex sm:items-end sm:space-x-5">
           {/* Avatar */}
           <div className="flex">
-            <Avatar className="size-24 rounded-full ring-4 ring-background sm:size-32 shadow-lg">
-              <AvatarImage src={user.avatar_url || ''} alt={fullName} />
-              <AvatarFallback className={`text-lg font-semibold bg-gradient-to-br ${avatarGradient} text-white shadow-inner`}>
-                {avatarInitials}
-              </AvatarFallback>
-            </Avatar>
+            <button
+              onClick={() => user.avatar_url && handleImageClick(user.avatar_url)}
+              className="rounded-full ring-4 ring-background shadow-lg cursor-pointer transition-transform hover:scale-105"
+              type="button"
+              aria-label="View profile picture"
+              disabled={!user.avatar_url}
+            >
+              <Avatar className="size-24 sm:size-32">
+                <AvatarImage src={user.avatar_url || ''} alt={fullName} />
+                <AvatarFallback className={`text-lg font-semibold bg-gradient-to-br ${avatarGradient} text-white shadow-inner`}>
+                  {avatarInitials}
+                </AvatarFallback>
+              </Avatar>
+            </button>
           </div>
           
           {/* Profile Info and Actions */}
@@ -86,16 +113,28 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
             
             {/* Action Buttons */}
             <div className="mt-6 flex flex-col justify-stretch space-y-3 sm:flex-row sm:space-y-0 sm:space-x-4">
-              <Button
-                variant="outline"
-                size="icon"
-                className="rounded-full"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
-                  <path d="M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
-                  <path d="M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1"/>
-                </svg>
-              </Button>
+              {isOwnProfile ? (
+                <Link href="/settings">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="rounded-full hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
+                  >
+                    Edit Profile
+                  </Button>
+                </Link>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="rounded-full"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+                    <path d="M16 10a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 14.286V4a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+                    <path d="M20 9a2 2 0 0 1 2 2v10.286a.71.71 0 0 1-1.212.502l-2.202-2.202A2 2 0 0 0 17.172 19H10a2 2 0 0 1-2-2v-1"/>
+                  </svg>
+                </Button>
+              )}
             </div>
           </div>
         </div>
@@ -107,7 +146,7 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
         </div>
         
         {/* Bio and Stats */}
-        <div className="mt-6 space-y-4">
+        <div className="mt-6 mb-6 space-y-4">
           {/* Bio */}
           <div className="space-y-3">
             {user.bio ? (
@@ -148,21 +187,37 @@ export function ProfileHeader({ user }: ProfileHeaderProps) {
           
           {/* Stats */}
           <div className="flex space-x-8 text-sm">
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-start">
               <span className="text-xl font-bold text-foreground">{stats.following.toLocaleString()}</span>
               <span className="text-xs text-muted-foreground uppercase tracking-wide">Following</span>
             </div>
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-start">
               <span className="text-xl font-bold text-foreground">{stats.followers.toLocaleString()}</span>
               <span className="text-xs text-muted-foreground uppercase tracking-wide">Followers</span>
             </div>
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-start">
               <span className="text-xl font-bold text-foreground">{stats.posts}</span>
               <span className="text-xs text-muted-foreground uppercase tracking-wide">Posts</span>
             </div>
           </div>
         </div>
       </div>
+      
+      {/* Image Preview Modal */}
+      <Dialog open={imageModalOpen} onOpenChange={setImageModalOpen}>
+        <DialogOverlay className="bg-black/50 backdrop-blur-sm" />
+        <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 border-0 bg-transparent">
+          <div className="relative w-full h-full flex items-center justify-center">
+            <NextImage
+              src={modalImageUrl}
+              alt="Full size preview"
+              width={1200}
+              height={1200}
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

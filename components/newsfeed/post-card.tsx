@@ -1,4 +1,4 @@
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Post, User, ApiPost, MediaAttachment } from "@/lib/types";
 import { CreatePostRequest } from "@/lib/services/posts.service";
@@ -42,6 +42,20 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   const isLiked = Boolean((post as { isLiked?: boolean })?.isLiked ?? false);
   const commentsCount =
     Array.isArray(post.comments) ? post.comments.length : Number(post.comments ?? 0);
+  
+  // Get username or extract from email/ID
+  const getUsername = () => {
+    if (post.user.username) {
+      return post.user.username;
+    }
+    // Extract from email if available (e.g., josh@example.com -> josh)
+    const email = (post.user as unknown as { email?: string }).email;
+    if (email && email.includes('@')) {
+      return email.split('@')[0];
+    }
+    // Last resort: use first part of ID
+    return post.user.id.split('-')[0];
+  };
 
   const handleCommentClick = () => {
     setShowComments(!showComments);
@@ -147,30 +161,78 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
 
   return (
     <div className="bg-card border-t border-border p-4 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
-      {/* Post Header and Content */}
+      {/* Post Header */}
       <div className="flex items-start gap-3 mb-3">
         <Avatar className="h-10 w-10">
-          <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-lg">
+          <AvatarImage src={post.user.avatar_url || ''} alt={post.user.name} />
+          <AvatarFallback className="bg-primary/10 text-lg">
             {post.user.avatar}
-          </div>
+          </AvatarFallback>
         </Avatar>
         
         <div className="flex-1 min-w-0">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold text-card-foreground">
+          {/* Header Row with Name, Username, Role, Date */}
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <div className="flex items-center gap-2 flex-wrap min-w-0">
+              <Link href={`/profile/${getUsername()}`} className="font-semibold text-card-foreground hover:underline">
                 {post.user.name}
+              </Link>
+              <span className="text-sm text-muted-foreground">
+                @{getUsername()}
               </span>
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-xs bg-blue-900 text-blue-300 hover:bg-blue-900">
                 {post.user.role}
               </Badge>
               {Boolean(post.content.event) && (
                 <Badge variant="outline" className="text-xs">Event</Badge>
               )}
+              <span className="text-sm text-muted-foreground">
+                · {post.timestamp}
+              </span>
             </div>
-            <span className="text-sm text-muted-foreground">
-              {post.timestamp}
-            </span>
+            
+            {/* 3-dot menu */}
+            {(canEdit || canDelete) && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full shrink-0"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const menu = e.currentTarget.nextElementSibling as HTMLElement;
+                  if (menu) menu.classList.toggle('hidden');
+                }}
+              >
+                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                </svg>
+              </Button>
+            )}
+            {(canEdit || canDelete) && (
+              <div className="hidden absolute right-4 mt-8 w-48 rounded-md shadow-lg bg-popover ring-1 ring-black ring-opacity-5 z-50">
+                <div className="py-1" role="menu">
+                  {canEdit && (
+                    <button
+                      onClick={handleEdit}
+                      className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent"
+                      role="menuitem"
+                    >
+                      Edit post
+                    </button>
+                  )}
+                  {canDelete && (
+                    <button
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-accent disabled:opacity-50"
+                      role="menuitem"
+                    >
+                      {isDeleting ? 'Deleting...' : 'Delete post'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           
           {/* Post Content */}

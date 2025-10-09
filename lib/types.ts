@@ -4,8 +4,10 @@ import { z } from "zod";
 export const userSchema = z.object({
   id: z.string(),
   name: z.string(),
+  username: z.string().optional(),
   role: z.string(),
   avatar: z.string(),
+  avatar_url: z.string().optional(),
   isAdmin: z.boolean().default(false),
 });
 

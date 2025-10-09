@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User } from "@/lib/types";
 
 interface CommentFormProps {
@@ -40,9 +40,10 @@ export function CommentForm({
     <form onSubmit={handleSubmit} className="space-y-3">
       <div className="flex gap-3">
         <Avatar className="h-8 w-8">
-          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">
+          <AvatarImage src={currentUser.avatar_url || ''} alt={currentUser.name} />
+          <AvatarFallback className="bg-primary/10 text-sm">
             {currentUser.avatar}
-          </div>
+          </AvatarFallback>
         </Avatar>
         
         <div className="flex-1">

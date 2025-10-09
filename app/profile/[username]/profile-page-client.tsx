@@ -101,13 +101,16 @@ export function ProfilePageClient({ username }: ProfilePageClientProps) {
     return null
   }
   
+  // Check if viewing own profile
+  const isOwnProfile = user.id === profileUser.id
+  
   return (
     <div className="min-h-screen bg-background">
       {/* Profile Header */}
-      <ProfileHeader user={profileUser} />
+      <ProfileHeader user={profileUser} isOwnProfile={isOwnProfile} />
       
       {/* Main column - Profile Posts */}
-      <main className="min-h-screen border-l border-r border-border">
+      <main className="min-h-screen">
         <ProfilePosts userId={profileUser.id} currentUser={currentUser} />
       </main>
     </div>

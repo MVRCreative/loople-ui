@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Avatar } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Comment as CommentType, User } from "@/lib/types";
 import { CommentForm } from "./comment-form";
@@ -49,9 +49,10 @@ export function Comment({ comment, currentUser, onReply, onDelete, isReply = fal
     <div className={`${isReply ? 'ml-8 border-l-2 border-border pl-4' : ''}`}>
       <div className="flex gap-3 mb-3">
         <Avatar className="h-8 w-8">
-          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm">
+          <AvatarImage src={comment.user?.avatar_url || ''} alt={comment.user?.name || 'User'} />
+          <AvatarFallback className="bg-primary/10 text-sm">
             {comment.user?.avatar ?? '👤'}
-          </div>
+          </AvatarFallback>
         </Avatar>
         
         <div className="flex-1 min-w-0">
