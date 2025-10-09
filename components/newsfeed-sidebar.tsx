@@ -10,26 +10,90 @@ import { Separator } from "@/components/ui/separator"
 import { ThemeSwitch } from "@/components/ui/theme-switch"
 import { ClubSwitcher } from "@/components/club-switcher"
 import { useAuth } from "@/lib/auth-context"
+import { UsersService } from "@/lib/services/users.service"
+import { useState, useEffect } from "react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
-const navigation = [
+type NavigationItem = {
+  name: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  badge?: string
+  needsUsername?: boolean
+}
+
+const baseNavigation: NavigationItem[] = [
   { name: "Home", href: "/", icon: Home },
   { name: "Programs", href: "#", icon: Users },
   { name: "Events", href: "/events", icon: Bell },
   { name: "Messages", href: "/messages", icon: MessageSquare, badge: "3" },
   { name: "Notifications", href: "#", icon: Bell, badge: "5" },
-  { name: "Profile", href: "/profile/ricardo-cooper", icon: User },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
 export function NewsfeedSidebar() {
   const { user, isAuthenticated, signOut } = useAuth()
   const pathname = usePathname()
+  const [userProfile, setUserProfile] = useState<{ username?: string | null } | null>(null)
+  const [showUsernameDialog, setShowUsernameDialog] = useState(false)
   
   // Use real auth user data if available
   const displayEmail = user?.email || "Not signed in"
-  // const _displayName = user?.user_metadata?.first_name && user?.user_metadata?.last_name 
-  //   ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
-  //   : user?.email || "Guest"
+  
+  // Load user profile to get username
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const loadUserProfile = async () => {
+        try {
+          const profile = await UsersService.getUserProfile()
+          setUserProfile(profile)
+        } catch (error) {
+          console.error('Error loading user profile:', error)
+        }
+      }
+      
+      loadUserProfile()
+    }
+  }, [isAuthenticated, user])
+
+  // Create navigation with dynamic profile link
+  const navigation = React.useMemo(() => {
+    const nav = [...baseNavigation]
+    
+    if (isAuthenticated && userProfile) {
+      if (userProfile.username) {
+        // Insert profile link before settings
+        nav.splice(-1, 0, { 
+          name: "Profile", 
+          href: `/profile/${userProfile.username}`, 
+          icon: User 
+        })
+      } else {
+        // Add profile button without href for users without username
+        nav.splice(-1, 0, { 
+          name: "Profile", 
+          href: "#", 
+          icon: User,
+          needsUsername: true
+        })
+      }
+    }
+    
+    return nav
+  }, [isAuthenticated, userProfile])
+
+  const handleProfileClick = (e: React.MouseEvent) => {
+    if (!userProfile?.username) {
+      e.preventDefault()
+      setShowUsernameDialog(true)
+    }
+  }
 
   const handleLogout = async () => {
     await signOut()
@@ -88,6 +152,17 @@ export function NewsfeedSidebar() {
                   >
                     <Link href={item.href}>{content}</Link>
                   </Button>
+                ) : item.needsUsername ? (
+                  <Button
+                    variant="ghost"
+                    className="group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-10 md:h-12 px-1 sm:px-2 md:px-3 rounded-lg transition-all duration-350 ease-in-out hover:scale-[1.05] hover:bg-muted"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleProfileClick(e)
+                    }}
+                  >
+                    {content}
+                  </Button>
                 ) : (
                   <Button
                     variant="ghost"
@@ -136,6 +211,36 @@ export function NewsfeedSidebar() {
           </Button>
         )}
       </div>
+
+      {/* Username Setup Dialog */}
+      <Dialog open={showUsernameDialog} onOpenChange={setShowUsernameDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Setup Your Profile</DialogTitle>
+            <DialogDescription>
+              You need to set up a username to access your profile page. This will be your unique identifier on the platform.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Go to Settings to set up your username and complete your profile.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowUsernameDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button asChild>
+                <Link href="/settings" onClick={() => setShowUsernameDialog(false)}>
+                  Go to Settings
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

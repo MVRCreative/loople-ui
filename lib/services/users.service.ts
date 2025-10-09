@@ -125,6 +125,32 @@ export class UsersService {
   }
 
   /**
+   * Get user by username
+   */
+  static async getUserByUsername(username: string): Promise<User | null> {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select(`
+          *,
+          role:roles(name, permissions)
+        `)
+        .eq('username', username)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user by username:', error);
+        throw error;
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error in getUserByUsername:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get users by club ID
    */
   static async getUsersByClub(clubId: string): Promise<User[]> {
