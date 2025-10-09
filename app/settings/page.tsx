@@ -8,6 +8,8 @@ import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { UserPreferences } from "@/lib/services/users.service"
+import { ThemeSwitch } from "@/components/ui/theme-switch"
+import { Moon } from "lucide-react"
 
 export default function Page() {
   const { user, isAuthenticated, loading } = useAuth()
@@ -174,9 +176,21 @@ export default function Page() {
             {/* Additional Settings Section */}
             <div className="bg-card border border-border rounded-lg p-6 shadow-xs">
               <h2 className="text-base font-semibold text-foreground">Additional Settings</h2>
-              <p className="mt-1 text-sm text-muted-foreground">
-                More settings will be available here in the future.
+              <p className="mt-1 text-sm text-muted-foreground mb-4">
+                Customize your experience with additional preferences.
               </p>
+              
+              {/* Dark Mode Toggle */}
+              <div className="flex items-center justify-between py-3 border-t border-border">
+                <div className="flex items-center gap-3">
+                  <Moon className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">Dark Mode</p>
+                    <p className="text-xs text-muted-foreground">Toggle between light and dark themes</p>
+                  </div>
+                </div>
+                <ThemeSwitch />
+              </div>
             </div>
           </div>
         </div>

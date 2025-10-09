@@ -1,14 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { Home, Bell, User, Settings, LogOut, Moon, Users, MessageSquare } from "lucide-react"
+import { Home, Bell, User, Settings, LogOut, Users, MessageSquare, MoreVertical, Building2, Plus } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { ThemeSwitch } from "@/components/ui/theme-switch"
-import { ClubSwitcher } from "@/components/club-switcher"
 import { useAuth } from "@/lib/auth-context"
 import { UsersService } from "@/lib/services/users.service"
 import { useState, useEffect } from "react"
@@ -19,6 +17,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useClub } from "@/lib/club-context"
+import { Avatar } from "@/components/ui/avatar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu"
 
 type NavigationItem = {
   name: string
@@ -39,12 +46,21 @@ const baseNavigation: NavigationItem[] = [
 
 export function NewsfeedSidebar() {
   const { user, isAuthenticated, signOut } = useAuth()
+  const { clubs, selectedClub, selectClub } = useClub()
   const pathname = usePathname()
+  const router = useRouter()
+  const { theme, resolvedTheme } = useTheme()
   const [userProfile, setUserProfile] = useState<{ username?: string | null } | null>(null)
   const [showUsernameDialog, setShowUsernameDialog] = useState(false)
   
   // Use real auth user data if available
-  const displayEmail = user?.email || "Not signed in"
+  const displayName = user?.user_metadata?.first_name && user?.user_metadata?.last_name 
+    ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
+    : user?.email || "Guest"
+
+  // Determine which logo to show based on theme
+  const currentTheme = theme === 'system' ? resolvedTheme : theme
+  const logoSrc = currentTheme === 'dark' ? '/loople-logo-white.svg' : '/loople logo3.svg'
   
   // Load user profile to get username
   useEffect(() => {
@@ -99,13 +115,27 @@ export function NewsfeedSidebar() {
     await signOut()
   }
 
+  const handleClubSwitch = (club: typeof selectedClub) => {
+    if (club) {
+      selectClub(club)
+    }
+  }
+
+  const handleClubManagement = () => {
+    router.push("/admin/club-management")
+  }
+
+  const handleCreateClub = () => {
+    router.push("/admin/club-management?action=create")
+  }
+
   return (
     <div className="flex h-screen w-[275px] flex-col bg-background border-r border-border sticky top-0 overflow-y-auto">
       {/* Logo */}
-      <div className="flex h-12 sm:h-14 md:h-16 w-full items-center px-2 sm:px-3 md:px-4 border-b border-border">
+      <div className="flex h-12 sm:h-14 md:h-16 w-full items-center px-1 sm:px-2 md:px-3">
         <Link href="/" className="flex items-center">
           <Image 
-            src="/loople logo3.svg" 
+            src={logoSrc} 
             alt="Loople Logo" 
             width={32}
             height={32}
@@ -113,13 +143,6 @@ export function NewsfeedSidebar() {
           />
         </Link>
       </div>
-
-      {/* Club Switcher */}
-      <div className="px-2 sm:px-3 md:px-4 pb-2 w-full">
-        <ClubSwitcher />
-      </div>
-
-      <Separator />
 
       {/* Navigation */}
       <nav className="flex flex-1 flex-col px-1 sm:px-2 md:px-3 py-2 sm:py-3 md:py-4">
@@ -143,7 +166,7 @@ export function NewsfeedSidebar() {
                 {item.href && item.href !== "#" ? (
                   <Button
                     variant="ghost"
-                    className={`group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-10 md:h-12 px-1 sm:px-2 md:px-3 rounded-lg transition-all duration-350 ease-in-out hover:scale-[1.05] hover:bg-muted ${
+                    className={`group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-10 md:h-12 px-3 rounded-full transition-colors hover:bg-muted/60 border-0 ${
                       isActive 
                         ? 'bg-muted' 
                         : ''
@@ -166,7 +189,7 @@ export function NewsfeedSidebar() {
                 ) : (
                   <Button
                     variant="ghost"
-                    className="group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-10 md:h-12 px-1 sm:px-2 md:px-3 rounded-lg transition-all duration-350 ease-in-out hover:scale-[1.05] hover:bg-muted"
+                    className="group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-10 md:h-12 px-3 rounded-full transition-colors hover:bg-muted/60 border-0"
                     onClick={(e) => e.preventDefault()}
                   >
                     {content}
@@ -179,34 +202,82 @@ export function NewsfeedSidebar() {
         </div>
       </nav>
 
-      <Separator />
-
-      {/* Theme toggle and logout */}
-      <div className="flex flex-col gap-1 sm:gap-2 px-1 sm:px-2 md:px-3 py-2 sm:py-3 md:py-4 border-t border-border">
-        <div className="group flex items-center gap-1 sm:gap-2 md:gap-3 px-1 sm:px-2 md:px-3 py-1 sm:py-2 rounded-lg transition-all duration-350 ease-in-out hover:scale-[1.05] hover:bg-muted">
-          <Moon className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-muted-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400" />
-          <span className="text-xs sm:text-sm text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400">Dark Mode</span>
-          <div className="ml-auto">
-            <ThemeSwitch />
-          </div>
-        </div>
-        <div className="px-1 sm:px-2 md:px-3 py-1 text-[9px] sm:text-[10px] md:text-[11px] text-muted-foreground">
-          {isAuthenticated ? `Signed in as ${displayEmail}` : "Not signed in"}
-        </div>
+      {/* User section with integrated club switcher */}
+      <div className="px-1 sm:px-2 md:px-3 py-3 sm:py-4 md:py-5 mb-2">
         {isAuthenticated ? (
-          <Button 
-            variant="ghost" 
-            className="group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-9 md:h-10 px-1 sm:px-2 md:px-3 rounded-lg transition-all duration-350 ease-in-out hover:scale-[1.05] hover:bg-muted" 
-            onClick={handleLogout}
-          >
-            <LogOut className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-muted-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400" />
-            <span className="text-xs sm:text-sm text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400">Sign Out</span>
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full h-auto px-3 py-2 rounded-full hover:bg-muted/60 transition-colors border-0"
+              >
+                <div className="flex items-center gap-2 w-full">
+                  {/* Avatar - spans height of username + club */}
+                  <Avatar className="h-10 w-10 shrink-0">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-lg">
+                      {displayName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                    </div>
+                  </Avatar>
+                  
+                  {/* Username and Club stacked */}
+                  <div className="flex-1 flex flex-col items-start justify-center min-w-0">
+                    <span className="text-sm font-medium text-left truncate w-full">
+                      {displayName}
+                    </span>
+                    <span className="text-xs text-muted-foreground text-left truncate w-full">
+                      {selectedClub?.name || "No Club"}
+                    </span>
+                  </div>
+                  
+                  {/* 3-dot menu */}
+                  <MoreVertical className="h-4 w-4 text-muted-foreground shrink-0" />
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 border border-border/50">
+              {/* Club list */}
+              {Array.isArray(clubs) && clubs.length > 0 && clubs.map((club) => (
+                <DropdownMenuItem
+                  key={club.id}
+                  onClick={() => handleClubSwitch(club)}
+                  className="flex items-center gap-2"
+                >
+                  <Building2 className="h-4 w-4" />
+                  <span className="flex-1">{club.name}</span>
+                  {club.id === selectedClub?.id && (
+                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                  )}
+                </DropdownMenuItem>
+              ))}
+              
+              {Array.isArray(clubs) && clubs.length > 0 && <DropdownMenuSeparator />}
+              
+              {/* Club Management */}
+              <DropdownMenuItem onClick={handleClubManagement}>
+                <Settings className="h-4 w-4 mr-2" />
+                Club Management
+              </DropdownMenuItem>
+              
+              {/* Create New Club */}
+              <DropdownMenuItem onClick={handleCreateClub}>
+                <Plus className="h-4 w-4 mr-2" />
+                Create New Club
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              
+              {/* Log out */}
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Log out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         ) : (
-          <Button variant="ghost" className="group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-9 md:h-10 px-1 sm:px-2 md:px-3 rounded-lg transition-all duration-350 ease-in-out hover:scale-[1.05] hover:bg-muted" asChild>
+          <Button variant="ghost" className="w-full justify-start gap-2 h-auto p-2 hover:bg-muted transition-colors" asChild>
             <Link href="/auth/login">
-              <User className="h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 text-muted-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400" />
-              <span className="text-xs sm:text-sm text-foreground group-hover:text-blue-600 dark:group-hover:text-blue-400">Sign In</span>
+              <User className="h-5 w-5 text-muted-foreground" />
+              <span className="text-sm text-foreground">Sign In</span>
             </Link>
           </Button>
         )}
