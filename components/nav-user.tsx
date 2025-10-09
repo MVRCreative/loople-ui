@@ -56,7 +56,7 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { user: authUser, signOut } = useAuth()
   const router = useRouter()
-  const [userProfile, setUserProfile] = useState<any>(null)
+  const [userProfile, setUserProfile] = useState<{ username?: string | null } | null>(null)
   const [showUsernameDialog, setShowUsernameDialog] = useState(false)
   
   // Use real auth user data if available, fallback to prop user

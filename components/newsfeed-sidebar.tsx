@@ -18,10 +18,17 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog"
 
-const baseNavigation = [
+type NavigationItem = {
+  name: string
+  href: string
+  icon: React.ComponentType<{ className?: string }>
+  badge?: string
+  needsUsername?: boolean
+}
+
+const baseNavigation: NavigationItem[] = [
   { name: "Home", href: "/", icon: Home },
   { name: "Programs", href: "#", icon: Users },
   { name: "Events", href: "/events", icon: Bell },
@@ -33,8 +40,7 @@ const baseNavigation = [
 export function NewsfeedSidebar() {
   const { user, isAuthenticated, signOut } = useAuth()
   const pathname = usePathname()
-  const [userProfile, setUserProfile] = useState<any>(null)
-  const [isLoadingProfile, setIsLoadingProfile] = useState(false)
+  const [userProfile, setUserProfile] = useState<{ username?: string | null } | null>(null)
   const [showUsernameDialog, setShowUsernameDialog] = useState(false)
   
   // Use real auth user data if available
@@ -45,13 +51,10 @@ export function NewsfeedSidebar() {
     if (isAuthenticated && user) {
       const loadUserProfile = async () => {
         try {
-          setIsLoadingProfile(true)
           const profile = await UsersService.getUserProfile()
           setUserProfile(profile)
         } catch (error) {
           console.error('Error loading user profile:', error)
-        } finally {
-          setIsLoadingProfile(false)
         }
       }
       
@@ -75,7 +78,7 @@ export function NewsfeedSidebar() {
         // Add profile button without href for users without username
         nav.splice(-1, 0, { 
           name: "Profile", 
-          href: null, 
+          href: "#", 
           icon: User,
           needsUsername: true
         })
@@ -153,7 +156,10 @@ export function NewsfeedSidebar() {
                   <Button
                     variant="ghost"
                     className="group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-10 md:h-12 px-1 sm:px-2 md:px-3 rounded-lg transition-all duration-350 ease-in-out hover:scale-[1.05] hover:bg-muted"
-                    onClick={handleProfileClick}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      handleProfileClick(e)
+                    }}
                   >
                     {content}
                   </Button>
