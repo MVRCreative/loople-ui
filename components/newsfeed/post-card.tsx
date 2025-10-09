@@ -146,7 +146,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   }
 
   return (
-    <div className="bg-card border-t border-l border-border p-4 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+    <div className="bg-card border-t border-border p-4 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
       {/* Post Header and Content */}
       <div className="flex items-start gap-3 mb-3">
         <Avatar className="h-10 w-10">

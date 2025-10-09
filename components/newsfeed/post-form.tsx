@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
-import { Calendar, MessageCircle, Paperclip, X } from "lucide-react";
+import { Image, FileImage, List, Smile, Bold, Italic, X } from "lucide-react";
 import { User } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -31,6 +31,15 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
     onUploadError?: (error: Error) => void;
   }> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea on content change
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  }, [content]);
 
   // Dynamically import UploadThing's UploadButton to avoid hard dependency
   useEffect(() => {
@@ -123,16 +132,8 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
     setUploadedItems(prev => prev.filter((_, i) => i !== index));
   };
 
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
   return (
-    <div className="bg-card p-4 relative border-border border-l">
+    <div className="bg-card p-4 relative border-border">
       {/* Loading Overlay */}
       {isLoading && (
         <div className="absolute inset-0 bg-background/20 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
@@ -153,11 +154,14 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
           
           <div className="flex-1">
             <textarea
+              ref={textareaRef}
               value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={isAuthenticated ? "What's on your mind?" : "Sign in to share your thoughts..."}
-              className="w-full min-h-[60px] p-3 border border-border rounded-lg bg-muted text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-foreground placeholder:text-muted-foreground"
-              rows={3}
+              onChange={(e) => {
+                setContent(e.target.value);
+              }}
+              placeholder={isAuthenticated ? "What's happening?" : "Sign in to share your thoughts..."}
+              className="w-full min-h-[100px] p-0 text-xl resize-none focus:outline-none text-foreground placeholder:text-muted-foreground bg-transparent overflow-hidden"
+              rows={1}
               disabled={!isAuthenticated}
               suppressHydrationWarning
             />
@@ -212,121 +216,112 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
               </div>
             )}
 
-            {/* UploadThing Uploader (images/videos/documents) */}
-            {isAuthenticated && UploadButtonCmp && (
-              <div className="mt-3">
-                <UploadButtonCmp
-                  endpoint="postMediaUploader"
-                  onClientUploadComplete={(res: Array<{ url: string; name?: string; size?: number; type?: string }> | undefined) => {
-                    if (!res) return;
-                    const mapped = res.map((f) => ({
-                      url: f.url,
-                      name: f.name || f.url.split('/').pop() || 'upload',
-                      size: f.size || 0,
-                      type: f.type || 'application/octet-stream',
-                    }));
-                    setUploadedItems(prev => [...prev, ...mapped]);
-                    toast.success('Upload complete');
-                  }}
-                  onUploadError={(error: Error) => {
-                    console.error(error);
-                    toast.error(error.message || 'Upload failed');
-                  }}
-                />
-              </div>
-            )}
-
-            {/* Attachments (local files) */}
+            {/* Twitter-style Image Preview */}
             {attachments.length > 0 && (
-              <div className="space-y-2 mt-3">
-                <div className="text-sm font-medium text-card-foreground">Attachments:</div>
-                {attachments.map((file, index) => (
-                  <div key={index} className="flex items-center gap-2 p-2 border border-border rounded bg-muted/50">
-                    <Paperclip className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-sm text-card-foreground flex-1 truncate">{file.name}</span>
-                    <span className="text-xs text-muted-foreground">{formatFileSize(file.size)}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeAttachment(index)}
-                      className="h-6 w-6 p-0"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
+              <div className="mt-2 relative">
+                <div className={`grid gap-2 ${attachments.length === 1 ? 'grid-cols-1' : attachments.length === 2 ? 'grid-cols-2' : 'grid-cols-2'}`}>
+                  {attachments.slice(0, 4).map((file, index) => (
+                    <div key={index} className="relative rounded-2xl overflow-hidden border border-border/50">
+                      {file.type.startsWith('image/') ? (
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={file.name}
+                          className="w-full h-auto max-h-96 object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-48 bg-muted flex items-center justify-center">
+                          <span className="text-sm text-muted-foreground">{file.name}</span>
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(index)}
+                        className="absolute top-2 right-2 p-1.5 bg-background/80 hover:bg-background rounded-full backdrop-blur-sm transition-colors"
+                        aria-label="Remove image"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {attachments.length > 4 && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    +{attachments.length - 4} more files
                   </div>
-                ))}
+                )}
               </div>
             )}
 
-            {/* Uploaded (external) items */}
-            {uploadedItems.length > 0 && (
-              <div className="space-y-2 mt-3">
-                <div className="text-sm font-medium text-card-foreground">Uploaded:</div>
-                {uploadedItems.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2 p-2 border border-border rounded bg-muted/50">
-                    <Paperclip className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-sm text-card-foreground flex-1 truncate">{item.name}</span>
-                    <span className="text-xs text-muted-foreground">{formatFileSize(item.size)}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeUploadedItem(index)}
-                      className="h-6 w-6 p-0"
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="flex items-center justify-between mt-3">
-              <div className="flex gap-2">
-                <Button
+            <div className="flex items-center justify-between mt-2 pt-2">
+              <div className="flex gap-1">
+                <button
                   type="button"
-                  variant="outline"
-                  size="sm"
                   onClick={() => fileInputRef.current?.click()}
-                  className="h-8 px-3"
                   disabled={!isAuthenticated}
+                  className="p-2 hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                  aria-label="Add image"
                   suppressHydrationWarning
                 >
-                  <Paperclip className="h-4 w-4 mr-1" />
-                  Attach
-                </Button>
+                  <Image className="h-5 w-5 text-primary" />
+                </button>
                 
-                <Button
+                <button
                   type="button"
-                  variant={postType === "event" ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setPostType("event")}
-                  className="h-8 px-3"
+                  onClick={() => fileInputRef.current?.click()}
                   disabled={!isAuthenticated}
+                  className="p-2 hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                  aria-label="Add GIF"
                   suppressHydrationWarning
                 >
-                  <Calendar className="h-4 w-4 mr-1" />
-                  Event
-                </Button>
-                <Button
+                  <FileImage className="h-5 w-5 text-primary" />
+                </button>
+                
+                <button
                   type="button"
-                  variant={postType === "poll" ? "default" : "outline"}
-                  size="sm"
                   onClick={() => setPostType("poll")}
-                  className="h-8 px-3"
                   disabled={!isAuthenticated}
+                  className="p-2 hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                  aria-label="Create poll"
                   suppressHydrationWarning
                 >
-                  <MessageCircle className="h-4 w-4 mr-1" />
-                  Poll
-                </Button>
+                  <List className="h-5 w-5 text-primary" />
+                </button>
+                
+                <button
+                  type="button"
+                  disabled={!isAuthenticated}
+                  className="p-2 hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                  aria-label="Add emoji"
+                  suppressHydrationWarning
+                >
+                  <Smile className="h-5 w-5 text-primary" />
+                </button>
+                
+                <button
+                  type="button"
+                  disabled={!isAuthenticated}
+                  className="p-2 hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                  aria-label="Bold text"
+                  suppressHydrationWarning
+                >
+                  <Bold className="h-5 w-5 text-primary" />
+                </button>
+                
+                <button
+                  type="button"
+                  disabled={!isAuthenticated}
+                  className="p-2 hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                  aria-label="Italic text"
+                  suppressHydrationWarning
+                >
+                  <Italic className="h-5 w-5 text-primary" />
+                </button>
               </div>
               
               <Button
                 type="submit"
                 disabled={!isAuthenticated || !content.trim() || (postType === "poll" && (!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2))}
-                className="h-8 px-4"
+                className="h-9 px-4 rounded-full font-bold"
                 suppressHydrationWarning
               >
                 {isAuthenticated ? "Post" : "Sign In Required"}
