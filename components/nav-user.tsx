@@ -7,9 +7,21 @@ import {
   CreditCard,
   LogOut,
   Sparkles,
+  User,
 } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
+import { UsersService } from "@/lib/services/users.service"
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 
 import {
   Avatar,
@@ -44,6 +56,8 @@ export function NavUser({
   const { isMobile } = useSidebar()
   const { user: authUser, signOut } = useAuth()
   const router = useRouter()
+  const [userProfile, setUserProfile] = useState<any>(null)
+  const [showUsernameDialog, setShowUsernameDialog] = useState(false)
   
   // Use real auth user data if available, fallback to prop user
   const displayName = authUser?.user_metadata?.first_name && authUser?.user_metadata?.last_name 
@@ -51,6 +65,29 @@ export function NavUser({
     : authUser?.email || user.name
   const displayEmail = authUser?.email || user.email
   const displayAvatar = user.avatar // Keep using the prop avatar for now
+
+  // Load user profile to get username
+  useEffect(() => {
+    if (authUser) {
+      const loadUserProfile = async () => {
+        try {
+          const profile = await UsersService.getUserProfile()
+          setUserProfile(profile)
+        } catch (error) {
+          console.error('Error loading user profile:', error)
+        }
+      }
+      
+      loadUserProfile()
+    }
+  }, [authUser])
+
+  const handleProfileClick = (e: React.MouseEvent) => {
+    if (!userProfile?.username) {
+      e.preventDefault()
+      setShowUsernameDialog(true)
+    }
+  }
 
   const handleLogout = async () => {
     const result = await signOut()
@@ -110,9 +147,24 @@ export function NavUser({
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <BadgeCheck />
-                Account
+              {userProfile?.username ? (
+                <DropdownMenuItem asChild>
+                  <Link href={`/profile/${userProfile.username}`}>
+                    <User />
+                    Profile
+                  </Link>
+                </DropdownMenuItem>
+              ) : (
+                <DropdownMenuItem onClick={handleProfileClick}>
+                  <User />
+                  Profile
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem asChild>
+                <Link href="/settings">
+                  <BadgeCheck />
+                  Settings
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem>
                 <CreditCard />
@@ -134,6 +186,36 @@ export function NavUser({
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>
+
+      {/* Username Setup Dialog */}
+      <Dialog open={showUsernameDialog} onOpenChange={setShowUsernameDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Setup Your Profile</DialogTitle>
+            <DialogDescription>
+              You need to set up a username to access your profile page. This will be your unique identifier on the platform.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Go to Settings to set up your username and complete your profile.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowUsernameDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button asChild>
+                <Link href="/settings" onClick={() => setShowUsernameDialog(false)}>
+                  Go to Settings
+                </Link>
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </SidebarMenu>
   )
 }

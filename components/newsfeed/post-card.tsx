@@ -110,8 +110,8 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
     }
   };
 
-  const canEdit = currentUser.id === post.user.id || currentUser.isAdmin;
-  const canDelete = currentUser.id === post.user.id || currentUser.isAdmin;
+  const canEdit = post.user?.id && (currentUser.id === post.user.id || currentUser.isAdmin);
+  const canDelete = post.user?.id && (currentUser.id === post.user.id || currentUser.isAdmin);
 
   // Set hero image from joined media attachments
   useEffect(() => {
