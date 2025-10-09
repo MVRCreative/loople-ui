@@ -8,7 +8,8 @@ import { Comment as CommentType, User, ApiComment } from "@/lib/types";
 import { postsService } from "@/lib/services/posts.service";
 import { transformApiCommentsToComments } from "@/lib/utils/posts.utils";
 import { toast } from "sonner";
-import { MessageCircle, Loader2 } from "lucide-react";
+import { MessageCircle } from "lucide-react";
+import { Loader } from "@/components/ui/loader";
 
 interface CommentsSectionProps {
   postId: string;
@@ -173,7 +174,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
 
       {loading && (
         <div className="flex items-center justify-center py-4">
-          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          <Loader size="sm" className="mr-2" />
           <span className="text-sm text-muted-foreground">Loading comments...</span>
         </div>
       )}

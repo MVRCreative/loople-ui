@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Loader } from "@/components/ui/loader";
 import { postsService } from "@/lib/services/posts.service";
 import { toast } from "sonner";
 
@@ -138,7 +139,7 @@ export function PollVoting({ postId, pollQuestion, pollOptions, pollVotes, userV
           >
             {voting ? (
               <div className="flex items-center gap-2">
-                <div className="h-3 w-3 border border-current border-t-transparent rounded-full animate-spin"></div>
+                <Loader size="sm" />
                 Voting...
               </div>
             ) : (

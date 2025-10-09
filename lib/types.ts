@@ -38,6 +38,10 @@ export const postContentSchema = z.object({
 export const apiUserSchema = z.object({
   id: z.string(),
   email: z.string(),
+  first_name: z.string().optional(),
+  last_name: z.string().optional(),
+  username: z.string().optional(),
+  avatar_url: z.string().optional(),
   raw_user_meta_data: z.object({
     first_name: z.string().optional(),
     last_name: z.string().optional(),

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader } from "@/components/ui/loader";
 import { Image, FileImage, List, Smile, Bold, Italic, X } from "lucide-react";
 import { User } from "@/lib/types";
 import { toast } from "sonner";
@@ -138,7 +139,7 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
       {isLoading && (
         <div className="absolute inset-0 bg-background/20 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
           <div className="flex flex-col items-center gap-3">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <Loader />
             <p className="text-sm text-muted-foreground">Creating post...</p>
           </div>
         </div>

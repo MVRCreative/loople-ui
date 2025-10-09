@@ -29,6 +29,7 @@ export function createUserFromApi(apiUser: Record<string, unknown>): User {
     || (apiUser.user_metadata as Record<string, unknown>)
     || {}
 
+  // Check direct properties first (from users table join), then metadata fallbacks
   const firstName = (apiUser.first_name as string)
     || (rawMeta.first_name as string)
     || (rawMeta.firstName as string)

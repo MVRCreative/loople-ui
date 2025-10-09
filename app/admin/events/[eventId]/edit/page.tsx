@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Loader } from "@/components/ui/loader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AdminEventForm } from "@/components/events/AdminEventForm";
 import { useEvent } from "@/lib/events/hooks";
@@ -60,7 +61,7 @@ export default function AdminEditEventPage() {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <Loader className="mx-auto mb-4" />
           <p className="text-lg text-muted-foreground">Loading club...</p>
         </div>
       </div>
@@ -84,7 +85,7 @@ export default function AdminEditEventPage() {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <Loader className="mx-auto mb-4" />
           <p className="text-lg text-muted-foreground">Loading event...</p>
         </div>
       </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader } from "@/components/ui/loader";
 import { Post, User } from "@/lib/types";
 import { Calendar, MessageCircle, X } from "lucide-react";
 
@@ -193,7 +194,7 @@ export function PostEditForm({ post, currentUser, onSubmit, onCancel }: PostEdit
                 >
                   {isSubmitting ? (
                     <div className="flex items-center gap-2">
-                      <div className="h-3 w-3 border border-current border-t-transparent rounded-full animate-spin"></div>
+                      <Loader size="sm" />
                       Updating...
                     </div>
                   ) : (

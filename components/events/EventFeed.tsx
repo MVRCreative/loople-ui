@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { PostForm } from "@/components/newsfeed/post-form";
 import { PostCard } from "@/components/newsfeed/post-card";
+import { Loader } from "@/components/ui/loader";
 import { Post, User, ApiPost } from "@/lib/types";
 import { EventPost } from "@/lib/events/types";
 import { useAuth } from "@/lib/auth-context";
@@ -143,7 +144,7 @@ export function EventFeed({ eventId, clubId, className }: EventFeedProps) {
     return (
       <div className={`space-y-4 ${className}`}>
         <div className="text-center py-12 text-muted-foreground">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <Loader className="mx-auto mb-4" />
           <p className="text-lg">Loading event posts...</p>
         </div>
       </div>

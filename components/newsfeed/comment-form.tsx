@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Loader } from "@/components/ui/loader";
 import { User } from "@/lib/types";
 
 interface CommentFormProps {
@@ -84,7 +85,7 @@ export function CommentForm({
               >
                 {isSubmitting ? (
                   <div className="flex items-center gap-2">
-                    <div className="h-3 w-3 border border-current border-t-transparent rounded-full animate-spin"></div>
+                    <Loader size="sm" />
                     Posting...
                   </div>
                 ) : (

@@ -7,6 +7,7 @@ import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Loader } from "@/components/ui/loader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
 import { signUpSchema } from "@/lib/auth-types";
@@ -227,7 +228,7 @@ export default function SignUpPage() {
         <CardContent>
           {isLoading ? (
             <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-white/60 backdrop-blur-[2px]">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-600" />
+              <Loader className="text-neutral-600" />
             </div>
           ) : null}
           <form onSubmit={handleSubmit} noValidate className="space-y-4">

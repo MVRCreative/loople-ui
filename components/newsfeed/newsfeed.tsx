@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { PostForm } from "./post-form";
 import { PostCard } from "./post-card";
+import { Loader } from "@/components/ui/loader";
 import { Post, User, ApiPost } from "@/lib/types";
 import { postsService, CreatePostRequest } from "@/lib/services/posts.service";
 import { transformApiPostsToPosts } from "@/lib/utils/posts.utils";
@@ -247,7 +248,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
 
       {isLoadingUI ? (
         <div className="text-center py-12 text-muted-foreground">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <Loader className="mx-auto mb-4" />
           <p className="text-lg">Loading posts...</p>
         </div>
       ) : !selectedClub?.id ? (

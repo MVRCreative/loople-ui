@@ -2,7 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, HelpCircle, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle, HelpCircle, XCircle } from "lucide-react";
+import { Loader } from "@/components/ui/loader";
 import { EventRSVPStatus } from "@/lib/events/types";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -140,7 +141,7 @@ export function RSVPButtonGroup({
                 aria-label={`RSVP as ${option.label}`}
               >
                 {isUpdating && isActive ? (
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" />
+                  <Loader size="sm" className="mr-1" />
                 ) : (
                   getStatusIcon(option.status)
                 )}

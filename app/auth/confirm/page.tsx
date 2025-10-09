@@ -6,7 +6,8 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, XCircle, Loader2, Home, User } from "lucide-react";
+import { CheckCircle, XCircle, Home, User } from "lucide-react";
+import { Loader } from "@/components/ui/loader";
 import { toast } from "sonner";
 
 function ConfirmEmailPage() {
@@ -67,7 +68,7 @@ function ConfirmEmailPage() {
       <Card className="w-full max-w-sm border-0 shadow-none">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
-            {status === 'loading' && <Loader2 className="h-12 w-12 animate-spin text-blue-500" />}
+            {status === 'loading' && <Loader size="lg" className="text-blue-500" />}
             {status === 'success' && <CheckCircle className="h-12 w-12 text-green-500" />}
             {status === 'error' && <XCircle className="h-12 w-12 text-red-500" />}
           </div>

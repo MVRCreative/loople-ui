@@ -43,19 +43,8 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   const commentsCount =
     Array.isArray(post.comments) ? post.comments.length : Number(post.comments ?? 0);
   
-  // Get username or extract from email/ID
-  const getUsername = () => {
-    if (post.user.username) {
-      return post.user.username;
-    }
-    // Extract from email if available (e.g., josh@example.com -> josh)
-    const email = (post.user as unknown as { email?: string }).email;
-    if (email && email.includes('@')) {
-      return email.split('@')[0];
-    }
-    // Last resort: use first part of ID
-    return post.user.id.split('-')[0];
-  };
+  // Get username - all users should have usernames after migration
+  const username = post.user.username || 'user';
 
   const handleCommentClick = () => {
     setShowComments(!showComments);
@@ -174,11 +163,11 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
           {/* Header Row with Name, Username, Role, Date */}
           <div className="flex items-center justify-between gap-2 mb-2">
             <div className="flex items-center gap-2 flex-wrap min-w-0">
-              <Link href={`/profile/${getUsername()}`} className="font-semibold text-card-foreground hover:underline">
+              <Link href={`/profile/${username}`} className="font-semibold text-card-foreground hover:underline">
                 {post.user.name}
               </Link>
               <span className="text-sm text-muted-foreground">
-                @{getUsername()}
+                @{username}
               </span>
               <Badge variant="secondary" className="text-xs bg-blue-900 text-blue-300 hover:bg-blue-900">
                 {post.user.role}
