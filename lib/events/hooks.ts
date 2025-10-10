@@ -46,10 +46,13 @@ export function useEvents() {
         setEvents(clubEvents);
       } else {
         // Use real API with club_id filter
+        console.log('Loading events for club:', selectedClub.id, 'parsed:', parseInt(selectedClub.id));
         const apiEvents = await EventsService.getEvents({ 
-          club_id: selectedClub.id,
+          club_id: parseInt(selectedClub.id),
           is_active: true 
         });
+        
+        console.log('API events received:', apiEvents);
         
         // Transform API events to match frontend EventDetail interface
         const transformedEvents: EventDetail[] = apiEvents.map((event: Event) => {
@@ -103,6 +106,7 @@ export function useEvents() {
         setEvents(transformedEvents);
       }
     } catch (err) {
+      console.error('Error loading events:', err);
       setError(err instanceof Error ? err.message : "Failed to load events");
     } finally {
       setLoading(false);

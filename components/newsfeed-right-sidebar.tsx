@@ -36,14 +36,19 @@ export function NewsfeedRightSidebar() {
 
   const upcoming = useMemo(() => {
     const now = new Date()
-    return events
+    console.log('Filtering events, total count:', events.length, 'events:', events)
+    const filtered = events
       .filter(e => {
         // Use end date to determine past vs upcoming/ongoing
         const endDate = new Date(e.end_date)
-        return endDate >= now
+        const isUpcoming = endDate >= now
+        console.log('Event:', e.title, 'end_date:', e.end_date, 'endDate:', endDate, 'now:', now, 'isUpcoming:', isUpcoming)
+        return isUpcoming
       })
       .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())
-      .slice(0, 5)
+      .slice(0, 4)
+    console.log('Filtered upcoming events:', filtered)
+    return filtered
   }, [events])
 
   const formatDay = (iso: string) => {

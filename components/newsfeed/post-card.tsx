@@ -113,8 +113,8 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
     }
   };
 
-  const canEdit = post.user?.id && (currentUser.id === post.user.id || currentUser.isAdmin);
-  const canDelete = post.user?.id && (currentUser.id === post.user.id || currentUser.isAdmin);
+  const canEdit = post.user?.id && (currentUser.id === post.user.id || currentUser.isAdmin) && !post.isOptimistic;
+  const canDelete = post.user?.id && (currentUser.id === post.user.id || currentUser.isAdmin) && !post.isOptimistic;
 
   // Set hero image from joined media attachments
   useEffect(() => {
@@ -126,7 +126,10 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
       if (firstImage) {
         const path: string = firstImage.file_path;
         
-        if (/^https?:\/\//i.test(path)) {
+        // Handle blob URLs (optimistic posts)
+        if (path.startsWith('blob:')) {
+          setHeroImageUrl(path);
+        } else if (/^https?:\/\//i.test(path)) {
           setHeroImageUrl(path);
         } else {
           // Convert storage path to public URL
@@ -250,13 +253,23 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
           {/* Media (moved below content, near bottom) */}
           {heroImageUrl && (
             <div className="mt-3 rounded-lg overflow-hidden border border-border/60 bg-muted/20">
-              <NextImage
-                src={heroImageUrl}
-                alt={post.content.text.slice(0, 64) || 'Post image'}
-                width={1200}
-                height={675}
-                className="w-full h-auto object-cover"
-              />
+              {heroImageUrl.startsWith('blob:') ? (
+                // Use regular img tag for blob URLs (optimistic posts)
+                <img
+                  src={heroImageUrl}
+                  alt={post.content.text.slice(0, 64) || 'Post image'}
+                  className="w-full h-auto object-cover"
+                />
+              ) : (
+                // Use Next.js Image for real URLs
+                <NextImage
+                  src={heroImageUrl}
+                  alt={post.content.text.slice(0, 64) || 'Post image'}
+                  width={1200}
+                  height={675}
+                  className="w-full h-auto object-cover"
+                />
+              )}
             </div>
           )}
 
@@ -269,6 +282,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
             onReaction={onReaction}
             onComment={handleCommentClick}
             onShare={onShare}
+            isOptimistic={post.isOptimistic}
           />
         </div>
       </div>

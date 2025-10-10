@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { PostForm } from "./post-form";
 import { PostCard } from "./post-card";
 import { Loader } from "@/components/ui/loader";
@@ -22,6 +22,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   // const [searchFilters] = useState<Record<string, unknown>>({});
   const { selectedClub, loading: clubLoading } = useClub();
+  const isHandlingOptimisticPost = useRef(false);
 
   const loadPosts = useCallback(async (filters: Record<string, unknown> = {}) => {
     if (!selectedClub?.id) return;
@@ -66,7 +67,12 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
         const payloadData = payload as Record<string, unknown>;
 
       if (payloadData.eventType === 'INSERT') {
-        // New post added
+        // Skip reload if we're currently handling an optimistic post
+        // The optimistic update already added it to the feed
+        if (isHandlingOptimisticPost.current) {
+          return;
+        }
+        // New post added (from another user or different session)
         loadPosts(); // Reload all posts to get the latest data
       } else if (payloadData.eventType === 'UPDATE') {
         // Post updated (e.g., reaction count changed)
@@ -96,25 +102,113 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
       return;
     }
 
+    // Generate temporary post ID
+    const tempPostId = `temp-${Date.now()}`;
+    const blobUrls: string[] = [];
+
+    // Create optimistic media attachments from File objects
+    const optimisticMedia: Array<{
+      id: number
+      file_name: string
+      file_path: string
+      file_size: number
+      mime_type: string
+      file_type: string
+      created_at: string
+    }> = [];
+
+    if (attachments && attachments.length > 0) {
+      attachments.forEach((file, index) => {
+        if (file instanceof File) {
+          const blobUrl = URL.createObjectURL(file);
+          blobUrls.push(blobUrl);
+          optimisticMedia.push({
+            id: -(index + 1), // Negative ID for temp media
+            file_name: file.name,
+            file_path: blobUrl, // Use blob URL for immediate display
+            file_size: file.size,
+            mime_type: file.type,
+            file_type: file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'file',
+            created_at: new Date().toISOString(),
+          });
+        } else if (file && typeof (file as { url: string }).url === 'string') {
+          // External uploads already have URLs
+          const fileData = file as { url: string; name: string; size: number; type: string };
+          optimisticMedia.push({
+            id: -(index + 1),
+            file_name: fileData.name,
+            file_path: fileData.url,
+            file_size: fileData.size,
+            mime_type: fileData.type,
+            file_type: fileData.type.startsWith('image/') ? 'image' : fileData.type.startsWith('video/') ? 'video' : 'file',
+            created_at: new Date().toISOString(),
+          });
+        }
+      });
+    }
+
+    // Parse poll data if needed
+    let pollQuestion = '';
+    let pollOptions: string[] = [];
+    let pollVotes: Record<string, number> = {};
+    let contentText = content;
+
+    if (type === "poll") {
+      try {
+        const parsedContent = JSON.parse(content);
+        contentText = parsedContent.text;
+        pollQuestion = parsedContent.poll.question;
+        pollOptions = parsedContent.poll.options;
+        // Initialize empty votes
+        pollVotes = pollOptions.reduce((acc, _, idx) => {
+          acc[idx.toString()] = 0;
+          return acc;
+        }, {} as Record<string, number>);
+      } catch {
+        console.warn('Failed to parse poll data, treating as text');
+      }
+    }
+
+    // Create optimistic post
+    const optimisticPost: Post = {
+      id: tempPostId,
+      user: currentUser,
+      content: {
+        type,
+        text: contentText,
+        ...(type === "poll" && pollQuestion && {
+          poll: {
+            question: pollQuestion,
+            options: pollOptions,
+            votes: pollVotes,
+            userVote: null,
+          }
+        }),
+      },
+      timestamp: 'Just now',
+      reactions: 0,
+      comments: 0,
+      isLiked: false,
+      media_attachments: optimisticMedia.length > 0 ? optimisticMedia : undefined,
+      isOptimistic: true,
+    };
+
+    // Immediately add optimistic post to the feed
+    setPosts(prev => [optimisticPost, ...prev]);
     setIsCreatingPost(true);
+    isHandlingOptimisticPost.current = true;
+
     try {
       const postData: CreatePostRequest = {
         club_id: parseInt(selectedClub.id),
         content_type: type,
-        content_text: content,
+        content_text: contentText,
       };
 
       // Handle poll data
-      if (type === "poll") {
-        try {
-          const parsedContent = JSON.parse(content);
-          postData.content_text = parsedContent.text;
-          postData.poll_question = parsedContent.poll.question;
-          postData.poll_options = parsedContent.poll.options;
-        } catch {
-          // If parsing fails, treat as regular text
-          console.warn('Failed to parse poll data, treating as text');
-        }
+      if (type === "poll" && pollQuestion) {
+        postData.poll_question = pollQuestion;
+        postData.poll_options = pollOptions;
       }
 
       const response = await postsService.createPost(postData);
@@ -164,15 +258,32 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
           media_attachments: mediaAttachments
         };
 
-        // Add the new post to the beginning of the list
+        // Transform and replace optimistic post with real post
         const newPost = transformApiPostsToPosts([postWithMedia as unknown as ApiPost])[0];
-        setPosts(prev => [newPost, ...prev]);
+        setPosts(prev => prev.map(p => p.id === tempPostId ? newPost : p));
+        
+        // Clean up blob URLs
+        blobUrls.forEach(url => URL.revokeObjectURL(url));
+        
+        // Allow real-time updates after a short delay to ensure our update is complete
+        setTimeout(() => {
+          isHandlingOptimisticPost.current = false;
+        }, 1000);
+        
         toast.success("Post created successfully!");
       } else {
+        // Remove optimistic post on failure
+        setPosts(prev => prev.filter(p => p.id !== tempPostId));
+        blobUrls.forEach(url => URL.revokeObjectURL(url));
+        isHandlingOptimisticPost.current = false;
         toast.error(response.error || 'Failed to create post');
       }
     } catch (error) {
       console.error('Error creating post:', error);
+      // Remove optimistic post on error
+      setPosts(prev => prev.filter(p => p.id !== tempPostId));
+      blobUrls.forEach(url => URL.revokeObjectURL(url));
+      isHandlingOptimisticPost.current = false;
       toast.error('Failed to create post');
     } finally {
       setIsCreatingPost(false);

@@ -105,6 +105,7 @@ export const postSchema = z.object({
   comments: z.number().default(0),
   isLiked: z.boolean().default(false),
   media_attachments: z.array(mediaAttachmentSchema).optional(),
+  isOptimistic: z.boolean().optional(),
 });
 
 // Frontend Comment schema (for UI components)

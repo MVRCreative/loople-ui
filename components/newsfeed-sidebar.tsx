@@ -154,13 +154,13 @@ export function NewsfeedSidebar() {
             const isActive = item.href && item.href !== "#" && pathname === item.href
             const content = (
               <>
-                <item.icon className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 group-hover:text-blue-600 dark:group-hover:text-blue-400 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`} />
-                <span className={`text-xs sm:text-sm font-medium group-hover:text-blue-600 dark:group-hover:text-blue-400 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>{item.name}</span>
-                {item.badge && (
-                  <div className="ml-auto flex h-3 w-3 sm:h-4 sm:w-4 md:h-5 md:w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white font-semibold">
-                    {item.badge}
-                  </div>
-                )}
+                <div className="relative">
+                  <item.icon className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 group-hover:text-blue-600 dark:group-hover:text-blue-400 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`} />
+                  {item.badge && (
+                    <div className="absolute -top-0.5 -right-0.5 h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-red-500 border border-background" />
+                  )}
+                </div>
+                <span className={`text-xl font-normal group-hover:text-blue-600 dark:group-hover:text-blue-400 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>{item.name}</span>
               </>
             )
 
