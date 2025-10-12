@@ -7,6 +7,8 @@ import { User } from '@/lib/types';
 export function convertAuthUserToUser(authUser: AuthUser): User {
   const firstName = authUser.user_metadata?.first_name || '';
   const lastName = authUser.user_metadata?.last_name || '';
+  const username = authUser.user_metadata?.username || undefined;
+  const avatarUrl = authUser.user_metadata?.avatar_url || undefined;
   
   // Create display name from metadata or fallback to email
   const name = firstName && lastName 
@@ -29,8 +31,10 @@ export function convertAuthUserToUser(authUser: AuthUser): User {
   return {
     id: authUser.id,
     name,
+    username,
     role: (authUser.user_metadata as Record<string, unknown>)?.role as string || 'Member',
     avatar,
+    avatar_url: avatarUrl,
     isAdmin,
   };
 }

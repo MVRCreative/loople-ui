@@ -34,6 +34,8 @@ export interface AuthUser {
     birth_date?: string;
     club_name?: string;
     club_subdomain?: string;
+    username?: string;
+    avatar_url?: string;
   };
   app_metadata?: {
     provider?: string;
