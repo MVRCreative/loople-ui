@@ -34,16 +34,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const fetchUserProfile = async (authUser: AuthUser): Promise<AuthUser> => {
     try {
       const userProfile = await UsersService.getUserProfile();
-      return {
-        ...authUser,
-        user_metadata: {
-          ...authUser.user_metadata,
-          first_name: userProfile.first_name,
-          last_name: userProfile.last_name,
-          avatar_url: userProfile.avatar_url,
-          username: userProfile.username,
-        }
-      };
+        return {
+          ...authUser,
+          user_metadata: {
+            ...authUser.user_metadata,
+            first_name: userProfile.first_name,
+            last_name: userProfile.last_name,
+            avatar_url: userProfile.avatar_url,
+            username: userProfile.username ?? undefined,
+          }
+        };
     } catch (error) {
       console.warn('Failed to fetch user profile, using auth user data only:', error);
       return authUser;
