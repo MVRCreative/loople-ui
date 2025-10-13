@@ -108,6 +108,9 @@ export default function LoginPage() {
                 disabled={loading}
               />
             </div>
+            <div className="text-right text-sm">
+              <Link className="underline" href="/auth/forgot">Forgot password?</Link>
+            </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "Signing in..." : "Sign in"}
             </Button>

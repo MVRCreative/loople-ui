@@ -118,6 +118,46 @@ class AuthService {
     }
   }
 
+  // Request password reset email
+  async requestPasswordReset(email: string, redirectTo?: string): Promise<ApiResponse> {
+    try {
+      const siteUrl =
+        redirectTo ||
+        (typeof window !== 'undefined'
+          ? new URL('/auth/reset-password', window.location.origin).toString()
+          : (process.env.NEXT_PUBLIC_SITE_URL
+              ? new URL('/auth/reset-password', process.env.NEXT_PUBLIC_SITE_URL).toString()
+              : undefined));
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: siteUrl,
+      });
+
+      if (error) throw error;
+
+      return { success: true };
+    } catch (error) {
+      return {
+        error: { message: error instanceof Error ? error.message : 'Password reset request failed' },
+        success: false,
+      };
+    }
+  }
+
+  // Update password for the currently authenticated (recovery) session
+  async updatePassword(newPassword: string): Promise<ApiResponse> {
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      return { success: true };
+    } catch (error) {
+      return {
+        error: { message: error instanceof Error ? error.message : 'Password update failed' },
+        success: false,
+      };
+    }
+  }
+
   // Sign in user using Supabase Auth
   async signIn(data: SignInFormData): Promise<ApiResponse<SignInResponse>> {
     try {

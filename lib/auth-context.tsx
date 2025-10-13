@@ -14,6 +14,8 @@ interface AuthContextType {
   signUp: (data: SignUpFormData) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<{ success: boolean; error?: string }>;
   resendVerification: (email: string) => Promise<{ success: boolean; error?: string }>;
+  requestPasswordReset: (email: string) => Promise<{ success: boolean; error?: string }>;
+  updatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   isAuthenticated: boolean;
   refreshSession: () => Promise<void>;
 }
@@ -199,6 +201,50 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   };
 
+  const requestPasswordReset = async (email: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const result = await authService.requestPasswordReset(email);
+
+      if (!result.success) {
+        setError(result.error || { message: 'Password reset request failed' });
+        return { success: false, error: result.error?.message };
+      }
+
+      return { success: true };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Password reset request failed';
+      setError({ message: errorMessage });
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const result = await authService.updatePassword(newPassword);
+
+      if (!result.success) {
+        setError(result.error || { message: 'Password update failed' });
+        return { success: false, error: result.error?.message };
+      }
+
+      return { success: true };
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Password update failed';
+      setError({ message: errorMessage });
+      return { success: false, error: errorMessage };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const refreshSession = async () => {
     try {
       const result = await authService.refreshSession();
@@ -220,6 +266,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signUp,
     signOut,
     resendVerification,
+    requestPasswordReset,
+    updatePassword,
     isAuthenticated: !!user && !!session,
     refreshSession,
   };
