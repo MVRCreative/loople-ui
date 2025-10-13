@@ -22,15 +22,16 @@ function ConfirmEmailPage() {
         const token = searchParams.get('token');
         const type = searchParams.get('type');
 
-        if (!token || type !== 'signup') {
+        if (!token || !type) {
           setStatus('error');
-          setMessage('Invalid confirmation link');
+          setMessage('Invalid link');
           return;
         }
 
         const { error } = await supabase.auth.verifyOtp({
           token_hash: token,
-          type: 'signup'
+          // type can be 'signup' | 'recovery'
+          type: type === 'recovery' ? 'recovery' : 'signup'
         });
 
         if (error) {
@@ -40,8 +41,13 @@ function ConfirmEmailPage() {
           toast.error('Email confirmation failed');
         } else {
           setStatus('success');
-          setMessage('Email confirmed successfully! You can now sign in.');
-          toast.success('Email confirmed successfully!');
+          if (type === 'recovery') {
+            setMessage('Link verified. You can now reset your password.');
+            toast.success('Recovery verified');
+          } else {
+            setMessage('Email confirmed successfully! You can now sign in.');
+            toast.success('Email confirmed successfully!');
+          }
         }
       } catch (error) {
         console.error('Email confirmation error:', error);
