@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { authService } from './auth-service';
 import { AuthUser, AuthSession, AuthError, SignUpFormData } from './auth-types';
+import { UsersService } from './services/users.service';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -29,6 +30,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<AuthError | null>(null);
 
+  // Helper function to fetch and merge user profile data
+  const fetchUserProfile = async (authUser: AuthUser): Promise<AuthUser> => {
+    try {
+      const userProfile = await UsersService.getUserProfile();
+        return {
+          ...authUser,
+          user_metadata: {
+            ...authUser.user_metadata,
+            first_name: userProfile.first_name,
+            last_name: userProfile.last_name,
+            avatar_url: userProfile.avatar_url,
+            username: userProfile.username ?? undefined,
+          }
+        };
+    } catch (error) {
+      console.warn('Failed to fetch user profile, using auth user data only:', error);
+      return authUser;
+    }
+  };
+
   // Initialize auth state
   useEffect(() => {
     const initializeAuth = async () => {
@@ -40,7 +61,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const currentSession = await authService.getCurrentSession();
         if (currentSession) {
           setSession(currentSession);
-          setUser(currentSession.user);
+          // Fetch user profile data and merge with auth user
+          const userWithProfile = await fetchUserProfile(currentSession.user);
+          setUser(userWithProfile);
         }
       } catch (err) {
         console.error('Auth initialization error:', err);
@@ -60,7 +83,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         
         if (session) {
           setSession(session);
-          setUser(session.user);
+          // Fetch user profile data and merge with auth user
+          const userWithProfile = await fetchUserProfile(session.user);
+          setUser(userWithProfile);
         } else {
           setSession(null);
           setUser(null);
@@ -91,7 +116,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       const currentSession = await authService.getCurrentSession();
       if (currentSession) {
         setSession(currentSession);
-        setUser(currentSession.user);
+        // Fetch user profile data and merge with auth user
+        const userWithProfile = await fetchUserProfile(currentSession.user);
+        setUser(userWithProfile);
       }
 
       return { success: true };
