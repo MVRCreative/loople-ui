@@ -57,7 +57,20 @@ export async function middleware(request: NextRequest) {
 
   try {
     // Refresh session if expired - required for Server Components
-    const { data: { session } } = await supabase.auth.getSession()
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+
+    // If there's a refresh token error, clear the session cookies
+    if (sessionError && sessionError.message.includes('Refresh Token')) {
+      console.warn('Invalid refresh token in middleware, clearing cookies')
+      // Clear all Supabase cookies
+      const cookieNames = request.cookies.getAll()
+        .filter(cookie => cookie.name.startsWith('sb-'))
+        .map(cookie => cookie.name)
+      
+      cookieNames.forEach(name => {
+        response.cookies.delete(name)
+      })
+    }
 
     // Protected routes that require authentication
     const protectedRoutes = ['/dashboard', '/messages', '/events', '/members', '/programs', '/settings', '/admin']
@@ -85,6 +98,7 @@ export async function middleware(request: NextRequest) {
     return response
   } catch (error) {
     console.error('Middleware error:', error)
+    // On any auth error, let the request through (will redirect via client-side logic)
     return response
   }
 }

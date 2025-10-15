@@ -69,9 +69,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
         }
       } catch (err) {
         console.error('Auth initialization error:', err);
-        setError({
-          message: err instanceof Error ? err.message : 'Authentication initialization failed',
-        });
+        
+        // If refresh token is invalid, clear the session
+        if (err instanceof Error && err.message.includes('Refresh Token')) {
+          console.warn('Invalid refresh token detected, clearing session');
+          await authService.signOut();
+          setSession(null);
+          setUser(null);
+        } else {
+          setError({
+            message: err instanceof Error ? err.message : 'Authentication initialization failed',
+          });
+        }
       } finally {
         setLoading(false);
       }
