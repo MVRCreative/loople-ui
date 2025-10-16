@@ -125,8 +125,44 @@ export type PostContent = z.infer<typeof postContentSchema>;
 export type Post = z.infer<typeof postSchema>;
 export type Comment = z.infer<typeof commentSchema>;
 
+// Todo schema (for UI components)
+export const todoSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().optional(),
+  assignee_id: z.string().optional(), // User ID
+  assignee_name: z.string().optional(), // For display
+  assignee_avatar: z.string().optional(), // For display
+  due_date: z.string().optional(), // ISO date string
+  priority: z.enum(["low", "medium", "high", "urgent"]),
+  status: z.enum(["todo", "in-progress", "completed", "overdue"]),
+  created_by: z.string(), // User ID
+  created_at: z.string(), // ISO date string
+  updated_at: z.string(), // ISO date string
+});
+
+// API Todo schema (for database responses)
+export const apiTodoSchema = z.object({
+  id: z.string(),
+  club_id: z.number(),
+  title: z.string(),
+  description: z.string().nullable(),
+  assignee_id: z.string().nullable(),
+  due_date: z.string().nullable(),
+  priority: z.enum(["low", "medium", "high", "urgent"]),
+  status: z.enum(["todo", "in-progress", "completed", "overdue"]),
+  created_by: z.string(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  // Joined user data for assignee
+  assignee_name: z.string().optional(),
+  assignee_avatar: z.string().optional(),
+});
+
 // API types
 export type ApiUser = z.infer<typeof apiUserSchema>;
 export type ApiPost = z.infer<typeof apiPostSchema>;
 export type ApiComment = z.infer<typeof apiCommentSchema>;
 export type MediaAttachment = z.infer<typeof mediaAttachmentSchema>;
+export type Todo = z.infer<typeof todoSchema>;
+export type ApiTodo = z.infer<typeof apiTodoSchema>;
