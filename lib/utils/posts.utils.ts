@@ -96,7 +96,17 @@ export function createEventFromApi(apiEvent: Record<string, unknown>): Event {
 // Transform API post to frontend post format
 export function transformApiPostToPost(apiPost: ApiPost): Post {
   // Prefer joined users object; fallback to top-level apiPost when functions include user fields inline
-  const user = createUserFromApi((apiPost as unknown as Record<string, unknown>).users as Record<string, unknown> || (apiPost as unknown as Record<string, unknown>))
+  const userData = (apiPost as unknown as Record<string, unknown>).users as Record<string, unknown> || (apiPost as unknown as Record<string, unknown>);
+  
+  // Add debug logging to help identify user data issues
+  console.log('Transforming post user data:', {
+    postId: apiPost.id,
+    hasUsers: !!(apiPost as unknown as Record<string, unknown>).users,
+    userData,
+    userDataKeys: Object.keys(userData || {})
+  });
+  
+  const user = createUserFromApi(userData);
   
   // Create content object based on post type
   const content = {

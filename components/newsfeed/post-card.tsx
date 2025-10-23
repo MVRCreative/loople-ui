@@ -116,6 +116,18 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   const canEdit = post.user?.id && (currentUser.id === post.user.id || currentUser.isAdmin) && !post.isOptimistic;
   const canDelete = post.user?.id && (currentUser.id === post.user.id || currentUser.isAdmin) && !post.isOptimistic;
 
+  // Add debug logging to help identify permission issues
+  console.log('Post permissions debug:', {
+    postId: post.id,
+    postUserId: post.user?.id,
+    postUserName: post.user?.name,
+    currentUserId: currentUser.id,
+    currentUserName: currentUser.name,
+    canEdit,
+    canDelete,
+    isOptimistic: post.isOptimistic
+  });
+
   // Set hero image from joined media attachments
   useEffect(() => {
     const mediaAttachments = post.media_attachments;
