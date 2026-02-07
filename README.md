@@ -76,16 +76,33 @@ Built with modern React patterns:
 - **Lucide React** - Beautiful icons
 - **Framer Motion** - Smooth animations (via GSAP)
 
+## Environment Setup
+
+This project requires Supabase environment variables. Create a `.env.local` file in the root directory:
+
+```bash
+cp .env.example .env.local
+```
+
+Then fill in your Supabase credentials:
+- `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous/public key
+
+You can find these values in your Supabase project dashboard under Settings → API.
+
 ## Development
 
-This is a **frontend-only** project. No backend services are required:
+After setting up your environment variables, run the development server:
 
-- ✅ No database setup needed
-- ✅ No authentication service required
-- ✅ No API endpoints to configure
-- ✅ No environment variables needed
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+```
 
-Just run `npm run dev` and start exploring the UI!
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
 ## Pages
 

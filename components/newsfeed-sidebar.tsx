@@ -130,7 +130,7 @@ export function NewsfeedSidebar() {
         <Link href="/" className="flex items-center">
           {/* Light mode logo */}
           <Image 
-            src="/loople logo3.svg" 
+            src="/loople-logo3.svg" 
             alt="Loople Logo" 
             width={32}
             height={32}

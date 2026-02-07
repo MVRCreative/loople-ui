@@ -18,7 +18,7 @@ export function AdminSidebar() {
       <div className="relative flex h-16 shrink-0 items-center">
         <Image
           alt="Loople"
-          src="/loople logo3.svg"
+          src="/loople-logo3.svg"
           width={32}
           height={32}
           className="h-8 w-auto"

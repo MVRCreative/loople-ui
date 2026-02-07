@@ -88,7 +88,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* Logo */}
         <div className="flex h-16 items-center px-6">
           <Image 
-            src="/loople logo3.svg" 
+            src="/loople-logo3.svg" 
             alt="Loople Logo" 
             width={32}
             height={32}

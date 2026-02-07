@@ -25,9 +25,10 @@ import { ClubSwitcher } from "@/components/club-switcher"
 
 interface AdminLayoutWrapperProps {
   children: React.ReactNode
+  sidebarContent?: React.ReactNode
 }
 
-export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
+export function AdminLayoutWrapper({ children, sidebarContent }: AdminLayoutWrapperProps) {
   const { user } = useAuth()
   const pathname = usePathname()
 
@@ -43,7 +44,7 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
             <div className="flex h-16 items-center px-6">
               <Image
                 alt="Loople"
-                src="/loople logo3.svg"
+                src="/loople-logo3.svg"
                 width={32}
                 height={32}
                 className="h-8 w-auto"
@@ -55,61 +56,67 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
           </SidebarHeader>
           
           <SidebarContent className="px-3 py-4">
-            <SidebarGroup>
-              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {adminNavigation.map((item) => {
-                    const isActive = pathname === item.href
-                    return (
-                      <SidebarMenuItem key={item.name}>
-                        <SidebarMenuButton 
-                          asChild
-                          isActive={isActive}
-                          className={cn(
-                            "w-full justify-start",
-                            isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
-                          )}
-                        >
-                          <a href={item.href}>
-                            <item.icon className="mr-2 h-4 w-4" />
-                            {item.name}
-                          </a>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    )
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-            
-            <SidebarGroup>
-              <SidebarGroupLabel>System</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {adminSecondaryNavigation.map((item) => {
-                    const isActive = pathname === item.href
-                    return (
-                      <SidebarMenuItem key={item.name}>
-                        <SidebarMenuButton 
-                          asChild
-                          isActive={isActive}
-                          className={cn(
-                            "w-full justify-start",
-                            isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
-                          )}
-                        >
-                          <a href={item.href}>
-                            <item.icon className="mr-2 h-4 w-4" />
-                            {item.name}
-                          </a>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    )
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            {sidebarContent ? (
+              sidebarContent
+            ) : (
+              <>
+                <SidebarGroup>
+                  <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {adminNavigation.map((item) => {
+                        const isActive = pathname === item.href
+                        return (
+                          <SidebarMenuItem key={item.name}>
+                            <SidebarMenuButton 
+                              asChild
+                              isActive={isActive}
+                              className={cn(
+                                "w-full justify-start",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
+                              )}
+                            >
+                              <a href={item.href}>
+                                <item.icon className="mr-2 h-4 w-4" />
+                                {item.name}
+                              </a>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        )
+                      })}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+                
+                <SidebarGroup>
+                  <SidebarGroupLabel>System</SidebarGroupLabel>
+                  <SidebarGroupContent>
+                    <SidebarMenu>
+                      {adminSecondaryNavigation.map((item) => {
+                        const isActive = pathname === item.href
+                        return (
+                          <SidebarMenuItem key={item.name}>
+                            <SidebarMenuButton 
+                              asChild
+                              isActive={isActive}
+                              className={cn(
+                                "w-full justify-start",
+                                isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
+                              )}
+                            >
+                              <a href={item.href}>
+                                <item.icon className="mr-2 h-4 w-4" />
+                                {item.name}
+                              </a>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        )
+                      })}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              </>
+            )}
           </SidebarContent>
           
           <SidebarFooter className="border-t border-sidebar-border p-4">
