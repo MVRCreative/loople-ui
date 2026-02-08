@@ -13,7 +13,7 @@ import { useClub } from "@/lib/club-context";
 import { useAuth } from "@/lib/auth-context";
 import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
 import { User } from "@/lib/types";
-import { ArrowLeft, Edit, Eye, Share2, Users, BarChart3, Trash2, CheckCircle2, Ban, Download } from "lucide-react";
+import { ArrowLeft, Edit, Eye, Share2, BarChart3, Trash2, CheckCircle2, Ban, Download } from "lucide-react";
 import { toast } from "sonner";
 import { RSVPService, EventRegistration } from "@/lib/services/rsvp.service";
 import { EventRSVP } from "@/lib/events/types";
@@ -28,7 +28,7 @@ export default function AdminEventDetailsPage() {
   const { user: authUser } = useAuth();
   
   const eventId = typeof params?.eventId === "string" ? params.eventId : "";
-  const { event, rsvps, posts, loading, error, loadEvent } = useEvent(eventId);
+  const { event, posts, loading, error, loadEvent } = useEvent(eventId);
   const { loading: clubLoading } = useClub();
   
   // Convert auth user to frontend User type
@@ -96,7 +96,7 @@ export default function AdminEventDetailsPage() {
           text: `Check out this event: ${event?.title}`,
           url: window.location.href,
         });
-      } catch (error) {
+      } catch {
         // User cancelled sharing
       }
     } else {
@@ -107,7 +107,7 @@ export default function AdminEventDetailsPage() {
 
   const [registrations, setRegistrations] = useState<EventRegistration[]>([]);
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
-  const [updatingRsvpId, setUpdatingRsvpId] = useState<number | null>(null);
+  const [, setUpdatingRsvpId] = useState<number | null>(null);
   const [rsvpSearch, setRsvpSearch] = useState<string>("");
 
   const handleExportRSVPs = () => {
@@ -140,7 +140,7 @@ export default function AdminEventDetailsPage() {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       toast.success("RSVPs exported");
-    } catch (e) {
+    } catch {
       toast.error("Failed to export RSVPs");
     }
   };

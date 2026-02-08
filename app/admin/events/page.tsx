@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useEvents } from "@/lib/events/hooks";
 import { formatEventDateTime, formatEventLocation, getEventStatusText } from "@/lib/events/selectors";
-import { Search, Plus, Eye, BarChart3, Filter, Calendar, Users, Edit } from "lucide-react";
+import { Search, Plus, Eye, BarChart3, Filter, Calendar, Edit } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useClub } from "@/lib/club-context";
 import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";

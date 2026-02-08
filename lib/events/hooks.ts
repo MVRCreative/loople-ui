@@ -57,7 +57,6 @@ export function useEvents() {
         // Transform API events to match frontend EventDetail interface
         const transformedEvents: EventDetail[] = apiEvents.map((event: Event) => {
           const now = new Date();
-          const startDate = new Date(event.start_date);
           const endDate = new Date(event.end_date);
           const isPast = endDate < now;
           const isUpcoming = !isPast; // includes ongoing and future
@@ -193,7 +192,6 @@ export function useEvent(eventId: string) {
         
         // Transform API event to match frontend EventDetail interface
         const now = new Date();
-        const startDate = new Date(apiEvent.start_date || now);
         const endDate = new Date(apiEvent.end_date || now);
         const isPast = endDate < now;
         const isUpcoming = !isPast; // includes ongoing and future

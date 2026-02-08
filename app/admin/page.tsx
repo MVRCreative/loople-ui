@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
   Building2, 
@@ -10,12 +9,10 @@ import {
   Calendar, 
   CreditCard, 
   BarChart3,
-  Plus,
   ChevronDownIcon
 } from "lucide-react";
 import { useClub } from "@/lib/club-context";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 
 const tabs = [
   { name: 'Overview', href: '#', current: true },

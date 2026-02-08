@@ -7,7 +7,7 @@ interface MemberPaymentsCardProps {
   memberId: string;
 }
 
-export function MemberPaymentsCard({ memberId }: MemberPaymentsCardProps) {
+export function MemberPaymentsCard({ memberId: _memberId }: MemberPaymentsCardProps) {
   return (
     <Card>
       <CardHeader>

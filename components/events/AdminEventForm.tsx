@@ -43,7 +43,7 @@ export function AdminEventForm({
   event, 
   onSubmit, 
   onCancel, 
-  loading = false,
+  loading: _loading = false,
   className 
 }: AdminEventFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -181,19 +181,6 @@ export function AdminEventForm({
         return "outline";
       default:
         return "default";
-    }
-  };
-
-  const getVisibilityVariant = (visibility: string) => {
-    switch (visibility) {
-      case "public":
-        return "default";
-      case "members_only":
-        return "secondary";
-      case "private":
-        return "destructive";
-      default:
-        return "outline";
     }
   };
 

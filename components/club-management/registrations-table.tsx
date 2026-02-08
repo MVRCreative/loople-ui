@@ -18,7 +18,6 @@ import {
   Trash2, 
   Calendar,
   User,
-  FileText,
   Search
 } from "lucide-react";
 import {

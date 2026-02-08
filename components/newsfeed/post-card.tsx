@@ -27,7 +27,7 @@ interface PostCardProps {
   isFirst?: boolean;
 }
 
-export function PostCard({ post, currentUser, onReaction, onComment, onShare, onPostUpdate, onPostDelete, isFirst = false }: PostCardProps) {
+export function PostCard({ post, currentUser, onReaction, onComment, onShare, onPostUpdate, onPostDelete, isFirst: _isFirst = false }: PostCardProps) {
   const [showComments, setShowComments] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -267,11 +267,14 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
             <div className="mt-3 rounded-lg overflow-hidden border border-border/60 bg-muted/20">
               {heroImageUrl.startsWith('blob:') ? (
                 // Use regular img tag for blob URLs (optimistic posts)
-                <img
-                  src={heroImageUrl}
-                  alt={post.content.text.slice(0, 64) || 'Post image'}
-                  className="w-full h-auto object-cover"
-                />
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={heroImageUrl}
+                    alt={post.content.text.slice(0, 64) || 'Post image'}
+                    className="w-full h-auto object-cover"
+                  />
+                </>
               ) : (
                 // Use Next.js Image for real URLs
                 <NextImage

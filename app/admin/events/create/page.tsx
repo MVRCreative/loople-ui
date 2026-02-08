@@ -31,7 +31,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useEvents } from "@/lib/events/hooks";
 import { EventHeader } from "@/components/events/EventHeader";
-import { EventDetail, EventVisibility, EventStatus, EventListItem } from "@/lib/events/types";
+import { EventDetail, EventVisibility, EventStatus } from "@/lib/events/types";
 import { getUpcomingEventListItems } from "@/lib/mocks/events";
 import { formatEventDateTime, formatEventLocation } from "@/lib/events/selectors";
 
@@ -55,7 +55,7 @@ export default function CreateEventPage() {
   const [price, setPrice] = useState("");
   const [limitEnabled, setLimitEnabled] = useState(false);
   const [limit, setLimit] = useState("");
-  const [ageRestriction, setAgeRestriction] = useState("");
+  const [ageRestriction] = useState("");
   const [showSaveMenu, setShowSaveMenu] = useState(false);
   const [visibility, setVisibility] = useState<EventVisibility>("public");
   const [status, setStatus] = useState<EventStatus>("draft");

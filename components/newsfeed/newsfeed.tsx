@@ -364,7 +364,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
   // #endregion
 
   // Show empty state when user has no clubs — never leave the main panel blank
-  if (isAuthenticated && !clubLoading && hasNoClubs) {
+  if (isBrandNewUser) {
     // #region agent log
     if (typeof fetch !== "undefined") fetch("http://127.0.0.1:7242/ingest/fa342421-bbc3-4297-9f03-9cfbd6477dbe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:"newsfeed.tsx:return",message:"Rendering NewUserEmptyState",data:{},timestamp:Date.now(),hypothesisId:"A"})}).catch(()=>{});
     // #endregion

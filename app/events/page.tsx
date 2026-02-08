@@ -12,7 +12,7 @@ import { CreateEventForm } from "@/components/club-management/create-event-form"
 import { EditEventForm } from "@/components/club-management/edit-event-form";
 import { useEvents } from "@/lib/events/hooks";
 import { useClub } from "@/lib/club-context";
-import { Search, Filter, Calendar, Plus, Edit, Trash2 } from "lucide-react";
+import { Search, Filter, Calendar, Plus } from "lucide-react";
 import { Event, EventsService } from "@/lib/services/events.service";
 import { EventDetail, EventListItem } from "@/lib/events/types";
 
@@ -43,7 +43,7 @@ export default function EventsPage() {
   // CRUD state
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const [, setDeletingEventId] = useState<string | null>(null);
 
   // Load events on component mount
   useEffect(() => {

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader } from "@/components/ui/loader";
-import { Image, FileImage, List, Smile, Bold, Italic, X } from "lucide-react";
+import { Image as ImageIcon, FileImage, List, Smile, Bold, Italic, X } from "lucide-react";
 import { User } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -26,7 +26,7 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [uploadedItems, setUploadedItems] = useState<Array<{ url: string; name: string; size: number; type: string }>>([]);
-  const [UploadButtonCmp, setUploadButtonCmp] = useState<React.ComponentType<{
+  const [, setUploadButtonCmp] = useState<React.ComponentType<{
     endpoint: string;
     onClientUploadComplete?: (res: Array<{ url: string; name: string; size: number; type: string }>) => void;
     onUploadError?: (error: Error) => void;
@@ -129,7 +129,7 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const removeUploadedItem = (index: number) => {
+  const _removeUploadedItem = (index: number) => {
     setUploadedItems(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -225,11 +225,14 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
                   {attachments.slice(0, 4).map((file, index) => (
                     <div key={index} className="relative rounded-2xl overflow-hidden border border-border/50">
                       {file.type.startsWith('image/') ? (
-                        <img
-                          src={URL.createObjectURL(file)}
-                          alt={file.name}
-                          className="w-full h-auto max-h-96 object-cover"
-                        />
+                        <>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="w-full h-auto max-h-96 object-cover"
+                          />
+                        </>
                       ) : (
                         <div className="w-full h-48 bg-muted flex items-center justify-center">
                           <span className="text-sm text-muted-foreground">{file.name}</span>
@@ -264,7 +267,7 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
                   aria-label="Add image"
                   suppressHydrationWarning
                 >
-                  <Image className="h-5 w-5 text-primary" />
+                  <ImageIcon className="h-5 w-5 text-primary" />
                 </button>
                 
                 <button

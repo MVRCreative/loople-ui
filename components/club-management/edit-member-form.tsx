@@ -49,8 +49,8 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
         membership_start_date: formData.membership_start_date,
         membership_status: formData.status,
         admin_notes: formData.admin_notes,
-        parent_member_id: formData.parent_member_id || null,
-        household_id: formData.household_id || null,
+        parent_member_id: formData.parent_member_id || undefined,
+        household_id: formData.household_id || undefined,
       });
       onSuccess();
     } catch (err: unknown) {

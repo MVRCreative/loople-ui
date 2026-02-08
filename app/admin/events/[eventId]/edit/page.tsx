@@ -39,7 +39,7 @@ export default function AdminEditEventPage() {
     router.back();
   };
 
-  const handleSubmit = async (data: CreateEventData | UpdateEventData) => {
+  const handleSubmit = async (_data: CreateEventData | UpdateEventData) => {
     setIsSubmitting(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));

@@ -41,7 +41,7 @@ export function RSVPButtonGroup({
       onRSVPUpdate?.(status);
       
       toast.success(`RSVP updated to ${getStatusText(status)}`);
-    } catch (error) {
+    } catch {
       // Revert optimistic update on error
       setOptimisticStatus(null);
       toast.error("Failed to update RSVP. Please try again.");

@@ -1,9 +1,7 @@
 "use client"
 
-import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { 
   Sidebar,
   SidebarContent,
@@ -16,7 +14,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { adminNavigation, adminSecondaryNavigation } from "./admin-navigation"
 import { useAuth } from "@/lib/auth-context"

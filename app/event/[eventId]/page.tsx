@@ -15,7 +15,6 @@ import { EventRSVPStatus } from "@/lib/events/types";
 import { useAuth } from "@/lib/auth-context";
 import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
 import { User } from "@/lib/types";
-import { ArrowLeft, Share2, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { useClub } from "@/lib/club-context";
 import { RSVPService, EventRegistration } from "@/lib/services/rsvp.service";
@@ -55,7 +54,7 @@ export default function EventDetailsPage() {
   // Owner RSVP management state
   const [registrations, setRegistrations] = useState<EventRegistration[]>([]);
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
-  const [updatingRsvpId, setUpdatingRsvpId] = useState<number | null>(null);
+  const [, setUpdatingRsvpId] = useState<number | null>(null);
   const [rsvpSearch, setRsvpSearch] = useState<string>("");
 
   useEffect(() => {
@@ -106,7 +105,7 @@ export default function EventDetailsPage() {
     router.back();
   };
 
-  const handleShare = async () => {
+  const _handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
@@ -114,7 +113,7 @@ export default function EventDetailsPage() {
           text: `Check out this event: ${event?.title}`,
           url: window.location.href,
         });
-      } catch (error) {
+      } catch {
         // User cancelled sharing
       }
     } else {
@@ -123,7 +122,7 @@ export default function EventDetailsPage() {
     }
   };
 
-  const handleAddToCalendar = () => {
+  const _handleAddToCalendar = () => {
     if (!event) return;
     
     const startDate = new Date(event.start_date);

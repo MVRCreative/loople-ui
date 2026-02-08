@@ -16,7 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { InviteMemberForm } from "@/components/club-management/invite-member-form";
 import { CreateMemberForm } from "@/components/club-management/create-member-form";
 import { EditMemberForm } from "@/components/club-management/edit-member-form";
-import { UserPlus, Plus, Users } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 
 export default function AdminUsersPage() {
   const router = useRouter();

@@ -5,7 +5,6 @@ import { PostForm } from "@/components/newsfeed/post-form";
 import { PostCard } from "@/components/newsfeed/post-card";
 import { Loader } from "@/components/ui/loader";
 import { Post, User, ApiPost } from "@/lib/types";
-import { EventPost } from "@/lib/events/types";
 import { useAuth } from "@/lib/auth-context";
 import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
 import { postsService } from "@/lib/services/posts.service";

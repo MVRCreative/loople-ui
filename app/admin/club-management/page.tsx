@@ -1,14 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
 import { useClub } from "@/lib/club-context";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { 
   Plus,
   AlertCircle,
@@ -17,101 +14,11 @@ import {
   Trash2,
   Search,
 } from "lucide-react";
-import { ClubAnalytics } from "@/components/club-management/club-analytics";
 import { CreateClubForm } from "@/components/club-management/create-club-form";
 import { EditClubForm } from "@/components/club-management/edit-club-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ClubsService, Club } from "@/lib/services/clubs.service";
-
-// Activity data adapted for club management context
-const activityItems = [
-  {
-    user: {
-      name: 'Emma Wilson',
-      imageUrl: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-    },
-    action: 'joined',
-    target: 'club membership',
-    details: 'New member registration',
-    date: '1h',
-    dateTime: '2023-01-23T11:00',
-  },
-  {
-    user: {
-      name: 'Michael Foster',
-      imageUrl: 'https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-    },
-    action: 'registered for',
-    target: 'Summer Championship',
-    details: 'Event registration',
-    date: '3h',
-    dateTime: '2023-01-23T09:00',
-  },
-  {
-    user: {
-      name: 'Lindsay Walton',
-      imageUrl: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-    },
-    action: 'made payment',
-    target: 'membership fees',
-    details: '$150 payment received',
-    date: '12h',
-    dateTime: '2023-01-23T00:00',
-  },
-  {
-    user: {
-      name: 'Courtney Henry',
-      imageUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-    },
-    action: 'created',
-    target: 'Swimming Practice',
-    details: 'New event scheduled',
-    date: '2d',
-    dateTime: '2023-01-21T13:00',
-  },
-  {
-    user: {
-      name: 'John Davis',
-      imageUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-    },
-    action: 'updated',
-    target: 'profile information',
-    details: 'Member profile updated',
-    date: '5d',
-    dateTime: '2023-01-18T12:34',
-  },
-];
-
-function RecentActivityList() {
-  return (
-    <ul role="list" className="divide-y divide-gray-100">
-      {activityItems.map((item, index) => (
-        <li key={`${item.user.name}-${index}`} className="py-4">
-          <div className="flex items-center gap-x-3">
-            <Image 
-              alt="" 
-              src={item.user.imageUrl} 
-              width={24}
-              height={24}
-              className="size-6 flex-none rounded-full bg-gray-800" 
-            />
-            <h3 className="flex-auto truncate text-sm/6 font-semibold text-gray-900">
-              {item.user.name}
-            </h3>
-            <time dateTime={item.dateTime} className="flex-none text-xs text-gray-500">
-              {item.date}
-            </time>
-          </div>
-          <p className="mt-3 truncate text-sm text-gray-500">
-            {item.action} <span className="text-gray-700">{item.target}</span> -{' '}
-            <span className="text-gray-700">{item.details}</span>
-          </p>
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 export default function ClubManagementPage() {
   const { isAuthenticated, loading: authLoading } = useAuth();

@@ -17,7 +17,6 @@ import {
   Edit, 
   Trash2, 
   Calendar,
-  CreditCard,
   DollarSign,
   Search,
   RefreshCw
