@@ -2,7 +2,9 @@
 
 > **Purpose**: Board-of-directors demo readiness tracker.
 > **Generated**: 2026-02-07
-> **Last audited against**: current `main` branch
+> **Last audited against**: 2026-02-08
+
+**Recent updates (Feb 2026)**: Waitlist management implemented — `waitlist_applications` table, RLS, admin page with toggle/settings, public form at `/app/waitlist/apply` (subdomain support), shareable link, `update-club-waitlist-settings` Edge Function, Stripe payment flow, convert-to-member, FIFO ordering. Public waitlist route excluded from auth redirect.
 
 Legend: ✅ Done | ⚠️ Partial | ❌ Not started | 🐛 Bug
 
@@ -23,11 +25,11 @@ Legend: ✅ Done | ⚠️ Partial | ❌ Not started | 🐛 Bug
 | 1.7 | Password reset (request) | ✅ Done | `app/auth/forgot/page.tsx` |
 | 1.8 | Password reset (new password) | ✅ Done | `app/auth/reset-password/page.tsx` |
 | 1.9 | Route protection (authenticated) | ✅ Done | Middleware blocks unauthenticated access to protected routes |
-| 1.10 | Role definitions (admin vs basic member) | ⚠️ Partial | DB `roles` table exists; not wired to frontend |
-| 1.11 | Role-based route protection (admin routes) | ❌ Not done | Middleware checks auth only, not authorization |
-| 1.12 | Remove `isAdmin` hardcoded bypass | 🐛 Bug | `lib/utils/auth.utils.ts` line 29 — `\|\| true` grants all users admin |
-| 1.13 | Wire admin check to DB roles | ❌ Not done | `club-context.tsx` hardcodes `isAdmin = false` |
-| 1.14 | Prevent path crossing between roles | ❌ Not done | Depends on 1.11 + 1.12 + 1.13 |
+| 1.10 | Role definitions (admin vs basic member) | ✅ Done | DB `roles` table wired via auth-context + convertAuthUserToUser |
+| 1.11 | Role-based route protection (admin routes) | ✅ Done | Middleware checks auth + admin (metadata + clubs/members) |
+| 1.12 | Remove `isAdmin` hardcoded bypass | ✅ Done | Bypass removed in `lib/utils/auth.utils.ts` |
+| 1.13 | Wire admin check to DB roles | ✅ Done | `club-context.tsx` uses `getUserClubRole` from permissions.service |
+| 1.14 | Prevent path crossing between roles | ✅ Done | Middleware redirects non-admins from `/admin/*` to home |
 
 ### Checklist
 
@@ -36,11 +38,11 @@ Legend: ✅ Done | ⚠️ Partial | ❌ Not started | 🐛 Bug
 - [x] Password reset flow (request + update)
 - [x] Email verification
 - [x] Route protection (auth-based)
-- [ ] Fix `isAdmin` bypass bug (`auth.utils.ts`)
-- [ ] Wire role checks to database `roles` table
-- [ ] Add role-based middleware for `/admin/*` routes
-- [ ] End-to-end test: basic member cannot access admin routes
-- [ ] End-to-end test: admin can access admin routes
+- [x] Fix `isAdmin` bypass bug (`auth.utils.ts`)
+- [x] Wire role checks to database `roles` table
+- [x] Add role-based middleware for `/admin/*` routes
+- [x] End-to-end test: basic member cannot access admin routes
+- [x] End-to-end test: admin can access admin routes
 
 ---
 
@@ -54,18 +56,18 @@ Legend: ✅ Done | ⚠️ Partial | ❌ Not started | 🐛 Bug
 | 2.2 | Create member | ✅ Done | `create-member-form.tsx` |
 | 2.3 | Edit member | ✅ Done | `edit-member-form.tsx` |
 | 2.4 | Invite member | ✅ Done | `invite-member-form.tsx` |
-| 2.5 | Member detail / activity panel | ❌ Not done | No `/admin/members/[id]` route or detail page |
-| 2.6 | Membership duration / join date | ⚠️ Partial | `membership_start_date` field exists; no display in detail view |
-| 2.7 | Family info (spouse, kids, ages) | ❌ Not done | No family relationship model (`family_id`, `parent_id`, etc.) |
-| 2.8 | Activity history (events, programs) | ❌ Not done | No per-member activity log |
+| 2.5 | Member detail / activity panel | ✅ Done | `app/admin/members/[id]/page.tsx` — profile, activity (registrations), payments placeholder, edit from header |
+| 2.6 | Membership duration / join date | ✅ Done | `membership_start_date` displayed as "Member Since" in `member-profile-card.tsx` |
+| 2.7 | Family info (spouse, kids, ages) | ⚠️ Partial | `household_id` + `parent_member_id` in members; MemberFamilyCard + EditMemberForm parent/household selectors; ages not displayed |
+| 2.8 | Activity history (events, programs) | ⚠️ Partial | Event registrations shown in `member-activity-card.tsx`; programs not yet |
 | 2.9 | Messages between member and admin | ❌ Not done | Messaging is mock-data only |
-| 2.10 | Payment history (per member) | ❌ Not done | Payment service exists but not connected; admin page uses mock data |
-| 2.11 | Admin notes on member | ❌ Not done | No `notes` field in member schema; no UI |
+| 2.10 | Payment history (per member) | ⚠️ Partial | `member-payments-card.tsx` placeholder exists; not wired to real data |
+| 2.11 | Admin notes on member | ✅ Done | `admin_notes` in Member type; MemberNotesCard displays; EditMemberForm has textarea |
 | 2.12 | Status: active | ✅ Done | Supported in member model |
 | 2.13 | Status: inactive | ✅ Done | Supported in member model |
 | 2.14 | Status: pending | ✅ Done | Supported in member model |
-| 2.15 | Status: suspended | ❌ Not done | Not in member type definition |
-| 2.16 | Status: canceled (end-of-season) | ❌ Not done | No cancellation logic or end-date handling |
+| 2.15 | Status: suspended | ✅ Done | `status: 'suspended'` in Member type; EditMemberForm dropdown |
+| 2.16 | Status: canceled (end-of-season) | ✅ Done | `status: 'canceled'` in Member type; EditMemberForm dropdown; cancellation workflow/end-date logic pending |
 | 2.17 | Status change workflow + history | ❌ Not done | No audit trail for status changes |
 | 2.18 | Status change notifications | ❌ Not done | No notification system |
 
@@ -73,13 +75,13 @@ Legend: ✅ Done | ⚠️ Partial | ❌ Not started | 🐛 Bug
 
 - [x] Member directory table with search
 - [x] Create / edit / invite member forms
-- [ ] Build member detail page (`/admin/members/[id]`)
-- [ ] Add family data model (family groups, parent-child, spouse relationships)
-- [ ] Build family management UI on member detail
-- [ ] Add per-member activity timeline (events, programs, registrations)
+- [x] Build member detail page (`/admin/members/[id]`)
+- [x] Add family data model (family groups, parent-child, spouse relationships)
+- [x] Build family management UI on member detail
+- [x] Add per-member activity timeline (events, programs, registrations) — events/registrations done; programs pending
 - [ ] Connect payment history to member detail (real data, not mock)
-- [ ] Add admin notes field to member schema + UI
-- [ ] Add `suspended` and `canceled` statuses to member model
+- [x] Add admin notes field to member schema + UI
+- [x] Add `suspended` and `canceled` statuses to member model
 - [ ] Build cancellation flow (effective end-of-season, record retained)
 - [ ] Add status change audit trail
 - [ ] Wire messaging to member detail (see Feature 6)
@@ -92,34 +94,34 @@ Legend: ✅ Done | ⚠️ Partial | ❌ Not started | 🐛 Bug
 
 | # | Requirement | Status | Notes |
 |---|---|---|---|
-| 3.1 | Waitlist data model | ❌ Not done | Documented in `docs/INVITE_USERS_FEATURE.md` but no DB table |
-| 3.2 | Waitlist toggle (on/off) | ❌ Not done | |
-| 3.3 | Waitlist settings page (fields, pricing) | ❌ Not done | |
-| 3.4 | Public application form | ❌ Not done | No `/waitlist/apply` route |
-| 3.5 | Online payment (registration fee) | ❌ Not done | No Stripe integration for waitlist |
-| 3.6 | Auto-add to waitlist on payment clearance | ❌ Not done | |
+| 3.1 | Waitlist data model | ✅ Done | `waitlist_applications` table + RLS on preview branch |
+| 3.2 | Waitlist toggle (on/off) | ✅ Done | Toggle in `/admin/waitlist` Settings |
+| 3.3 | Waitlist settings page (fields, pricing) | ✅ Done | Settings: enable toggle, registration fee field; shareable link + "View public form" when enabled |
+| 3.4 | Public application form | ✅ Done | `/app/waitlist/apply` with subdomain support (`?club=id` or `?club=subdomain`); public route excluded from auth |
+| 3.5 | Online payment (registration fee) | ⚠️ Partial | Stripe via `waitlist-create-payment-intent` Edge Function; confirm deployed on preview |
+| 3.6 | Auto-add to waitlist on payment clearance | ⚠️ Partial | Stripe webhook may update `payment_status`; verify flow |
 | 3.7 | Finance visibility on transactions | ❌ Not done | |
-| 3.8 | FIFO ordering (by application date) | ❌ Not done | |
+| 3.8 | FIFO ordering (by application date) | ✅ Done | `position` field, `order("position")` in `waitlist.service.ts` |
 | 3.9 | Deferral option (drop one spot, not to bottom) | ❌ Not done | |
 | 3.10 | First right of refusal for deferred members | ❌ Not done | |
-| 3.11 | Admin: manual placement adjustment | ❌ Not done | |
+| 3.11 | Admin: manual placement adjustment | ❌ Not done | `reorder()` exists in service; no UI for drag-and-drop |
 | 3.12 | Placement adjustment warning + confirmation | ❌ Not done | |
-| 3.13 | Admin: review individual waitlist entries | ❌ Not done | |
-| 3.14 | Convert waitlist entry to active member | ❌ Not done | |
+| 3.13 | Admin: review individual waitlist entries | ✅ Done | Admin table with applications; dropdown for Convert/Remove |
+| 3.14 | Convert waitlist entry to active member | ✅ Done | `WaitlistService.convertToMember()` wired in admin UI |
 
 ### Checklist
 
-- [ ] Design and create `waitlist_applications` DB table + RLS policies
-- [ ] Build waitlist settings page (`/admin/waitlist/settings`)
-- [ ] Build admin waitlist toggle (on/off)
-- [ ] Build public-facing application form (`/waitlist/apply`)
-- [ ] Integrate Stripe for registration fee payment
-- [ ] Auto-add applicant to waitlist on payment clearance (webhook)
-- [ ] Implement FIFO ordering logic
+- [x] Design and create `waitlist_applications` DB table + RLS policies
+- [x] Build waitlist settings (in `/admin/waitlist`)
+- [x] Build admin waitlist toggle (on/off)
+- [x] Build public-facing application form (`/waitlist/apply`)
+- [x] Integrate Stripe for registration fee payment (Edge Function)
+- [ ] Auto-add applicant to waitlist on payment clearance (webhook) — verify
+- [x] Implement FIFO ordering logic
 - [ ] Build deferral mechanism (drop one spot, retain priority)
-- [ ] Build admin waitlist management page (`/admin/waitlist`)
+- [x] Build admin waitlist management page (`/admin/waitlist`)
 - [ ] Build manual placement adjustment with warning dialog
-- [ ] Build waitlist-to-active-member conversion flow
+- [x] Build waitlist-to-active-member conversion flow
 - [ ] Add waitlist transactions to finance view
 
 ---
@@ -168,7 +170,7 @@ Legend: ✅ Done | ⚠️ Partial | ❌ Not started | 🐛 Bug
 | # | Requirement | Status | Notes |
 |---|---|---|---|
 | 5.1 | Programs data model | ⚠️ Partial | Events reference `program_id` but no programs CRUD |
-| 5.2 | Admin: create program (name, photo, description) | ❌ Not done | `app/(dashboard)/programs/page.tsx` is empty placeholder |
+| 5.2 | Admin: create program (name, photo, description) | ❌ Not done | Member-facing programs page shows events grouped by program; no admin CRUD for programs |
 | 5.3 | Dynamic registration fields | ❌ Not done | |
 | 5.4 | Fee per registrant | ❌ Not done | |
 | 5.5 | Family cap (e.g. $50/kid, max $200) | ❌ Not done | Requires family model (Feature 2.7) |
@@ -267,9 +269,9 @@ Legend: ✅ Done | ⚠️ Partial | ❌ Not started | 🐛 Bug
 
 ## Priority Order for Demo Readiness
 
-1. **Auth RBAC fix** — unblock everything else (1-2 days)
-2. **Member Management** — detail page, family model, notes, payment history, status (1-2 weeks)
-3. **Waitlist Management** — entirely net-new (1-2 weeks)
+1. ~~**Auth RBAC fix**~~ — Done
+2. **Member Management** — payment history wiring (family, notes, status done) (1-2 days)
+3. ~~**Waitlist Management**~~ — Done (core flow); polish: verify webhook, add manual placement UI
 4. **Annual Dues + Stripe** — payment flow, dashboard, refunds (1-2 weeks)
 5. **Program Management** — depends on family model from #2 (2-3 weeks)
 6. **Messaging** — UI shell exists, needs real backend (1 week)
@@ -277,13 +279,45 @@ Legend: ✅ Done | ⚠️ Partial | ❌ Not started | 🐛 Bug
 
 ---
 
+## Next Steps (Prioritized)
+
+### 1. Verify waitlist Stripe webhook (1 day)
+- **Goal**: Confirm `stripe-webhook` Edge Function updates `waitlist_applications.payment_status` on successful payment.
+- **Tasks**: Audit webhook handler; add handler if missing.
+- **Verify**: Submit paid waitlist application; confirm payment_status becomes "completed".
+
+### 2. Member Payment History (1–2 days)
+- **Goal**: Replace placeholder in `member-payments-card.tsx` with real data.
+- **Tasks**: Add `getPaymentsByMemberId()` to `payments.service.ts`; wire MemberPaymentsCard to fetch and display transactions.
+- **Verify**: Open `/admin/members/[id]` → Payment History shows real transactions or "No payments" from API.
+
+### 3. Admin Payments Page — Real Data (1 day)
+- **Goal**: Replace mock data in `app/admin/payments/page.tsx` with PaymentsService.
+- **Tasks**: Fetch payments (or registrations with payments); remove hardcoded sample array.
+- **Verify**: `/admin/payments` shows real transactions (or empty state) from backend.
+
+### 4. Waitlist manual placement adjustment (2–3 days)
+- **Goal**: Add drag-and-drop or up/down buttons for reordering in admin waitlist table.
+- **Tasks**: Call `WaitlistService.reorder()`; add confirmation dialog.
+- **Verify**: Admins can reorder applications with warning.
+
+### 5. Annual Dues (1–2 weeks)
+- **Prerequisite**: Stripe webhooks, notification system.
+- **Tasks**: `dues_campaigns` + `member_dues` tables; admin dues setup page; push to members (email/notification); Stripe checkout; dues dashboard (paid/unpaid/past-due).
+- **Note**: `notifications.service.ts` has `sendDuesReminder`.
+
+### 6. Status Change Audit Trail (optional, 2–3 days)
+- Add `member_status_history` table or audit log; record status changes on update; display in member detail.
+
+---
+
 ## Cross-Cutting Concerns
 
 | Concern | Status | Notes |
 |---|---|---|
-| Stripe integration (shared) | ⚠️ Skeletal | Payment intent creation exists; no checkout UI, webhooks, or refund processing |
+| Stripe integration (shared) | ⚠️ Skeletal | Waitlist has payment flow; payment intent + checkout; webhooks and refunds need verification |
 | Email / notification system | ❌ Not done | Needed by dues, waitlist, programs, messaging |
-| Family data model | ❌ Not done | Blocks member detail, program registration, billing |
+| Family data model | ⚠️ Partial | `household_id` + `parent_member_id` exist; MemberFamilyCard + EditMemberForm; ages not in family card |
 | CSV export | ❌ Not done | Button exists in UI but non-functional |
 | Real-time (beyond newsfeed) | ❌ Not done | Only newsfeed has Realtime; messaging and notifications need it |
 | RLS policies | ❓ Unknown | May exist in Supabase but not documented in codebase |

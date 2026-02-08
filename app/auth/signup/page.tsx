@@ -213,7 +213,7 @@ export default function SignUpPage() {
     <div className="flex min-h-[80vh] w-full flex-col items-center justify-center p-4">
       <div className="mb-6 text-center">
         <Image 
-          src="/loople logo3.svg" 
+          src="/app/loople-logo3.svg" 
           alt="Loople Logo" 
           width={48}
           height={48}

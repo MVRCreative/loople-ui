@@ -122,9 +122,12 @@ export class ClubsService {
    */
   static async createClub(clubData: CreateClubData): Promise<Club[]> {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) throw new Error('You must be signed in to create a club');
+
       const { data, error } = await supabase.functions.invoke('clubs', {
         method: 'POST',
-        body: clubData
+        body: { ...clubData, owner_id: user.id }
       });
       
       

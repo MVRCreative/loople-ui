@@ -19,7 +19,8 @@ import {
   Mail, 
   Phone,
   UserPlus,
-  Search
+  Search,
+  Eye
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -33,12 +34,13 @@ interface MembersTableProps {
   members: Member[];
   onInviteClick?: () => void;
   onExportClick?: () => void;
+  onViewMember?: (member: Member) => void;
   onEditMember?: (member: Member) => void;
   onDeleteMember?: (member: Member) => void;
   hideActions?: boolean;
 }
 
-export function MembersTable({ members, onInviteClick, onExportClick, onEditMember, onDeleteMember, hideActions }: MembersTableProps) {
+export function MembersTable({ members, onInviteClick, onExportClick, onViewMember, onEditMember, onDeleteMember, hideActions }: MembersTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredMembers = members.filter(member =>
@@ -54,6 +56,10 @@ export function MembersTable({ members, onInviteClick, onExportClick, onEditMemb
         return <Badge variant="secondary">Pending</Badge>;
       case "inactive":
         return <Badge variant="outline">Inactive</Badge>;
+      case "suspended":
+        return <Badge variant="outline" className="border-amber-500 text-amber-700 dark:text-amber-400">Suspended</Badge>;
+      case "canceled":
+        return <Badge variant="outline" className="text-muted-foreground">Canceled</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -153,7 +159,7 @@ export function MembersTable({ members, onInviteClick, onExportClick, onEditMemb
                 </TableCell>
                 <TableCell>
                   <div className="text-xs lg:text-sm">
-                    {getStatusBadge((member as unknown as { membership_status?: string; status?: string }).membership_status ?? (member as unknown as { status?: string }).status ?? "")}
+                    {getStatusBadge(member.status ?? "")}
                   </div>
                 </TableCell>
                 <TableCell>
@@ -178,6 +184,12 @@ export function MembersTable({ members, onInviteClick, onExportClick, onEditMemb
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                      {onViewMember && (
+                        <DropdownMenuItem onClick={() => onViewMember(member)}>
+                          <Eye className="h-4 w-4 mr-2" />
+                          View
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={() => onEditMember?.(member)}>
                         <Edit className="h-4 w-4 mr-2" />
                         Edit Member

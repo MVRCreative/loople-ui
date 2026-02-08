@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader } from "@/components/ui/loader";
@@ -20,7 +21,7 @@ export default function AdminEventsPage() {
   const router = useRouter();
   const { events, loading, error, loadEvents } = useEvents();
   const { user: authUser } = useAuth();
-  const { loading: clubLoading } = useClub();
+  const { selectedClub, loading: clubLoading } = useClub();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
@@ -121,6 +122,31 @@ export default function AdminEventsPage() {
             You don&apos;t have permission to access this page.
           </p>
         </div>
+      </div>
+    );
+  }
+
+  if (!selectedClub) {
+    return (
+      <div className="flex-1 space-y-6">
+        <h1 className="text-3xl font-bold text-foreground">Event Management</h1>
+        <Card>
+          <CardContent className="text-center py-16 px-6">
+            <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">Select or create a club to manage events</h3>
+            <p className="text-muted-foreground mb-6">
+              Choose a club from the switcher or create your first club to create and manage events.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button asChild>
+                <Link href="/admin/club-management?action=create">Create New Club</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/admin/club-management">Go to Club Management</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }

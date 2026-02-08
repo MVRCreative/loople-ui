@@ -6,29 +6,16 @@ import { useRouter } from "next/navigation"
 import { Search, Clock } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { useEvents } from "@/lib/events/hooks"
-
-const userPrograms = [
-  {
-    name: "Competitive Swim Team",
-    coach: "Sarah Johnson",
-    next: "Team Practice - Tomorrow"
-  },
-  {
-    name: "Adult Fitness Swimming", 
-    coach: "Michael Torres",
-    next: "Team Practice - Tomorrow"
-  },
-  {
-    name: "Water Polo Introduction",
-    coach: "Alex Rivera", 
-    next: "Team Practice - Tomorrow"
-  }
-]
+import { useEvents, usePrograms } from "@/lib/events/hooks"
+import { useClub } from "@/lib/club-context"
 
 export function NewsfeedRightSidebar() {
   const router = useRouter()
   const { events, loading, error, loadEvents } = useEvents()
+  const { programs, loading: clubLoading } = usePrograms(events)
+  const { clubs } = useClub()
+
+  const programsLoading = loading || clubLoading
 
   useEffect(() => {
     loadEvents()
@@ -68,6 +55,27 @@ export function NewsfeedRightSidebar() {
       return ''
     }
   }
+
+  const formatNextEvent = (startDate: string, title: string) => {
+    try {
+      const d = new Date(startDate)
+      const today = new Date()
+      const tomorrow = new Date(today)
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      const isToday = d.toDateString() === today.toDateString()
+      const isTomorrow = d.toDateString() === tomorrow.toDateString()
+      if (isToday) return `${title} - Today`
+      if (isTomorrow) return `${title} - Tomorrow`
+      return `${title} - ${d.toLocaleDateString(undefined, { weekday: 'short' })}`
+    } catch {
+      return title
+    }
+  }
+
+  const hasClub = clubs.length > 0 && !clubLoading
+  const showProgramsEmptyNoClub = !clubLoading && clubs.length === 0
+  const showProgramsEmptyWithClub = hasClub && !programsLoading && programs.length === 0
+  const showProgramsList = hasClub && programs.length > 0
 
   return (
     <div className="w-full bg-background border-l border-border p-4 sticky top-0 h-screen flex flex-col" suppressHydrationWarning>
@@ -125,18 +133,45 @@ export function NewsfeedRightSidebar() {
         <div className="rounded-lg border border-border bg-background p-4 flex flex-col min-h-0 flex-1">
           <h3 className="font-semibold text-lg mb-3 text-foreground flex-shrink-0">Your Programs</h3>
           <div className="space-y-3 overflow-y-auto flex-1">
-            {userPrograms.map((program, index) => (
-              <div key={index} className="p-3 rounded-lg bg-muted hover:bg-accent transition-colors duration-200 cursor-pointer">
-                <div className="mb-2">
+            {programsLoading && (
+              <div className="text-sm text-muted-foreground">Loading...</div>
+            )}
+            {showProgramsEmptyNoClub && (
+              <div className="text-sm text-muted-foreground">
+                Join a club to see your programs.
+              </div>
+            )}
+            {showProgramsEmptyWithClub && (
+              <div className="text-sm text-muted-foreground">
+                No programs yet. Programs will appear when your club adds events.
+              </div>
+            )}
+            {showProgramsList && programs.map((program) => (
+              <Link
+                key={program.id}
+                href={`/programs?programId=${encodeURIComponent(program.id)}`}
+                className="block p-3 rounded-lg bg-muted hover:bg-accent transition-colors duration-200"
+              >
+                <div className="mb-1">
                   <p className="font-medium text-sm text-foreground">{program.name}</p>
                 </div>
-                <p className="text-xs text-muted-foreground mb-1">Coach: {program.coach}</p>
-                <p className="text-xs text-muted-foreground">Next: {program.next}</p>
-              </div>
+                {program.nextEvent ? (
+                  <p className="text-xs text-muted-foreground">
+                    Next: {formatNextEvent(program.nextEvent.start_date, program.nextEvent.title)}
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No upcoming events</p>
+                )}
+              </Link>
             ))}
           </div>
           <div className="pt-3 flex-shrink-0">
-            <Button variant="ghost" className="p-0 h-auto text-primary hover:text-primary/80 text-sm font-medium" suppressHydrationWarning>
+            <Button
+              variant="ghost"
+              className="p-0 h-auto text-primary hover:text-primary/80 text-sm font-medium"
+              onClick={() => router.push('/programs')}
+              suppressHydrationWarning
+            >
               View All Programs
             </Button>
           </div>

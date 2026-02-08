@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
 import { useAuth } from "@/lib/auth-context";
@@ -10,12 +12,14 @@ import { useClub } from "@/lib/club-context";
 import { MembersService, Member } from "@/lib/services/members.service";
 import { MembersTable } from "@/components/club-management/members-table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
 import { InviteMemberForm } from "@/components/club-management/invite-member-form";
 import { CreateMemberForm } from "@/components/club-management/create-member-form";
 import { EditMemberForm } from "@/components/club-management/edit-member-form";
-import { UserPlus, Plus } from "lucide-react";
+import { UserPlus, Plus, Users } from "lucide-react";
 
 export default function AdminUsersPage() {
+  const router = useRouter();
   const { user: authUser } = useAuth();
   const { selectedClub, loading: clubLoading } = useClub();
   const [members, setMembers] = useState<Member[]>([]);
@@ -69,6 +73,31 @@ export default function AdminUsersPage() {
     );
   }
 
+  if (!selectedClub) {
+    return (
+      <div className="flex-1 space-y-6">
+        <h1 className="text-3xl font-bold text-foreground">User Management</h1>
+        <Card>
+          <CardContent className="text-center py-16 px-6">
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">Select or create a club to manage members</h3>
+            <p className="text-muted-foreground mb-6">
+              Choose a club from the switcher or create your first club to manage members and roles.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button asChild>
+                <Link href="/admin/club-management?action=create">Create New Club</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/admin/club-management">Go to Club Management</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 space-y-6">
       <div className="flex items-center justify-between">
@@ -92,6 +121,7 @@ export default function AdminUsersPage() {
       <MembersTable 
         members={members}
         onInviteClick={() => setShowInviteMember(true)}
+        onViewMember={(m) => router.push(`/admin/members/${m.id}`)}
         onEditMember={(m) => setEditingMember(m)}
         onDeleteMember={async (m) => {
           try {

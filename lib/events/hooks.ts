@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { EventDetail, EventRSVP, EventPost, EventRSVPStatus } from "./types";
+import { EventDetail, EventRSVP, EventPost, EventRSVPStatus, ProgramWithNextEvent } from "./types";
 import { EventsService, Event } from "@/lib/services/events.service";
 import { RSVPService, EventRegistration } from "@/lib/services/rsvp.service";
 import { useClub } from "@/lib/club-context";
@@ -114,6 +114,42 @@ export function useEvents() {
   }, [selectedClub, clubLoading]);
 
   return { events, loading, error, loadEvents };
+}
+
+// Derive unique programs from events (for sidebar, programs page).
+// Caller must provide events from useEvents() and ensure loadEvents is called.
+export function usePrograms(events: EventDetail[]) {
+  const { clubs, selectedClub, loading: clubLoading } = useClub();
+
+  const programs: ProgramWithNextEvent[] = (() => {
+    if (!selectedClub || clubs.length === 0) return [];
+    const seen = new Set<string>();
+    const result: ProgramWithNextEvent[] = [];
+    const upcoming = [...events].filter((e) => e.is_upcoming).sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime());
+
+    for (const event of events) {
+      const program = event.program;
+      if (!program?.id && !program?.name) continue;
+      const key = program.id || program.name;
+      if (seen.has(key)) continue;
+      seen.add(key);
+
+      const nextEvent = upcoming.find((e) => e.program?.id === program.id || e.program?.name === program.name);
+
+      result.push({
+        id: program.id || `name-${program.name}`,
+        name: program.name,
+        description: program.description,
+        nextEvent: nextEvent
+          ? { id: nextEvent.id, title: nextEvent.title, start_date: nextEvent.start_date }
+          : undefined,
+      });
+    }
+
+    return result;
+  })();
+
+  return { programs, loading: clubLoading };
 }
 
 // Custom hook for single event

@@ -19,6 +19,9 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const pathname = usePathname();
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
+  // #region agent log
+  if (typeof fetch !== "undefined") fetch("http://127.0.0.1:7242/ingest/fa342421-bbc3-4297-9f03-9cfbd6477dbe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:"conditional-sidebar.tsx:render",message:"Layout render",data:{pathname,isAuthRoute:pathname.startsWith("/auth"),isAdminRoute:pathname.startsWith("/admin")},timestamp:Date.now(),hypothesisId:"E"})}).catch(()=>{});
+  // #endregion
 
   // const _isNewsfeedRoute = pathname === "/";
   const isMessagesRoute = pathname.startsWith("/messages");
@@ -27,20 +30,35 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const isAuthRoute = pathname.startsWith("/auth");
   const isRootRoute = pathname === "/";
   const isAdminRoute = pathname.startsWith("/admin");
+  const isWaitlistApplyRoute = pathname.startsWith("/waitlist/apply");
   // const _isFeedPage = pathname === "/";
   // const _isClubManagementPage = pathname.startsWith("/admin/club-management");
 
   // Redirect to login if not authenticated and trying to access protected routes
+  // Exclude public routes: auth, root, and waitlist apply (public form for non-members)
   useEffect(() => {
-    if (!loading && !isAuthenticated && !isAuthRoute && !isRootRoute) {
+    if (!loading && !isAuthenticated && !isAuthRoute && !isRootRoute && !isWaitlistApplyRoute) {
       router.push("/auth/login");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, loading, isAuthRoute, isRootRoute, router]);
+  }, [isAuthenticated, loading, isAuthRoute, isRootRoute, isWaitlistApplyRoute, router]);
 
   const isClubManagementPage = pathname.startsWith("/admin/club-management");
   // Show auth pages without sidebar (these pages manage their own loading/errors)
   if (isAuthRoute) {
+    return (
+      <div className="min-h-screen w-full bg-background">
+        <div className="max-w-[1200px] mx-auto">
+          <main>
+            {children}
+          </main>
+        </div>
+      </div>
+    );
+  }
+
+  // Waitlist apply is a public page - minimal layout, no sidebar
+  if (isWaitlistApplyRoute) {
     return (
       <div className="min-h-screen w-full bg-background">
         <div className="max-w-[1200px] mx-auto">

@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { ClubsService, Club } from './services/clubs.service';
+import { getUserClubRole } from './services/permissions.service';
 import { useAuth } from './auth-context';
 
 interface ClubContextType {
@@ -28,6 +29,7 @@ export function ClubProvider({ children }: ClubProviderProps) {
   const [selectedClub, setSelectedClub] = useState<Club | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clubRole, setClubRole] = useState<'owner' | 'admin' | 'member' | null>(null);
 
   // Load user's clubs when authenticated
   const loadUserClubs = useCallback(async () => {
@@ -39,7 +41,11 @@ export function ClubProvider({ children }: ClubProviderProps) {
       
       const userClubs = await ClubsService.getUserClubs();
       // Ensure we always have an array
-      setClubs(Array.isArray(userClubs) ? userClubs : []);
+      const clubsArr = Array.isArray(userClubs) ? userClubs : [];
+      // #region agent log
+      if (typeof fetch !== "undefined") fetch("http://127.0.0.1:7242/ingest/fa342421-bbc3-4297-9f03-9cfbd6477dbe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:"club-context.tsx:loadClubs",message:"Clubs loaded",data:{count:clubsArr.length,rawIsArray:Array.isArray(userClubs)},timestamp:Date.now(),hypothesisId:"C"})}).catch(()=>{});
+      // #endregion
+      setClubs(clubsArr);
     } catch (err) {
       console.error('Error loading user clubs:', err);
       setError(err instanceof Error ? err.message : 'Failed to load clubs');
@@ -98,9 +104,24 @@ export function ClubProvider({ children }: ClubProviderProps) {
     }
   }, [clubs, selectedClub]);
 
+  // Fetch user's role for selected club
+  useEffect(() => {
+    if (!user?.id || !selectedClub?.id) {
+      setClubRole(null);
+      return;
+    }
+    let cancelled = false;
+    getUserClubRole(user.id, selectedClub.id).then((role) => {
+      if (!cancelled) setClubRole(role);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, selectedClub?.id]);
+
   // Check user's role/permissions for selected club
   const isOwner = selectedClub ? selectedClub.owner_id === user?.id : false;
-  const isAdmin = false; // TODO: Implement admin role check based on user's role in the club
+  const isAdmin = clubRole === 'admin' || clubRole === 'owner';
   const isMember = selectedClub ? clubs.some(club => club.id === selectedClub.id) : false;
 
   const value: ClubContextType = {

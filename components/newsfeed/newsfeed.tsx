@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { PostForm } from "./post-form";
 import { PostCard } from "./post-card";
+import { NewUserEmptyState } from "@/components/home/new-user-empty-state";
 import { Loader } from "@/components/ui/loader";
 import { Post, User, ApiPost } from "@/lib/types";
 import { postsService, CreatePostRequest } from "@/lib/services/posts.service";
@@ -21,7 +22,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
   const [loading, setLoading] = useState(false);
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   // const [searchFilters] = useState<Record<string, unknown>>({});
-  const { selectedClub, loading: clubLoading } = useClub();
+  const { selectedClub, clubs, loading: clubLoading } = useClub();
   const isHandlingOptimisticPost = useRef(false);
 
   const loadPosts = useCallback(async (filters: Record<string, unknown> = {}) => {
@@ -352,7 +353,51 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
   };
 
   const isLoadingUI = clubLoading || loading;
+  const hasNoClubs = (clubs?.length ?? 0) === 0;
+  const isBrandNewUser =
+    isAuthenticated &&
+    !clubLoading &&
+    hasNoClubs;
 
+  // #region agent log
+  if (typeof fetch !== "undefined") fetch("http://127.0.0.1:7242/ingest/fa342421-bbc3-4297-9f03-9cfbd6477dbe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:"newsfeed.tsx:branch",message:"Newsfeed state",data:{clubLoading,clubsLen:clubs?.length??-1,hasNoClubs,selectedClubId:selectedClub?.id??null,isAuthenticated,branch:isAuthenticated&&!clubLoading&&hasNoClubs?"noClubs":!clubLoading&&!selectedClub?.id?"noSelection":"feed"},timestamp:Date.now(),hypothesisId:"A"})}).catch(()=>{});
+  // #endregion
+
+  // Show empty state when user has no clubs — never leave the main panel blank
+  if (isAuthenticated && !clubLoading && hasNoClubs) {
+    // #region agent log
+    if (typeof fetch !== "undefined") fetch("http://127.0.0.1:7242/ingest/fa342421-bbc3-4297-9f03-9cfbd6477dbe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:"newsfeed.tsx:return",message:"Rendering NewUserEmptyState",data:{},timestamp:Date.now(),hypothesisId:"A"})}).catch(()=>{});
+    // #endregion
+    return (
+      <div className="w-full min-h-[400px] flex items-center justify-center">
+        <NewUserEmptyState />
+      </div>
+    );
+  }
+
+  // Show empty state when no club selected (e.g. clubs exist but none selected yet)
+  if (!clubLoading && !selectedClub?.id) {
+    // #region agent log
+    if (typeof fetch !== "undefined") fetch("http://127.0.0.1:7242/ingest/fa342421-bbc3-4297-9f03-9cfbd6477dbe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:"newsfeed.tsx:return",message:"Rendering SelectClub empty state",data:{},timestamp:Date.now(),hypothesisId:"A"})}).catch(()=>{});
+    // #endregion
+    return (
+      <div className="w-full min-h-[400px] flex items-center justify-center">
+        <div className="text-center py-12 px-6">
+          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+          </div>
+          <p className="text-lg font-semibold text-foreground">Select a club</p>
+          <p className="text-sm text-muted-foreground mt-1">Use the club switcher in the sidebar to select a club and view its newsfeed.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // #region agent log
+  if (typeof fetch !== "undefined") fetch("http://127.0.0.1:7242/ingest/fa342421-bbc3-4297-9f03-9cfbd6477dbe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:"newsfeed.tsx:return",message:"Rendering feed (PostForm + posts)",data:{isLoadingUI,postsCount:posts.length},timestamp:Date.now(),hypothesisId:"A"})}).catch(()=>{});
+  // #endregion
   return (
     <div className="w-full">
       <PostForm currentUser={currentUser} onSubmit={handleCreatePost} isAuthenticated={isAuthenticated} isLoading={isCreatingPost} />
@@ -361,16 +406,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
         <div className="text-center py-12 text-muted-foreground">
           <Loader className="mx-auto mb-4" />
           <p className="text-lg">Loading posts...</p>
-        </div>
-      ) : !selectedClub?.id ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          </div>
-          <p className="text-lg font-medium">No club selected</p>
-          <p className="text-sm">Select a club to view its newsfeed.</p>
         </div>
       ) : (
         <div>
@@ -389,14 +424,14 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
         </div>
       )}
 
-      {posts.length === 0 && (
+      {!isLoadingUI && posts.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
           </div>
-          <p className="text-lg font-medium">No posts yet</p>
+          <p className="text-lg font-medium text-foreground">No posts yet</p>
           <p className="text-sm">Be the first to share an update!</p>
         </div>
       )}

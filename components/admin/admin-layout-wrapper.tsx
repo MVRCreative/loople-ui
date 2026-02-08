@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { 
   Sidebar,
@@ -41,13 +42,15 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
         >
           <SidebarHeader>
             <div className="flex h-16 items-center px-6">
-              <Image
-                alt="Loople"
-                src="/loople logo3.svg"
-                width={32}
-                height={32}
-                className="h-8 w-auto"
-              />
+              <Link href="/" className="flex items-center rounded-md hover:opacity-80 transition-opacity" aria-label="Back to home">
+                <Image
+                  alt="Loople"
+                  src="/app/loople-logo3.svg"
+                  width={32}
+                  height={32}
+                  className="h-8 w-auto"
+                />
+              </Link>
             </div>
             <div className="px-3 pb-3">
               <ClubSwitcher ownerOnly className="w-full" />
@@ -71,10 +74,10 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
                             isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
                           )}
                         >
-                          <a href={item.href}>
+                          <Link href={item.href}>
                             <item.icon className="mr-2 h-4 w-4" />
                             {item.name}
-                          </a>
+                          </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     )
@@ -99,10 +102,10 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
                             isActive && "bg-sidebar-accent text-sidebar-accent-foreground"
                           )}
                         >
-                          <a href={item.href}>
+                          <Link href={item.href}>
                             <item.icon className="mr-2 h-4 w-4" />
                             {item.name}
-                          </a>
+                          </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     )

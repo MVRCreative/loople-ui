@@ -1,7 +1,7 @@
 import type React from "react"
 import type { Metadata } from "next"
 import { GeistMono } from "geist/font/mono"
-import { Poppins } from "next/font/google"
+import { Poppins, Source_Serif_4 } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
 import { ConditionalSidebar } from "@/components/conditional-sidebar"
@@ -18,6 +18,13 @@ const poppins = Poppins({
   display: "swap",
 })
 
+const sourceSerif = Source_Serif_4({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-source-serif",
+  display: "swap",
+})
+
 export const metadata: Metadata = {
   title: "Loople",
   description: "Community management platform",
@@ -31,7 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans ${poppins.variable} ${GeistMono.variable}`}>
+      <body className={`${poppins.className} ${poppins.variable} ${sourceSerif.variable} ${GeistMono.variable}`}>
         <Suspense fallback={null}>
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
             <AuthProvider>

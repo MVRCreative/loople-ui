@@ -174,9 +174,9 @@ export default function EventsPage() {
 
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
-      <div className="space-y-6">
+      <div className="space-y-6 px-4 sm:px-6 lg:px-8 pt-6">
       {/* Header */}
-      <div className="space-y-4 px-4 lg:px-6 xl:px-8">
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Events</h1>
@@ -256,7 +256,7 @@ export default function EventsPage() {
       )}
 
       {/* Events Tabs */}
-      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="space-y-6">
+      <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="upcoming" className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
@@ -268,7 +268,7 @@ export default function EventsPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="upcoming" className="space-y-4">
+        <TabsContent value="upcoming" className="mt-6 space-y-4">
           {upcomingEvents.length > 0 ? (
             <div className="space-y-0">
               {sortedEvents.filter(event => event.is_upcoming).map((event) => (
@@ -318,7 +318,7 @@ export default function EventsPage() {
             </div>
           ) : (
             <Card>
-              <CardContent className="text-center py-12">
+              <CardContent className="text-center pt-16 pb-16 px-6">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">No upcoming events</h3>
                 <p className="text-muted-foreground">
@@ -329,7 +329,7 @@ export default function EventsPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="past" className="space-y-4">
+        <TabsContent value="past" className="mt-6 space-y-4">
           {pastEvents.length > 0 ? (
             <div className="space-y-0">
               {sortedEvents.filter(event => event.is_past).map((event) => (
@@ -379,7 +379,7 @@ export default function EventsPage() {
             </div>
           ) : (
             <Card>
-              <CardContent className="text-center py-12">
+              <CardContent className="text-center pt-16 pb-16 px-6">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">No past events</h3>
                 <p className="text-muted-foreground">

@@ -44,6 +44,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
             last_name: userProfile.last_name,
             avatar_url: userProfile.avatar_url,
             username: userProfile.username ?? undefined,
+            // Wire role from DB roles table (userProfile.role from users.role_id -> roles)
+            role: (userProfile as { role?: { name: string } }).role?.name ?? authUser.user_metadata?.role,
           }
         };
     } catch (error) {

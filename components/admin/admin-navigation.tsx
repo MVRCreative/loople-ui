@@ -8,7 +8,9 @@ import {
   FileText,
   Shield,
   UserCog,
-  Database
+  Database,
+  ClipboardList,
+  ListPlus
 } from "lucide-react"
 
 export const adminNavigation = [
@@ -43,6 +45,12 @@ export const adminNavigation = [
     current: false,
   },
   {
+    name: "Waitlist",
+    href: "/admin/waitlist",
+    icon: ListPlus,
+    current: false,
+  },
+  {
     name: "Reports",
     href: "/admin/reports",
     icon: FileText,
@@ -57,6 +65,12 @@ export const adminNavigation = [
 ]
 
 export const adminSecondaryNavigation = [
+  {
+    name: "Form Submissions",
+    href: "/admin/form-submissions",
+    icon: ClipboardList,
+    current: false,
+  },
   {
     name: "Database",
     href: "/admin/database",

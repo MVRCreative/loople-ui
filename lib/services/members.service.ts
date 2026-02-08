@@ -13,8 +13,11 @@ export interface Member {
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
   membership_start_date: string;
-  status: 'active' | 'inactive' | 'pending';
+  status: 'active' | 'inactive' | 'pending' | 'suspended' | 'canceled';
   role?: string;
+  admin_notes?: string;
+  parent_member_id?: string;
+  household_id?: string;
   created_at: string;
   updated_at: string;
 }
@@ -31,6 +34,8 @@ export interface CreateMemberData {
   emergency_contact_name?: string;
   emergency_contact_phone?: string;
   membership_start_date: string;
+  parent_member_id?: string;
+  household_id?: string;
 }
 
 export class MembersService {
@@ -84,6 +89,9 @@ export class MembersService {
             membership_start_date: ((am.membership_start_date as string | undefined) || (am.created_at as string | undefined) || new Date().toISOString()),
             status: ((am as unknown as { membership_status?: Member['status']; status?: Member['status'] }).membership_status || (am as unknown as { status?: Member['status'] }).status || 'active'),
             role: (am.role as string | undefined) ?? undefined,
+            admin_notes: (am.admin_notes as string | undefined) ?? undefined,
+            parent_member_id: am.parent_member_id != null ? String(am.parent_member_id) : undefined,
+            household_id: am.household_id != null ? String(am.household_id) : undefined,
             created_at: (am.created_at as string | undefined) || new Date().toISOString(),
             updated_at: (am.updated_at as string | undefined) || (am.created_at as string | undefined) || new Date().toISOString(),
           };
@@ -123,6 +131,17 @@ export class MembersService {
       if (sanitized.member_type === 'individual') sanitized.member_type = 'adult';
       if (sanitized.member_type === 'youth') sanitized.member_type = 'child';
 
+      if (sanitized.parent_member_id != null && sanitized.parent_member_id !== '') {
+        sanitized.parent_member_id = /^\d+$/.test(String(sanitized.parent_member_id)) ? Number(sanitized.parent_member_id) : sanitized.parent_member_id;
+      } else {
+        delete sanitized.parent_member_id;
+      }
+      if (sanitized.household_id != null && sanitized.household_id !== '') {
+        sanitized.household_id = /^\d+$/.test(String(sanitized.household_id)) ? Number(sanitized.household_id) : sanitized.household_id;
+      } else {
+        delete sanitized.household_id;
+      }
+
       const { data, error } = await supabase
         .from('members')
         .insert(sanitized)
@@ -145,7 +164,7 @@ export class MembersService {
    */
   static async updateMember(
     memberId: string,
-    updates: Partial<CreateMemberData> & { status?: 'active' | 'inactive' | 'pending', membership_status?: 'active' | 'inactive' | 'pending' }
+    updates: Partial<CreateMemberData> & { status?: Member['status']; membership_status?: Member['status']; admin_notes?: string; parent_member_id?: string | null; household_id?: string | null }
   ): Promise<Member[]> {
     try {
       // Whitelist columns per schema
@@ -160,16 +179,22 @@ export class MembersService {
         'emergency_contact_phone',
         'membership_start_date',
         'membership_status',
+        'admin_notes',
+        'parent_member_id',
+        'household_id',
       ]);
       const payload: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(updates)) {
         if (k === 'status') {
-          // Map UI field to DB column name
           if (v !== '') payload['membership_status'] = v as Member['status'];
           continue;
         }
+        if (k === 'parent_member_id' || k === 'household_id') {
+          payload[k] = v === '' || v === undefined ? null : (typeof v === 'string' && /^\d+$/.test(v) ? Number(v) : v);
+          continue;
+        }
         if (allowedKeys.has(k)) {
-          if (v !== '') payload[k] = v as unknown;
+          if (v !== undefined && v !== null) payload[k] = v as unknown;
         }
       }
 
@@ -213,6 +238,7 @@ export class MembersService {
 
   /**
    * Get member by ID
+   * Normalizes membership_status vs status so UI gets consistent status field.
    */
   static async getMemberById(memberId: string): Promise<Member | null> {
     try {
@@ -221,16 +247,161 @@ export class MembersService {
         .select('*')
         .eq('id', memberId)
         .single();
-      
+
       if (error) {
-        console.error('Error fetching member:', error);
+        if ((error as { code?: string }).code === "PGRST116") return null;
+        console.error("Error fetching member:", error);
         throw error;
       }
-      
-      return data;
+
+      if (!data) return null;
+
+      type ApiMember = Partial<Record<keyof Member | 'membership_status', unknown>>;
+      const am = data as ApiMember;
+      return {
+        id: String(am.id ?? ''),
+        club_id: String(am.club_id ?? ''),
+        user_id: (am.user_id as string | undefined) ?? undefined,
+        first_name: (am.first_name as string) ?? '',
+        last_name: (am.last_name as string) ?? '',
+        email: (am.email as string) ?? '',
+        phone: (am.phone as string | undefined) ?? undefined,
+        date_of_birth: (am.date_of_birth as string | undefined) ?? undefined,
+        member_type: (am.member_type as Member['member_type']) ?? 'adult',
+        emergency_contact_name: (am.emergency_contact_name as string | undefined) ?? undefined,
+        emergency_contact_phone: (am.emergency_contact_phone as string | undefined) ?? undefined,
+        membership_start_date:
+          (am.membership_start_date as string | undefined) ??
+          (am.created_at as string | undefined) ??
+          new Date().toISOString(),
+        status:
+          ((am as unknown as { membership_status?: Member['status']; status?: Member['status'] }).membership_status ??
+            (am as unknown as { status?: Member['status'] }).status) ??
+          'active',
+        role: (am.role as string | undefined) ?? undefined,
+        admin_notes: (am.admin_notes as string | undefined) ?? undefined,
+        parent_member_id: am.parent_member_id != null ? String(am.parent_member_id) : undefined,
+        household_id: am.household_id != null ? String(am.household_id) : undefined,
+        created_at: (am.created_at as string | undefined) ?? new Date().toISOString(),
+        updated_at:
+          (am.updated_at as string | undefined) ??
+          (am.created_at as string | undefined) ??
+          new Date().toISOString(),
+      };
     } catch (error) {
       console.error('Error in getMemberById:', error);
       throw error;
     }
+  }
+
+  /**
+   * Get children of a parent member (members where parent_member_id = parentMemberId)
+   */
+  static async getChildren(parentMemberId: string): Promise<Member[]> {
+    try {
+      const { data, error } = await supabase
+        .from('members')
+        .select('*')
+        .eq('parent_member_id', parentMemberId);
+
+      if (error) {
+        console.error('Error fetching children:', error);
+        throw error;
+      }
+
+      return (data ?? []).map((row) => this.mapApiRowToMember(row));
+    } catch (error) {
+      console.error('Error in getChildren:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get all members in a household (members with same household_id)
+   */
+  static async getHouseholdMembers(householdId: string): Promise<Member[]> {
+    try {
+      const { data, error } = await supabase
+        .from('members')
+        .select('*')
+        .eq('household_id', householdId);
+
+      if (error) {
+        console.error('Error fetching household members:', error);
+        throw error;
+      }
+
+      return (data ?? []).map((row) => this.mapApiRowToMember(row));
+    } catch (error) {
+      console.error('Error in getHouseholdMembers:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get family members for a member (household + children)
+   * If member has household_id, returns household members. If member has parent, returns parent + siblings.
+   */
+  static async getFamilyForMember(member: Member): Promise<Member[]> {
+    const family: Member[] = [];
+
+    if (member.household_id) {
+      const household = await this.getHouseholdMembers(member.household_id);
+      family.push(...household.filter((m) => m.id !== member.id));
+    }
+
+    // If this member is a parent, include their children
+    const children = await this.getChildren(member.id);
+    family.push(...children.filter((c) => !family.some((f) => f.id === c.id)));
+
+    // If this member has a parent, include parent and siblings
+    if (member.parent_member_id) {
+      const parent = await this.getMemberById(member.parent_member_id);
+      if (parent && !family.some((f) => f.id === parent.id)) {
+        family.push(parent);
+      }
+      const siblings = await this.getChildren(member.parent_member_id);
+      siblings.forEach((s) => {
+        if (s.id !== member.id && !family.some((f) => f.id === s.id)) {
+          family.push(s);
+        }
+      });
+    }
+
+    return family;
+  }
+
+  private static mapApiRowToMember(row: Record<string, unknown>): Member {
+    const am = row as Partial<Record<keyof Member | 'membership_status', unknown>>;
+    return {
+      id: String(am.id ?? ''),
+      club_id: String(am.club_id ?? ''),
+      user_id: (am.user_id as string | undefined) ?? undefined,
+      first_name: (am.first_name as string) ?? '',
+      last_name: (am.last_name as string) ?? '',
+      email: (am.email as string) ?? '',
+      phone: (am.phone as string | undefined) ?? undefined,
+      date_of_birth: (am.date_of_birth as string | undefined) ?? undefined,
+      member_type: (am.member_type as Member['member_type']) ?? 'adult',
+      emergency_contact_name: (am.emergency_contact_name as string | undefined) ?? undefined,
+      emergency_contact_phone: (am.emergency_contact_phone as string | undefined) ?? undefined,
+      membership_start_date:
+        (am.membership_start_date as string | undefined) ??
+        (am.created_at as string | undefined) ??
+        new Date().toISOString(),
+      status:
+        ((am as unknown as { membership_status?: Member['status']; status?: Member['status'] }).membership_status ??
+          (am as unknown as { status?: Member['status'] }).status) ??
+        'active',
+      role: (am.role as string | undefined) ?? undefined,
+      admin_notes: (am.admin_notes as string | undefined) ?? undefined,
+      parent_member_id: am.parent_member_id != null ? String(am.parent_member_id) : undefined,
+      household_id: am.household_id != null ? String(am.household_id) : undefined,
+      created_at: (am.created_at as string | undefined) ?? new Date().toISOString(),
+      updated_at:
+        (am.updated_at as string | undefined) ??
+        (am.created_at as string | undefined) ??
+        new Date().toISOString(),
+    };
   }
 }

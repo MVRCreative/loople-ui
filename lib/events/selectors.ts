@@ -273,11 +273,13 @@ export const groupEventsByDate = (events: EventDetail[]): Record<string, EventDe
 };
 
 /**
- * Get events grouped by program
+ * Get events grouped by program.
+ * Uses same key as usePrograms: program.id || `name-${program.name}` || "no-program"
  */
 export const groupEventsByProgram = (events: EventDetail[]): Record<string, EventDetail[]> => {
   return events.reduce((groups, event) => {
-    const programKey = event.program?.id || "no-program";
+    const program = event.program;
+    const programKey = program?.id || (program?.name ? `name-${program.name}` : null) || "no-program";
     if (!groups[programKey]) {
       groups[programKey] = [];
     }

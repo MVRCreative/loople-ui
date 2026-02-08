@@ -3,6 +3,7 @@
 import ProfileForm from "@/components/settings/profile-form"
 import OrganizationsForm from "@/components/settings/organizations-form"
 import UserInfoLogger from "@/components/user-info-logger"
+import { UserRoleBadge } from "@/components/settings/user-role-badge"
 import { UsersService, ClubsService } from "@/lib/services"
 import { useAuth } from "@/lib/auth-context"
 import { useRouter } from "next/navigation"
@@ -143,6 +144,8 @@ export default function Page() {
             <h1 className="text-xl font-semibold">Settings</h1>
             <p className="text-sm text-muted-foreground">Manage your profile and organization settings.</p>
           </div>
+
+          <UserRoleBadge />
           
           <div className="space-y-6">
             {/* Profile Section */}

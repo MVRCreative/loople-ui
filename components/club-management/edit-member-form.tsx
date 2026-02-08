@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Save, X } from "lucide-react";
@@ -19,6 +20,12 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<Member>({ ...member });
+  const [clubMembers, setClubMembers] = useState<Member[]>([]);
+
+  useEffect(() => {
+    if (!member.club_id) return;
+    MembersService.getClubMembers(member.club_id).then(setClubMembers).catch(() => setClubMembers([]));
+  }, [member.club_id]);
 
   const handleInput = (field: keyof Member, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -40,7 +47,10 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
         emergency_contact_name: formData.emergency_contact_name,
         emergency_contact_phone: formData.emergency_contact_phone,
         membership_start_date: formData.membership_start_date,
-        membership_status: (formData as unknown as { membership_status?: Member['status']; status?: Member['status'] }).membership_status ?? (formData as unknown as { status?: Member['status'] }).status,
+        membership_status: formData.status,
+        admin_notes: formData.admin_notes,
+        parent_member_id: formData.parent_member_id || null,
+        household_id: formData.household_id || null,
       });
       onSuccess();
     } catch (err: unknown) {
@@ -85,14 +95,27 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
             <div className="space-y-2">
               <Label>Membership Status</Label>
               <select
-                value={(formData as unknown as { membership_status?: Member['status']; status?: Member['status'] }).membership_status ?? (formData as unknown as { status?: Member['status'] }).status}
-                onChange={(e) => setFormData(prev => ({ ...(prev as unknown as Member & { membership_status?: Member['status'] }), membership_status: e.target.value as Member['status'] }))}
+                value={formData.status ?? "active"}
+                onChange={(e) => setFormData(prev => ({ ...prev, status: e.target.value as Member['status'] }))}
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <option value="active">Active</option>
                 <option value="pending">Pending</option>
                 <option value="inactive">Inactive</option>
+                <option value="suspended">Suspended</option>
+                <option value="canceled">Canceled</option>
               </select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="admin_notes">Admin Notes</Label>
+              <Textarea
+                id="admin_notes"
+                value={formData.admin_notes ?? ""}
+                onChange={(e) => handleInput("admin_notes", e.target.value)}
+                placeholder="Internal notes visible only to admins"
+                rows={3}
+                className="resize-none"
+              />
             </div>
             <div className="space-y-2">
               <Label>Member Type</Label>
@@ -105,6 +128,38 @@ export function EditMemberForm({ member, onSuccess, onCancel }: EditMemberFormPr
                 <option value="child">Child</option>
                 <option value="family">Family</option>
               </select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Parent (for children)</Label>
+              <select
+                value={formData.parent_member_id ?? ""}
+                onChange={(e) => setFormData(prev => ({ ...prev, parent_member_id: e.target.value || undefined }))}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">None</option>
+                {clubMembers.filter(m => m.id !== member.id && (m.member_type === 'adult' || m.member_type === 'family')).map((m) => (
+                  <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Household (link to family)</Label>
+              <select
+                value={formData.household_id ?? ""}
+                onChange={(e) => setFormData(prev => ({ ...prev, household_id: e.target.value || undefined }))}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">None</option>
+                {clubMembers.filter(m => m.id !== member.id).map((m) => {
+                  const householdValue = m.household_id ?? m.id;
+                  return (
+                    <option key={m.id} value={householdValue}>
+                      {m.first_name} {m.last_name}{m.household_id ? " (household)" : ""}
+                    </option>
+                  );
+                })}
+              </select>
+              <p className="text-xs text-muted-foreground">Select a member to share a household with</p>
             </div>
           </div>
 

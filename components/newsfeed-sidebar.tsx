@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Home, Bell, User, Settings, LogOut, Users, MessageSquare, MoreVertical, Building2, Plus } from "lucide-react"
+import { Home, Bell, User, Settings, LogOut, Users, MessageSquare, MoreVertical, Building2, Plus, FileText } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname, useRouter } from "next/navigation"
@@ -36,7 +36,7 @@ type NavigationItem = {
 
 const baseNavigation: NavigationItem[] = [
   { name: "Home", href: "/", icon: Home },
-  { name: "Programs", href: "#", icon: Users },
+  { name: "Programs", href: "/programs", icon: Users },
   { name: "Events", href: "/events", icon: Bell },
   { name: "Messages", href: "/messages", icon: MessageSquare, badge: "3" },
   { name: "Notifications", href: "#", icon: Bell, badge: "5" },
@@ -130,7 +130,7 @@ export function NewsfeedSidebar() {
         <Link href="/" className="flex items-center">
           {/* Light mode logo */}
           <Image 
-            src="/loople logo3.svg" 
+            src="/app/loople-logo3.svg" 
             alt="Loople Logo" 
             width={32}
             height={32}
@@ -138,7 +138,7 @@ export function NewsfeedSidebar() {
           />
           {/* Dark mode logo */}
           <Image 
-            src="/loople-logo-white.svg" 
+            src="/app/loople-logo-white.svg" 
             alt="Loople Logo" 
             width={32}
             height={32}
@@ -267,6 +267,13 @@ export function NewsfeedSidebar() {
                 <Plus className="h-4 w-4 mr-2" />
                 Create New Club
               </DropdownMenuItem>
+
+              {(user?.app_metadata as { isAdmin?: boolean } | undefined)?.isAdmin === true && (
+                <DropdownMenuItem onClick={() => router.push("/admin/form-submissions")}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  Form Submissions
+                </DropdownMenuItem>
+              )}
               
               <DropdownMenuSeparator />
               

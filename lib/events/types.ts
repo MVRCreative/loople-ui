@@ -136,6 +136,18 @@ export interface EventFilters {
   search?: string;
 }
 
+// Program derived from events (for sidebar, programs page)
+export interface ProgramWithNextEvent {
+  id: string;
+  name: string;
+  description?: string;
+  nextEvent?: {
+    id: string;
+    title: string;
+    start_date: string;
+  };
+}
+
 // Event list item (simplified for lists)
 export interface EventListItem {
   id: string;

@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { CalendarDays, Save, X } from "lucide-react";
-import { CreateMemberData, MembersService } from "@/lib/services/members.service";
+import { CreateMemberData, MembersService, Member } from "@/lib/services/members.service";
 import { useClub } from "@/lib/club-context";
 
 interface CreateMemberFormProps {
@@ -19,6 +19,7 @@ export function CreateMemberForm({ onSuccess, onCancel }: CreateMemberFormProps)
   const { selectedClub } = useClub();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clubMembers, setClubMembers] = useState<Member[]>([]);
   const [formData, setFormData] = useState<CreateMemberData>({
     club_id: selectedClub?.id || "",
     first_name: "",
@@ -31,6 +32,11 @@ export function CreateMemberForm({ onSuccess, onCancel }: CreateMemberFormProps)
     emergency_contact_phone: "",
     membership_start_date: new Date().toISOString().slice(0, 10),
   });
+
+  useEffect(() => {
+    if (!selectedClub?.id) return;
+    MembersService.getClubMembers(selectedClub.id).then(setClubMembers).catch(() => setClubMembers([]));
+  }, [selectedClub?.id]);
 
   const handleInput = (field: keyof CreateMemberData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -59,7 +65,10 @@ export function CreateMemberForm({ onSuccess, onCancel }: CreateMemberFormProps)
 
     try {
       setLoading(true);
-      await MembersService.createMember({ ...formData, club_id: selectedClub.id });
+      const data: CreateMemberData = { ...formData, club_id: selectedClub.id };
+      if (formData.parent_member_id) data.parent_member_id = formData.parent_member_id;
+      if (formData.household_id) data.household_id = formData.household_id;
+      await MembersService.createMember(data);
       onSuccess();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to create member";
@@ -122,6 +131,43 @@ export function CreateMemberForm({ onSuccess, onCancel }: CreateMemberFormProps)
             <div className="space-y-2">
               <Label htmlFor="membership_start_date">Member Since *</Label>
               <Input id="membership_start_date" type="date" value={formData.membership_start_date} onChange={(e) => handleInput("membership_start_date", e.target.value)} />
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2 md:col-span-2">
+              <Label>Parent (for children)</Label>
+              <select
+                value={formData.parent_member_id ?? ""}
+                onChange={(e) => setFormData(prev => ({ ...prev, parent_member_id: e.target.value || undefined }))}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">None</option>
+                {clubMembers.filter(m => m.member_type === 'adult' || m.member_type === 'family').map((m) => (
+                  <option key={m.id} value={m.id}>{m.first_name} {m.last_name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>Household (link to family)</Label>
+              <select
+                value={formData.household_id ?? ""}
+                onChange={(e) => setFormData(prev => ({ ...prev, household_id: e.target.value || undefined }))}
+                className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <option value="">None</option>
+                {clubMembers.map((m) => {
+                  const householdValue = m.household_id ?? m.id;
+                  return (
+                    <option key={m.id} value={householdValue}>
+                      {m.first_name} {m.last_name}{m.household_id ? " (household)" : ""}
+                    </option>
+                  );
+                })}
+              </select>
+              <p className="text-xs text-muted-foreground">Select a member to share a household with</p>
             </div>
           </div>
 

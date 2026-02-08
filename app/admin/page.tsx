@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { 
   Building2, 
   Users, 
@@ -79,7 +80,40 @@ function classNames(...classes: (string | undefined | null | false)[]) {
 }
 
 export default function AdminPage() {
-  const { selectedClub, clubs } = useClub();
+  const { selectedClub, clubs, loading: clubLoading } = useClub();
+
+  if (clubLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[200px]">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (!selectedClub) {
+    return (
+      <div className="space-y-6 -m-6 p-6">
+        <h1 className="text-2xl font-bold text-foreground">Overview</h1>
+        <Card>
+          <CardContent className="text-center py-16 px-6">
+            <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-medium mb-2">Select or create a club to see your overview</h3>
+            <p className="text-muted-foreground mb-6">
+              Choose a club from the switcher or create your first club to view stats and manage your organization.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Button asChild>
+                <Link href="/admin/club-management?action=create">Create New Club</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/admin/club-management">Go to Club Management</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const stats = [
     {

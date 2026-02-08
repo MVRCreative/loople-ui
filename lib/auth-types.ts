@@ -36,10 +36,12 @@ export interface AuthUser {
     club_subdomain?: string;
     username?: string;
     avatar_url?: string;
+    role?: string;
   };
   app_metadata?: {
     provider?: string;
     providers?: string[];
+    isAdmin?: boolean;
   };
   aud: string;
   created_at: string;
