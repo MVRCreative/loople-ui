@@ -160,7 +160,7 @@ class MentionsService {
     for (const mentioned of mentionedUsers) {
       if (mentioned.id === user.id) continue // don't notify yourself
 
-      let notifType: 'mention' = 'mention'
+      const notifType = 'mention' as const
       let link: string | undefined
       let subject: string
 
