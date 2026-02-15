@@ -1,5 +1,5 @@
 import { supabase } from '@/lib/supabase'
-import { Post, Comment } from '@/lib/types'
+import { Post, Comment, ApiPost } from '@/lib/types'
 
 export interface CreatePostRequest {
   club_id: number
@@ -151,30 +151,68 @@ class PostsService {
       const { data, error } = await query
       if (error) throw error
 
-      // Transform DB rows → frontend Post shape
-      const posts: Post[] = (data ?? []).map((row) => {
+      // Look up avatar_url and username for each unique user_id from the users table
+      const userIds = [...new Set(
+        (data ?? [])
+          .map((row) => (row.author as { user_id?: string } | null)?.user_id)
+          .filter((id): id is string => Boolean(id))
+      )]
+
+      let usersMap: Record<string, { avatar_url?: string; username?: string }> = {}
+      if (userIds.length > 0) {
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id, avatar_url, username')
+          .in('id', userIds)
+
+        if (usersData) {
+          usersMap = Object.fromEntries(
+            usersData.map((u) => [u.id, { avatar_url: u.avatar_url, username: u.username }])
+          )
+        }
+      }
+
+      // Transform DB rows → ApiPost shape so transformApiPostsToPosts works correctly
+      const apiPosts: ApiPost[] = (data ?? []).map((row) => {
         const author = row.author as { id: number; first_name: string; last_name: string; email: string; user_id: string } | null
         const commentCount = Array.isArray(row.comments) ? row.comments.length : 0
         const likeCount = Array.isArray(row.reactions) ? row.reactions.length : 0
+        const userExtra = author?.user_id ? usersMap[author.user_id] : undefined
 
         return {
           id: row.id,
           club_id: row.club_id,
-          content_type: row.kind === 'post' ? 'text' : row.kind,
-          content_text: row.body ?? '',
           user_id: author?.user_id ?? '',
-          author_name: author ? `${author.first_name} ${author.last_name}` : 'Unknown',
-          author_avatar: null,
+          content_type: row.kind === 'post' ? 'text' : row.kind === 'event_update' ? 'event' : 'text',
+          content_text: row.body ?? '',
+          is_active: true,
           created_at: row.created_at,
           updated_at: row.updated_at,
-          comments_count: commentCount,
-          reactions_count: likeCount,
-          event_id: row.event_id,
-          program_id: row.program_id,
-        } as unknown as Post
+          event_id: row.event_id ?? undefined,
+          reaction_count: likeCount,
+          comment_count: commentCount,
+          // Provide `users` object so transformApiPostToPost can build proper User display
+          users: author ? {
+            id: author.user_id ?? '',
+            email: author.email ?? '',
+            first_name: author.first_name ?? '',
+            last_name: author.last_name ?? '',
+            avatar_url: userExtra?.avatar_url,
+            username: userExtra?.username,
+          } : undefined,
+          // Include poll data from the `rich` JSONB column
+          ...(row.rich && typeof row.rich === 'object' && 'poll' in (row.rich as Record<string, unknown>)
+            ? {
+                poll_question: ((row.rich as Record<string, unknown>).poll as Record<string, unknown>)?.question as string,
+                poll_options: JSON.stringify(((row.rich as Record<string, unknown>).poll as Record<string, unknown>)?.options ?? []),
+              }
+            : {}),
+        } as unknown as ApiPost
       })
 
-      return { success: true, data: posts }
+      // Return as Post[] type to satisfy the interface, but the data is actually ApiPost[]
+      // The caller (newsfeed.tsx) will cast it through transformApiPostsToPosts
+      return { success: true, data: apiPosts as unknown as Post[] }
     } catch (error) {
       return {
         success: false,
@@ -232,17 +270,47 @@ class PostsService {
 
       if (error) throw error
 
-      // Return a shape that the frontend expects
-      const post = {
+      // Fetch author info (member + user) so the frontend can display name/avatar
+      const { data: memberData } = await supabase
+        .from('members')
+        .select('id, first_name, last_name, email, user_id')
+        .eq('id', memberId)
+        .single()
+
+      let userData: { avatar_url?: string; username?: string } = {}
+      if (memberData?.user_id) {
+        const { data: userRow } = await supabase
+          .from('users')
+          .select('avatar_url, username')
+          .eq('id', memberData.user_id)
+          .single()
+        if (userRow) userData = userRow
+      }
+
+      // Return ApiPost-shaped data so transformApiPostToPost can build proper User
+      const apiPost = {
         id: data.id,
         club_id: data.club_id,
+        user_id: memberData?.user_id ?? '',
         content_type: postData.content_type,
-        content_text: data.body,
+        content_text: data.body ?? '',
+        is_active: true,
         created_at: data.created_at,
         updated_at: data.updated_at,
+        event_id: data.event_id ?? undefined,
+        reaction_count: 0,
+        comment_count: 0,
+        users: memberData ? {
+          id: memberData.user_id ?? '',
+          email: memberData.email ?? '',
+          first_name: memberData.first_name ?? '',
+          last_name: memberData.last_name ?? '',
+          avatar_url: userData.avatar_url,
+          username: userData.username,
+        } : undefined,
       } as unknown as Post
 
-      return { success: true, data: post }
+      return { success: true, data: apiPost }
     } catch (error) {
       return {
         success: false,

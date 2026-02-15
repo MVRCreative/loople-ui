@@ -51,16 +51,6 @@ export function createUserFromApi(apiUser: Record<string, unknown>): User {
   
   const username = (apiUser.username as string | undefined) || undefined
   
-  // Debug log to see what data we're receiving
-  console.log('Creating user from API data:', { 
-    id: apiUser.id, 
-    username, 
-    firstName, 
-    lastName, 
-    email,
-    rawApiUser: apiUser 
-  })
-
   const displayName = (firstName || lastName)
     ? `${firstName} ${lastName}`.trim()
     : (fullNameFromMeta || email || 'Unknown User')
@@ -97,14 +87,6 @@ export function createEventFromApi(apiEvent: Record<string, unknown>): Event {
 export function transformApiPostToPost(apiPost: ApiPost): Post {
   // Prefer joined users object; fallback to top-level apiPost when functions include user fields inline
   const userData = (apiPost as unknown as Record<string, unknown>).users as Record<string, unknown> || (apiPost as unknown as Record<string, unknown>);
-  
-  // Add debug logging to help identify user data issues
-  console.log('Transforming post user data:', {
-    postId: apiPost.id,
-    hasUsers: !!(apiPost as unknown as Record<string, unknown>).users,
-    userData,
-    userDataKeys: Object.keys(userData || {})
-  });
   
   const user = createUserFromApi(userData);
   

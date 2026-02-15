@@ -19,9 +19,6 @@ import { Building2 } from "lucide-react";
 
 export function NewUserEmptyState() {
   const [open, setOpen] = useState(false);
-  // #region agent log
-  if (typeof fetch !== "undefined") fetch("http://127.0.0.1:7242/ingest/fa342421-bbc3-4297-9f03-9cfbd6477dbe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:"new-user-empty-state.tsx:mount",message:"NewUserEmptyState mounted",data:{},timestamp:Date.now(),hypothesisId:"D"})}).catch(()=>{});
-  // #endregion
   const [submitting, setSubmitting] = useState(false);
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");

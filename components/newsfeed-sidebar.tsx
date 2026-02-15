@@ -155,12 +155,12 @@ export function NewsfeedSidebar() {
             const content = (
               <>
                 <div className="relative">
-                  <item.icon className={`h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 group-hover:text-blue-600 dark:group-hover:text-blue-400 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`} />
+                  <item.icon className={`h-5 w-5 sm:h-5 sm:w-5 md:h-6 md:w-6 transition-colors group-hover:text-foreground ${isActive ? 'text-foreground' : 'text-muted-foreground'}`} />
                   {item.badge && (
-                    <div className="absolute -top-0.5 -right-0.5 h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full bg-red-500 border border-background" />
+                    <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive border-2 border-background" />
                   )}
                 </div>
-                <span className={`text-xl font-normal group-hover:text-blue-600 dark:group-hover:text-blue-400 ${isActive ? 'text-foreground' : 'text-muted-foreground'}`}>{item.name}</span>
+                <span className={`text-lg font-normal transition-colors group-hover:text-foreground ${isActive ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>{item.name}</span>
               </>
             )
 
@@ -169,9 +169,9 @@ export function NewsfeedSidebar() {
                 {item.href && item.href !== "#" ? (
                   <Button
                     variant="ghost"
-                    className={`group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-10 md:h-12 px-3 rounded-full transition-colors hover:bg-muted/60 border-0 ${
+                    className={`group w-full justify-start gap-2 md:gap-3 h-10 md:h-12 px-3 rounded-full transition-colors hover:bg-accent border-0 ${
                       isActive 
-                        ? 'bg-muted' 
+                        ? 'bg-accent' 
                         : ''
                     }`}
                     asChild
@@ -181,7 +181,7 @@ export function NewsfeedSidebar() {
                 ) : item.needsUsername ? (
                   <Button
                     variant="ghost"
-                    className="group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-10 md:h-12 px-1 sm:px-2 md:px-3 rounded-lg transition-all duration-350 ease-in-out hover:scale-[1.05] hover:bg-muted"
+                    className="group w-full justify-start gap-2 md:gap-3 h-10 md:h-12 px-3 rounded-full transition-colors hover:bg-accent border-0"
                     onClick={(e) => {
                       e.preventDefault()
                       handleProfileClick(e)
@@ -192,7 +192,7 @@ export function NewsfeedSidebar() {
                 ) : (
                   <Button
                     variant="ghost"
-                    className="group w-full justify-start gap-1 sm:gap-2 md:gap-3 h-8 sm:h-10 md:h-12 px-3 rounded-full transition-colors hover:bg-muted/60 border-0"
+                    className="group w-full justify-start gap-2 md:gap-3 h-10 md:h-12 px-3 rounded-full transition-colors hover:bg-accent border-0"
                     onClick={(e) => e.preventDefault()}
                   >
                     {content}
@@ -249,7 +249,7 @@ export function NewsfeedSidebar() {
                   <Building2 className="h-4 w-4" />
                   <span className="flex-1">{club.name}</span>
                   {club.id === selectedClub?.id && (
-                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                    <div className="h-2 w-2 rounded-full bg-primary" />
                   )}
                 </DropdownMenuItem>
               ))}

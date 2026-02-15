@@ -173,9 +173,20 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
       </div>
 
       {loading && (
-        <div className="flex items-center justify-center py-4">
-          <Loader size="sm" className="mr-2" />
-          <span className="text-sm text-muted-foreground">Loading comments...</span>
+        <div className="space-y-3 py-2">
+          {[1, 2].map((i) => (
+            <div key={i} className="flex gap-3">
+              <div className="h-8 w-8 rounded-full bg-accent animate-pulse shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div className="flex gap-2">
+                  <div className="h-3 w-20 bg-accent animate-pulse rounded" />
+                  <div className="h-3 w-12 bg-accent animate-pulse rounded" />
+                </div>
+                <div className="h-3 w-full bg-accent animate-pulse rounded" />
+                <div className="h-3 w-3/4 bg-accent animate-pulse rounded" />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

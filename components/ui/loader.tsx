@@ -1,17 +1,17 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Loader - A simple circular spinner with white outline
- * 
+ * Loader - A simple circular spinner using theme-aware colors
+ *
  * Purpose: Minimal loading indicator for async states
  * Variants: size (sm, default, lg)
  * Accessibility: Uses aria-label for screen readers
- * 
+ *
  * Usage:
  * ```tsx
- * <Loader /> // default size
- * <Loader size="sm" /> // small
- * <Loader size="lg" className="text-blue-500" /> // large with custom color
+ * <Loader />            // default size
+ * <Loader size="sm" />  // small
+ * <Loader size="lg" />  // large
  * ```
  */
 
@@ -30,7 +30,7 @@ export function Loader({ size = "default", className }: LoaderProps) {
   return (
     <div
       className={cn(
-        "animate-spin rounded-full border-white border-t-transparent",
+        "animate-spin rounded-full border-primary border-t-transparent",
         sizeClasses[size],
         className
       )}
@@ -41,4 +41,3 @@ export function Loader({ size = "default", className }: LoaderProps) {
     </div>
   );
 }
-

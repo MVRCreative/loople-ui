@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader } from "@/components/ui/loader";
-import { Image as ImageIcon, FileImage, List, Smile, Bold, Italic, X } from "lucide-react";
+import { Image as ImageIcon, List, Smile, X } from "lucide-react";
 import { User } from "@/lib/types";
 import { toast } from "sonner";
 
@@ -26,46 +26,21 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
   const [pollOptions, setPollOptions] = useState<string[]>(["", ""]);
   const [attachments, setAttachments] = useState<File[]>([]);
   const [uploadedItems, setUploadedItems] = useState<Array<{ url: string; name: string; size: number; type: string }>>([]);
-  const [, setUploadButtonCmp] = useState<React.ComponentType<{
-    endpoint: string;
-    onClientUploadComplete?: (res: Array<{ url: string; name: string; size: number; type: string }>) => void;
-    onUploadError?: (error: Error) => void;
-  }> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-resize textarea on content change
+  // Auto-resize textarea on content change (capped at ~200px)
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px';
     }
   }, [content]);
-
-  // Dynamically import UploadThing's UploadButton to avoid hard dependency
-  useEffect(() => {
-    (async () => {
-      try {
-        // Use eval to avoid TypeScript static analysis of the import
-        const mod: { UploadButton?: React.ComponentType<{
-          endpoint: string;
-          onClientUploadComplete?: (res: Array<{ url: string; name: string; size: number; type: string }>) => void;
-          onUploadError?: (error: Error) => void;
-        }> } = await eval('import("@uploadthing/react")').catch(() => null);
-        if (mod?.UploadButton) {
-          setUploadButtonCmp(mod.UploadButton);
-        }
-      } catch {
-        // UploadThing not installed; silently ignore
-      }
-    })();
-  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (content.trim()) {
       if (postType === "poll") {
-        // For poll posts, we'll pass the poll data through the content
         const pollData = {
           question: pollQuestion,
           options: pollOptions.filter(option => option.trim())
@@ -129,25 +104,23 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
     setAttachments(prev => prev.filter((_, i) => i !== index));
   };
 
-  const _removeUploadedItem = (index: number) => {
-    setUploadedItems(prev => prev.filter((_, i) => i !== index));
-  };
+  const hasContent = content.trim().length > 0;
 
   return (
-    <div className="bg-card p-4 relative border-border">
+    <div className="bg-card px-4 pt-3 pb-2 relative">
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="absolute inset-0 bg-background/20 backdrop-blur-sm z-50 flex items-center justify-center rounded-lg">
+        <div className="absolute inset-0 bg-background/40 backdrop-blur-sm z-50 flex items-center justify-center rounded-xl">
           <div className="flex flex-col items-center gap-3">
             <Loader />
-            <p className="text-sm text-muted-foreground">Creating post...</p>
+            <p className="text-sm text-muted-foreground font-medium">Creating post...</p>
           </div>
         </div>
       )}
       
-      <form onSubmit={handleSubmit} className="space-y-4" suppressHydrationWarning>
+      <form onSubmit={handleSubmit} className="space-y-3">
         <div className="flex gap-3">
-          <Avatar className="h-10 w-10">
+          <Avatar className="h-10 w-10 shrink-0">
             <AvatarImage src={currentUser.avatar_url || ''} alt={currentUser.name} />
             <AvatarFallback className="bg-primary/10 text-lg">
               {currentUser.avatar}
@@ -158,26 +131,22 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
             <textarea
               ref={textareaRef}
               value={content}
-              onChange={(e) => {
-                setContent(e.target.value);
-              }}
+              onChange={(e) => setContent(e.target.value)}
               placeholder={isAuthenticated ? "What's happening?" : "Sign in to share your thoughts..."}
-              className="w-full min-h-[100px] p-0 text-xl resize-none focus:outline-none text-foreground placeholder:text-muted-foreground bg-transparent overflow-hidden"
+              className="w-full min-h-[60px] max-h-[200px] p-0 text-[15px] leading-relaxed resize-none focus:outline-none text-foreground placeholder:text-muted-foreground bg-transparent overflow-y-auto"
               rows={1}
               disabled={!isAuthenticated}
-              suppressHydrationWarning
             />
             
             {/* Poll form fields */}
             {postType === "poll" && isAuthenticated && (
-              <div className="space-y-3 mt-3">
+              <div className="space-y-3 mt-3 p-3 rounded-xl border border-border bg-muted/30">
                 <input
                   type="text"
                   value={pollQuestion}
                   onChange={(e) => setPollQuestion(e.target.value)}
                   placeholder="Poll question..."
-                  className="w-full p-2 border border-input rounded-md bg-background text-sm"
-                  suppressHydrationWarning
+                  className="w-full p-2 border border-input rounded-lg bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                 />
                 <div className="space-y-2">
                   {pollOptions.map((option, index) => (
@@ -187,19 +156,17 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
                         value={option}
                         onChange={(e) => updatePollOption(index, e.target.value)}
                         placeholder={`Option ${index + 1}`}
-                        className="flex-1 p-2 border border-input rounded-md bg-background text-sm"
-                        suppressHydrationWarning
+                        className="flex-1 p-2 border border-input rounded-lg bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                       />
                       {pollOptions.length > 2 && (
                         <Button
                           type="button"
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
                           onClick={() => removePollOption(index)}
-                          className="h-8 px-2"
-                          suppressHydrationWarning
+                          className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive"
                         >
-                          ×
+                          <X className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
@@ -210,7 +177,6 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
                     size="sm"
                     onClick={addPollOption}
                     className="h-8 px-3"
-                    suppressHydrationWarning
                   >
                     Add Option
                   </Button>
@@ -218,19 +184,19 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
               </div>
             )}
 
-            {/* Twitter-style Image Preview */}
+            {/* Image Preview Grid */}
             {attachments.length > 0 && (
-              <div className="mt-2 relative">
-                <div className={`grid gap-2 ${attachments.length === 1 ? 'grid-cols-1' : attachments.length === 2 ? 'grid-cols-2' : 'grid-cols-2'}`}>
+              <div className="mt-3">
+                <div className={`grid gap-2 ${attachments.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                   {attachments.slice(0, 4).map((file, index) => (
-                    <div key={index} className="relative rounded-2xl overflow-hidden border border-border/50">
+                    <div key={index} className="relative rounded-xl overflow-hidden border border-border/50">
                       {file.type.startsWith('image/') ? (
                         <>
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={URL.createObjectURL(file)}
                             alt={file.name}
-                            className="w-full h-auto max-h-96 object-cover"
+                            className="w-full h-auto max-h-80 object-cover"
                           />
                         </>
                       ) : (
@@ -257,79 +223,49 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
               </div>
             )}
 
-            <div className="flex items-center justify-between mt-2 pt-2">
-              <div className="flex gap-1">
+            {/* Action bar */}
+            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+              <div className="flex gap-0.5">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={!isAuthenticated}
-                  className="p-2 hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                  className="p-2 rounded-full transition-colors text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-40 disabled:pointer-events-none"
                   aria-label="Add image"
-                  suppressHydrationWarning
                 >
-                  <ImageIcon className="h-5 w-5 text-primary" />
+                  <ImageIcon className="h-5 w-5" />
                 </button>
                 
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => setPostType(postType === "poll" ? "text" : "poll")}
                   disabled={!isAuthenticated}
-                  className="p-2 hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:pointer-events-none"
-                  aria-label="Add GIF"
-                  suppressHydrationWarning
-                >
-                  <FileImage className="h-5 w-5 text-primary" />
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => setPostType("poll")}
-                  disabled={!isAuthenticated}
-                  className="p-2 hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                  className={`p-2 rounded-full transition-colors disabled:opacity-40 disabled:pointer-events-none ${
+                    postType === "poll"
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                  }`}
                   aria-label="Create poll"
-                  suppressHydrationWarning
                 >
-                  <List className="h-5 w-5 text-primary" />
+                  <List className="h-5 w-5" />
                 </button>
                 
                 <button
                   type="button"
                   disabled={!isAuthenticated}
-                  className="p-2 hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:pointer-events-none"
+                  className="p-2 rounded-full transition-colors text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-40 disabled:pointer-events-none"
                   aria-label="Add emoji"
-                  suppressHydrationWarning
                 >
-                  <Smile className="h-5 w-5 text-primary" />
-                </button>
-                
-                <button
-                  type="button"
-                  disabled={!isAuthenticated}
-                  className="p-2 hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:pointer-events-none"
-                  aria-label="Bold text"
-                  suppressHydrationWarning
-                >
-                  <Bold className="h-5 w-5 text-primary" />
-                </button>
-                
-                <button
-                  type="button"
-                  disabled={!isAuthenticated}
-                  className="p-2 hover:bg-primary/10 rounded-full transition-colors disabled:opacity-50 disabled:pointer-events-none"
-                  aria-label="Italic text"
-                  suppressHydrationWarning
-                >
-                  <Italic className="h-5 w-5 text-primary" />
+                  <Smile className="h-5 w-5" />
                 </button>
               </div>
               
               <Button
                 type="submit"
-                disabled={!isAuthenticated || !content.trim() || (postType === "poll" && (!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2))}
-                className="h-9 px-4 rounded-full font-bold"
-                suppressHydrationWarning
+                disabled={!isAuthenticated || !hasContent || (postType === "poll" && (!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2))}
+                className="h-9 px-5 rounded-full font-semibold"
               >
-                {isAuthenticated ? "Post" : "Sign In Required"}
+                {isAuthenticated ? "Post" : "Sign In"}
               </Button>
             </div>
           </div>

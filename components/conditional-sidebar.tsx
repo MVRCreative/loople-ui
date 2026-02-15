@@ -19,10 +19,6 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const pathname = usePathname();
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
-  // #region agent log
-  if (typeof fetch !== "undefined") fetch("http://127.0.0.1:7242/ingest/fa342421-bbc3-4297-9f03-9cfbd6477dbe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:"conditional-sidebar.tsx:render",message:"Layout render",data:{pathname,isAuthRoute:pathname.startsWith("/auth"),isAdminRoute:pathname.startsWith("/admin")},timestamp:Date.now(),hypothesisId:"E"})}).catch(()=>{});
-  // #endregion
-
   // const _isNewsfeedRoute = pathname === "/";
   const isMessagesRoute = pathname.startsWith("/messages");
   // const _isSettingsRoute = pathname.startsWith("/settings");

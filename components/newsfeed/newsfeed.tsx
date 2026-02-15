@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { PostForm } from "./post-form";
 import { PostCard } from "./post-card";
+import { PostCardSkeletonList } from "./post-card-skeleton";
 import { NewUserEmptyState } from "@/components/home/new-user-empty-state";
-import { Loader } from "@/components/ui/loader";
 import { Post, User, ApiPost } from "@/lib/types";
 import { postsService, CreatePostRequest } from "@/lib/services/posts.service";
 import { transformApiPostsToPosts } from "@/lib/utils/posts.utils";
 import { useClub } from "@/lib/club-context";
 import { toast } from "sonner";
+import { MessageCircle } from "lucide-react";
 
 interface NewsfeedProps {
   initialPosts: Post[];
@@ -21,7 +22,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [loading, setLoading] = useState(false);
   const [isCreatingPost, setIsCreatingPost] = useState(false);
-  // const [searchFilters] = useState<Record<string, unknown>>({});
   const { selectedClub, clubs, loading: clubLoading } = useClub();
   const isHandlingOptimisticPost = useRef(false);
 
@@ -68,18 +68,13 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
         const payloadData = payload as Record<string, unknown>;
 
       if (payloadData.eventType === 'INSERT') {
-        // Skip reload if we're currently handling an optimistic post
-        // The optimistic update already added it to the feed
         if (isHandlingOptimisticPost.current) {
           return;
         }
-        // New post added (from another user or different session)
-        loadPosts(); // Reload all posts to get the latest data
+        loadPosts();
       } else if (payloadData.eventType === 'UPDATE') {
-        // Post updated (e.g., reaction count changed)
-        loadPosts(); // Reload to get updated counts
+        loadPosts();
       } else if (payloadData.eventType === 'DELETE') {
-        // Post deleted
         const oldData = payloadData.old as Record<string, unknown>;
         setPosts(prev => prev.filter(post => post.id !== (oldData.id as number).toString()));
       }
@@ -91,7 +86,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedClub?.id]);
 
-  // attachments can be native File[] or external uploads with url/name/size/type
   const handleCreatePost = async (content: string, type: "text" | "event" | "poll", attachments?: Array<File | { url: string; name: string; size: number; type: string }>) => {
     if (!isAuthenticated) {
       toast.error('Please sign in to create posts');
@@ -103,11 +97,9 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
       return;
     }
 
-    // Generate temporary post ID
     const tempPostId = `temp-${Date.now()}`;
     const blobUrls: string[] = [];
 
-    // Create optimistic media attachments from File objects
     const optimisticMedia: Array<{
       id: number
       file_name: string
@@ -124,16 +116,15 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
           const blobUrl = URL.createObjectURL(file);
           blobUrls.push(blobUrl);
           optimisticMedia.push({
-            id: -(index + 1), // Negative ID for temp media
+            id: -(index + 1),
             file_name: file.name,
-            file_path: blobUrl, // Use blob URL for immediate display
+            file_path: blobUrl,
             file_size: file.size,
             mime_type: file.type,
             file_type: file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'file',
             created_at: new Date().toISOString(),
           });
         } else if (file && typeof (file as { url: string }).url === 'string') {
-          // External uploads already have URLs
           const fileData = file as { url: string; name: string; size: number; type: string };
           optimisticMedia.push({
             id: -(index + 1),
@@ -148,7 +139,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
       });
     }
 
-    // Parse poll data if needed
     let pollQuestion = '';
     let pollOptions: string[] = [];
     let pollVotes: Record<string, number> = {};
@@ -160,7 +150,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
         contentText = parsedContent.text;
         pollQuestion = parsedContent.poll.question;
         pollOptions = parsedContent.poll.options;
-        // Initialize empty votes
         pollVotes = pollOptions.reduce((acc, _, idx) => {
           acc[idx.toString()] = 0;
           return acc;
@@ -170,7 +159,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
       }
     }
 
-    // Create optimistic post
     const optimisticPost: Post = {
       id: tempPostId,
       user: currentUser,
@@ -194,7 +182,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
       isOptimistic: true,
     };
 
-    // Immediately add optimistic post to the feed
     setPosts(prev => [optimisticPost, ...prev]);
     setIsCreatingPost(true);
     isHandlingOptimisticPost.current = true;
@@ -206,7 +193,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
         content_text: contentText,
       };
 
-      // Handle poll data
       if (type === "poll" && pollQuestion) {
         postData.poll_question = pollQuestion;
         postData.poll_options = pollOptions;
@@ -225,7 +211,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
           file_type: string
         }> = [];
 
-        // Upload media attachments if any
         if (attachments && attachments.length > 0) {
           for (const file of attachments) {
             try {
@@ -253,27 +238,22 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
           }
         }
 
-        // Create the post data with media attachments
         const postWithMedia = {
           ...response.data,
           media_attachments: mediaAttachments
         };
 
-        // Transform and replace optimistic post with real post
         const newPost = transformApiPostsToPosts([postWithMedia as unknown as ApiPost])[0];
         setPosts(prev => prev.map(p => p.id === tempPostId ? newPost : p));
         
-        // Clean up blob URLs
         blobUrls.forEach(url => URL.revokeObjectURL(url));
         
-        // Allow real-time updates after a short delay to ensure our update is complete
         setTimeout(() => {
           isHandlingOptimisticPost.current = false;
         }, 1000);
         
         toast.success("Post created successfully!");
       } else {
-        // Remove optimistic post on failure
         setPosts(prev => prev.filter(p => p.id !== tempPostId));
         blobUrls.forEach(url => URL.revokeObjectURL(url));
         isHandlingOptimisticPost.current = false;
@@ -281,7 +261,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
       }
     } catch (error) {
       console.error('Error creating post:', error);
-      // Remove optimistic post on error
       setPosts(prev => prev.filter(p => p.id !== tempPostId));
       blobUrls.forEach(url => URL.revokeObjectURL(url));
       isHandlingOptimisticPost.current = false;
@@ -292,7 +271,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
   };
 
   const handleReaction = async (postId: string) => {
-    // Optimistically toggle like and reaction count
     const previousPosts = posts;
     const target = posts.find(p => p.id === postId);
     const wasLiked = Boolean(target?.isLiked);
@@ -316,7 +294,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
       }
     } catch (error) {
       console.error('Reaction update failed:', error);
-      // Revert on error
       setPosts(previousPosts);
       toast.error('Failed to update reaction');
     }
@@ -324,11 +301,9 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
 
   const handleComment = () => {
     // Comment functionality is handled by PostCard component
-    // This function is called when comment button is clicked
   };
 
   const handleShare = (postId: string) => {
-    // TODO: Implement share functionality
     if (navigator.share) {
       navigator.share({
         title: "Check out this post",
@@ -336,7 +311,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
         url: `${window.location.origin}/post/${postId}`,
       });
     } else {
-      // Fallback for browsers that don't support Web Share API
       navigator.clipboard.writeText(`${window.location.origin}/post/${postId}`);
       toast.success("Link copied to clipboard!");
     }
@@ -359,7 +333,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     !clubLoading &&
     hasNoClubs;
 
-  // Show empty state when user has no clubs — never leave the main panel blank
+  // Show empty state when user has no clubs
   if (isBrandNewUser) {
     return (
       <div className="w-full min-h-[400px] flex items-center justify-center">
@@ -368,7 +342,7 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     );
   }
 
-  // Show empty state when no club selected (e.g. clubs exist but none selected yet)
+  // Show empty state when no club selected
   if (!clubLoading && !selectedClub?.id) {
     return (
       <div className="w-full min-h-[400px] flex items-center justify-center">
@@ -389,37 +363,40 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     <div className="w-full">
       <PostForm currentUser={currentUser} onSubmit={handleCreatePost} isAuthenticated={isAuthenticated} isLoading={isCreatingPost} />
 
+      {/* Separator between composer and feed */}
+      <div className="h-2 bg-muted/50 border-y border-border" />
+
       {isLoadingUI ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <Loader className="mx-auto mb-4" />
-          <p className="text-lg">Loading posts...</p>
-        </div>
+        <PostCardSkeletonList count={5} />
       ) : (
         <div>
-          {posts.map((post) => (
-            <PostCard
+          {posts.map((post, index) => (
+            <div
               key={post.id}
-              post={post}
-              currentUser={currentUser}
-              onReaction={handleReaction}
-              onComment={handleComment}
-              onShare={handleShare}
-              onPostUpdate={handlePostUpdate}
-              onPostDelete={handlePostDelete}
-            />
+              className="animate-in fade-in-0 slide-in-from-bottom-2"
+              style={{ animationDelay: `${Math.min(index * 50, 250)}ms`, animationFillMode: 'both' }}
+            >
+              <PostCard
+                post={post}
+                currentUser={currentUser}
+                onReaction={handleReaction}
+                onComment={handleComment}
+                onShare={handleShare}
+                onPostUpdate={handlePostUpdate}
+                onPostDelete={handlePostDelete}
+              />
+            </div>
           ))}
         </div>
       )}
 
       {!isLoadingUI && posts.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="text-center py-16 text-muted-foreground">
           <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
+            <MessageCircle className="w-8 h-8 text-muted-foreground" />
           </div>
           <p className="text-lg font-medium text-foreground">No posts yet</p>
-          <p className="text-sm">Be the first to share an update!</p>
+          <p className="text-sm mt-1">Be the first to share an update!</p>
         </div>
       )}
     </div>

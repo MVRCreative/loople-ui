@@ -15,6 +15,13 @@ import NextImage from "next/image";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface PostCardProps {
   post: Post;
@@ -116,18 +123,6 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   const canEdit = post.user?.id && (currentUser.id === post.user.id || currentUser.isAdmin) && !post.isOptimistic;
   const canDelete = post.user?.id && (currentUser.id === post.user.id || currentUser.isAdmin) && !post.isOptimistic;
 
-  // Add debug logging to help identify permission issues
-  console.log('Post permissions debug:', {
-    postId: post.id,
-    postUserId: post.user?.id,
-    postUserName: post.user?.name,
-    currentUserId: currentUser.id,
-    currentUserName: currentUser.name,
-    canEdit,
-    canDelete,
-    isOptimistic: post.isOptimistic
-  });
-
   // Set hero image from joined media attachments
   useEffect(() => {
     const mediaAttachments = post.media_attachments;
@@ -164,91 +159,86 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   }
 
   return (
-    <div className="bg-card border-t border-border p-4 shadow-sm hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors">
+    <div className={`bg-card border-b border-border px-4 py-3 transition-colors hover:bg-accent/40 ${post.isOptimistic ? 'opacity-70' : ''}`}>
       {/* Post Header */}
-      <div className="flex items-start gap-3 mb-3">
-        <Avatar className="h-10 w-10">
-          <AvatarImage src={post.user.avatar_url || ''} alt={post.user.name} />
-          <AvatarFallback className="bg-primary/10 text-lg">
-            {post.user.avatar}
-          </AvatarFallback>
-        </Avatar>
+      <div className="flex items-start gap-3">
+        <Link href={`/profile/${username}`} className="shrink-0">
+          <Avatar className="h-10 w-10 transition-opacity hover:opacity-80">
+            <AvatarImage src={post.user.avatar_url || ''} alt={post.user.name} />
+            <AvatarFallback className="bg-primary/10 text-lg">
+              {post.user.avatar}
+            </AvatarFallback>
+          </Avatar>
+        </Link>
         
         <div className="flex-1 min-w-0">
           {/* Header Row with Name, Username, Role, Date */}
-          <div className="flex items-center justify-between gap-2 mb-2">
-            <div className="flex items-center gap-2 flex-wrap min-w-0">
-              <Link href={`/profile/${username}`} className="font-semibold text-card-foreground hover:underline">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+              <Link href={`/profile/${username}`} className="font-semibold text-[15px] text-card-foreground hover:underline truncate">
                 {post.user.name}
               </Link>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground truncate">
                 @{username}
               </span>
-              <Badge variant="secondary" className="text-xs bg-blue-900 text-blue-300 hover:bg-blue-900">
-                {post.user.role}
-              </Badge>
-              {Boolean(post.content.event) && (
-                <Badge variant="outline" className="text-xs">Event</Badge>
-              )}
-              <span className="text-sm text-muted-foreground">
-                · {post.timestamp}
+              <span className="text-muted-foreground">·</span>
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                {post.timestamp}
               </span>
             </div>
             
-            {/* 3-dot menu */}
+            {/* Dropdown menu */}
             {(canEdit || canDelete) && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full shrink-0"
-                onClick={(e) => {
-                  e.preventDefault();
-                  const menu = e.currentTarget.nextElementSibling as HTMLElement;
-                  if (menu) menu.classList.toggle('hidden');
-                }}
-              >
-                <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                </svg>
-              </Button>
-            )}
-            {(canEdit || canDelete) && (
-              <div className="hidden absolute right-4 mt-8 w-48 rounded-md shadow-lg bg-popover ring-1 ring-black ring-opacity-5 z-50">
-                <div className="py-1" role="menu">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 rounded-full shrink-0 text-muted-foreground hover:text-foreground hover:bg-accent"
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
                   {canEdit && (
-                    <button
-                      onClick={handleEdit}
-                      className="w-full text-left px-4 py-2 text-sm text-foreground hover:bg-accent"
-                      role="menuitem"
-                    >
+                    <DropdownMenuItem onClick={handleEdit}>
+                      <Pencil className="h-4 w-4 mr-2" />
                       Edit post
-                    </button>
+                    </DropdownMenuItem>
                   )}
                   {canDelete && (
-                    <button
+                    <DropdownMenuItem
                       onClick={handleDelete}
                       disabled={isDeleting}
-                      className="w-full text-left px-4 py-2 text-sm text-destructive hover:bg-accent disabled:opacity-50"
-                      role="menuitem"
+                      className="text-destructive focus:text-destructive"
                     >
+                      <Trash2 className="h-4 w-4 mr-2" />
                       {isDeleting ? 'Deleting...' : 'Delete post'}
-                    </button>
+                    </DropdownMenuItem>
                   )}
-                </div>
-              </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+
+          {/* Role badge (below name row, subtle) */}
+          <div className="flex items-center gap-2 mt-0.5 mb-2">
+            <Badge variant="secondary" className="text-xs">
+              {post.user.role}
+            </Badge>
+            {Boolean(post.content.event) && (
+              <Badge variant="outline" className="text-xs">Event</Badge>
             )}
           </div>
           
           {/* Post Content */}
-          <p className="text-card-foreground text-sm leading-relaxed">
+          <p className="text-card-foreground text-[15px] leading-relaxed whitespace-pre-wrap">
             {post.content.text}
           </p>
         
           {/* Event Card */}
           {post.content.event && (
-            <>
-              <EventCard event={post.content.event} />
-            </>
+            <EventCard event={post.content.event} />
           )}
           
           {/* Poll Voting */}
@@ -264,9 +254,8 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
           
           {/* Media (moved below content, near bottom) */}
           {heroImageUrl && (
-            <div className="mt-3 rounded-lg overflow-hidden border border-border/60 bg-muted/20">
+            <div className="mt-3 rounded-xl overflow-hidden border border-border/60 bg-muted/20">
               {heroImageUrl.startsWith('blob:') ? (
-                // Use regular img tag for blob URLs (optimistic posts)
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
@@ -276,7 +265,6 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
                   />
                 </>
               ) : (
-                // Use Next.js Image for real URLs
                 <NextImage
                   src={heroImageUrl}
                   alt={post.content.text.slice(0, 64) || 'Post image'}
@@ -302,13 +290,23 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
         </div>
       </div>
       
-      {/* Comments Section */}
-      {showComments && (
-        <CommentsSection
-          postId={post.id}
-          currentUser={currentUser}
-        />
-      )}
+      {/* Comments Section — animated expand */}
+      <div
+        className={`grid transition-all duration-300 ease-out ${
+          showComments ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+      >
+        <div className="overflow-hidden">
+          {showComments && (
+            <div className="ml-13">
+              <CommentsSection
+                postId={post.id}
+                currentUser={currentUser}
+              />
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
