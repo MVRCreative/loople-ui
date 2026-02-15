@@ -18,6 +18,15 @@ export type ProgramMemberStatus = "active" | "inactive" | "pending";
 /** Payment status for a program membership */
 export type ProgramPaymentStatus = "pending" | "paid" | "free" | "failed";
 
+/** A single recurring schedule entry */
+export interface ProgramScheduleEntry {
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  location?: string;
+  notes?: string;
+}
+
 /** Core program record (matches DB schema) */
 export interface Program {
   id: string;
@@ -35,6 +44,7 @@ export interface Program {
   max_members: number | null;
   image_url: string | null;
   visibility: ProgramVisibility;
+  schedule: ProgramScheduleEntry[];
   settings: Record<string, unknown>;
   created_at: string;
   updated_at: string;
@@ -86,6 +96,7 @@ export interface CreateProgramData {
   max_members?: number;
   image_url?: string;
   visibility?: ProgramVisibility;
+  schedule?: ProgramScheduleEntry[];
 }
 
 /** Data for updating an existing program */

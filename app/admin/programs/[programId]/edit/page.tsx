@@ -101,13 +101,11 @@ export default function EditProgramPage() {
         </p>
       </div>
 
-      <div className="max-w-2xl">
-        <ProgramForm
-          clubId={String(selectedClub?.id ?? program.club_id)}
-          program={program}
-          mode="edit"
-        />
-      </div>
+      <ProgramForm
+        clubId={String(selectedClub?.id ?? program.club_id)}
+        program={program}
+        mode="edit"
+      />
     </div>
   );
 }

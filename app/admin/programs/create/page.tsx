@@ -64,9 +64,7 @@ export default function CreateProgramPage() {
         </p>
       </div>
 
-      <div className="max-w-2xl">
-        <ProgramForm clubId={String(selectedClub.id)} mode="create" />
-      </div>
+      <ProgramForm clubId={String(selectedClub.id)} mode="create" />
     </div>
   );
 }

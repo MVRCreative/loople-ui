@@ -4,6 +4,7 @@ import type {
   ProgramWithMemberCount,
   ProgramMembership,
   ProgramMembershipWithMember,
+  ProgramScheduleEntry,
   CreateProgramData,
   UpdateProgramData,
 } from "../programs/types";
@@ -137,6 +138,7 @@ export class ProgramsService {
         "max_members",
         "image_url",
         "visibility",
+        "schedule",
       ]);
 
       for (const [k, v] of Object.entries(updates)) {
@@ -408,6 +410,7 @@ export class ProgramsService {
       max_members: (row.max_members as number | null) ?? null,
       image_url: (row.image_url as string | null) ?? null,
       visibility: (row.visibility as Program["visibility"]) ?? "public",
+      schedule: (row.schedule as ProgramScheduleEntry[]) ?? [],
       settings: (row.settings as Record<string, unknown>) ?? {},
       created_at: (row.created_at as string) ?? new Date().toISOString(),
       updated_at: (row.updated_at as string) ?? new Date().toISOString(),

@@ -11,7 +11,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useClub } from "@/lib/club-context";
 import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
 import { ProgramsService } from "@/lib/services/programs.service";
-import type { ProgramWithMemberCount, ProgramMembershipWithMember } from "@/lib/programs/types";
+import type { ProgramWithMemberCount, ProgramMembershipWithMember, ProgramScheduleEntry } from "@/lib/programs/types";
 import type { User } from "@/lib/types";
 import {
   Edit,
@@ -23,6 +23,7 @@ import {
   Eye,
   Lock,
   Layers,
+  Clock,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -267,6 +268,44 @@ export default function AdminProgramDetailPage() {
               Season: {formatDate(program.season_start)} &mdash;{" "}
               {formatDate(program.season_end)}
             </span>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Schedule */}
+      {program.schedule && (program.schedule as ProgramScheduleEntry[]).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Weekly Schedule
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {(program.schedule as ProgramScheduleEntry[]).map(
+                (entry, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-3 rounded-lg border"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary shrink-0">
+                      {entry.day_of_week.slice(0, 3)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">
+                        {entry.start_time} &ndash; {entry.end_time}
+                      </p>
+                      {entry.location && (
+                        <p className="text-xs text-muted-foreground">
+                          {entry.location}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
           </CardContent>
         </Card>
       )}

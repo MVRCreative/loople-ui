@@ -17,7 +17,6 @@ import type { User } from "@/lib/types";
 import {
   Search,
   Plus,
-  Eye,
   Edit,
   Layers,
   Users,
@@ -243,18 +242,6 @@ export default function AdminProgramsPage() {
                   }
                 >
                   <div className="absolute inset-0 bg-black/10" />
-                  <div className="absolute top-3 right-3 flex gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 bg-white/20 hover:bg-white/30 text-white"
-                      onClick={() =>
-                        router.push(`/admin/programs/${program.id}`)
-                      }
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </div>
                   <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2">
                     <Badge
                       variant={program.is_active ? "default" : "secondary"}
@@ -299,20 +286,21 @@ export default function AdminProgramsPage() {
                       size="sm"
                       className="flex-1"
                       onClick={() =>
+                        router.push(`/admin/programs/${program.id}`)
+                      }
+                    >
+                      View
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() =>
                         router.push(`/admin/programs/${program.id}/edit`)
                       }
                     >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        router.push(`/admin/programs/${program.id}`)
-                      }
-                    >
-                      <Eye className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardContent>

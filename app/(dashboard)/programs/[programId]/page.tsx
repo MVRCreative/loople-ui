@@ -7,12 +7,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/ui/loader";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useClub } from "@/lib/club-context";
 import { ProgramsService } from "@/lib/services/programs.service";
 import { useProgramMembership } from "@/lib/programs/hooks";
 import type {
   ProgramWithMemberCount,
   ProgramMembershipWithMember,
+  ProgramScheduleEntry,
 } from "@/lib/programs/types";
 import {
   Users,
@@ -25,6 +32,8 @@ import {
   LogIn,
   LogOut,
   Loader2,
+  MoreHorizontal,
+  Clock,
 } from "lucide-react";
 
 export default function ProgramDetailPage() {
@@ -186,10 +195,17 @@ export default function ProgramDetailPage() {
         </div>
       </div>
 
-      {/* Title + Join */}
+      {/* Title + Join / Actions */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">{program.name}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold text-foreground">
+              {program.name}
+            </h1>
+            {isMember && (
+              <Badge variant="default">Joined</Badge>
+            )}
+          </div>
           {program.description && (
             <p className="text-muted-foreground mt-1 max-w-2xl">
               {program.description}
@@ -197,25 +213,31 @@ export default function ProgramDetailPage() {
           )}
         </div>
 
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex items-center gap-2">
           {membershipLoading ? (
             <Button disabled>
               <Loader2 className="h-4 w-4 animate-spin mr-1" />
               Loading...
             </Button>
           ) : isMember ? (
-            <Button
-              variant="outline"
-              onClick={handleLeave}
-              disabled={actionLoading}
-            >
-              {actionLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
-              ) : (
-                <LogOut className="h-4 w-4 mr-1" />
-              )}
-              Leave Program
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <MoreHorizontal className="h-4 w-4" />
+                  <span className="sr-only">Program options</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  className="text-destructive focus:text-destructive"
+                  onClick={handleLeave}
+                  disabled={actionLoading}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Leave Program
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : canJoin ? (
             <Button onClick={handleJoin} disabled={actionLoading}>
               {actionLoading ? (
@@ -223,7 +245,9 @@ export default function ProgramDetailPage() {
               ) : (
                 <LogIn className="h-4 w-4 mr-1" />
               )}
-              {isFree ? "Join for Free" : `Join \u2014 $${program.registration_fee}`}
+              {isFree
+                ? "Join for Free"
+                : `Join \u2014 $${program.registration_fee}`}
             </Button>
           ) : isFull ? (
             <Button disabled>Program Full</Button>
@@ -232,12 +256,14 @@ export default function ProgramDetailPage() {
               You must be a club member to join programs
             </p>
           ) : null}
-
-          {actionError && (
-            <p className="text-sm text-destructive">{actionError}</p>
-          )}
         </div>
       </div>
+
+      {actionError && (
+        <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+          {actionError}
+        </div>
+      )}
 
       {/* Info Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -289,6 +315,49 @@ export default function ProgramDetailPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Schedule */}
+      {program.schedule && (program.schedule as ProgramScheduleEntry[]).length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Clock className="h-5 w-5" />
+              Weekly Schedule
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {(program.schedule as ProgramScheduleEntry[]).map(
+                (entry, index) => (
+                  <div
+                    key={index}
+                    className="flex items-start gap-3 p-3 rounded-lg border bg-card"
+                  >
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary shrink-0">
+                      {entry.day_of_week.slice(0, 3)}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">
+                        {entry.start_time} &ndash; {entry.end_time}
+                      </p>
+                      {entry.location && (
+                        <p className="text-xs text-muted-foreground">
+                          {entry.location}
+                        </p>
+                      )}
+                      {entry.notes && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {entry.notes}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Members */}
       <Card>
