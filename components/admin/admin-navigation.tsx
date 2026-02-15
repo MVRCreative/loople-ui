@@ -10,7 +10,8 @@ import {
   UserCog,
   Database,
   ClipboardList,
-  ListPlus
+  ListPlus,
+  Layers
 } from "lucide-react"
 
 export const adminNavigation = [
@@ -30,6 +31,12 @@ export const adminNavigation = [
     name: "User Management",
     href: "/admin/users",
     icon: Users,
+    current: false,
+  },
+  {
+    name: "Programs",
+    href: "/admin/programs",
+    icon: Layers,
     current: false,
   },
   {

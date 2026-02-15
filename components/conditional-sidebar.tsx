@@ -73,12 +73,12 @@ export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
 
   // Dynamic grid layout
   const getGridLayout = () => {
-    // Messages pages: nav (xl only) + content. On lg, nav is hidden so use a single column.
+    // Messages pages: nav (xl only) + content area that equals center+right sidebar widths (600+350=950)
     if (isMessagesRoute) {
       return `max-w-[600px] lg:max-w-[966px] xl:max-w-[1257px]
         [grid-template-columns:600px]
-        lg:[grid-template-columns:1fr]
-        xl:[grid-template-columns:275px_1fr]`;
+        lg:[grid-template-columns:950px]
+        xl:[grid-template-columns:275px_950px]`;
     }
     
     // Club management pages get full width - no right sidebar

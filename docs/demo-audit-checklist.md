@@ -169,37 +169,49 @@ Legend: ✅ Done | ⚠️ Partial | ❌ Not started | 🐛 Bug
 
 | # | Requirement | Status | Notes |
 |---|---|---|---|
-| 5.1 | Programs data model | ⚠️ Partial | Events reference `program_id` but no programs CRUD |
-| 5.2 | Admin: create program (name, photo, description) | ❌ Not done | Member-facing programs page shows events grouped by program; no admin CRUD for programs |
+| 5.1 | Programs data model | ✅ Done | `programs` + `program_memberships` tables with RLS, visibility, fees, max_members, image_url |
+| 5.2 | Admin: create program (name, photo, description) | ✅ Done | `/admin/programs/create` — full form with type, visibility, fees, season, capacity |
 | 5.3 | Dynamic registration fields | ❌ Not done | |
-| 5.4 | Fee per registrant | ❌ Not done | |
+| 5.4 | Fee per registrant | ⚠️ Partial | `registration_fee` + `monthly_fee` fields in programs; Stripe checkout not wired |
 | 5.5 | Family cap (e.g. $50/kid, max $200) | ❌ Not done | Requires family model (Feature 2.7) |
-| 5.6 | Registration cap (max participants) | ❌ Not done | |
+| 5.6 | Registration cap (max participants) | ✅ Done | `max_members` column on programs; enforced in UI (join button disabled when full) |
 | 5.7 | Schedule builder | ❌ Not done | |
 | 5.8 | Member: auto-filled registration from profile | ❌ Not done | Requires family model |
 | 5.9 | Select / deselect children for registration | ❌ Not done | Requires family model |
 | 5.10 | Review + pay via Stripe | ❌ Not done | |
 | 5.11 | Confirmation email | ❌ Not done | |
-| 5.12 | Admin: registration dashboard | ❌ Not done | `registrations-table.tsx` exists for events, not programs |
+| 5.12 | Admin: registration dashboard | ✅ Done | `/admin/programs/[id]` shows members table with role, status, join date |
 | 5.13 | View by family or by participant | ❌ Not done | |
 | 5.14 | Sort / filter / group by age + gender | ❌ Not done | |
 | 5.15 | CSV export for coaches | ❌ Not done | Export button in members table is non-functional |
 | 5.16 | Full / partial refund with reason | ❌ Not done | |
-| 5.17 | Program sub-page (feed, schedule, comments) | ❌ Not done | |
+| 5.17 | Program sub-page (feed, schedule, comments) | ⚠️ Partial | `/programs/[id]` detail page with members, stats, join/leave; feed/schedule/comments pending |
 | 5.18 | Program-scoped messaging | ❌ Not done | |
+| 5.19 | Admin: edit program | ✅ Done | `/admin/programs/[id]/edit` — full edit form |
+| 5.20 | Admin: delete program | ✅ Done | Delete with confirmation dialog on admin detail page |
+| 5.21 | Admin: program list with search/filter | ✅ Done | `/admin/programs` with search + active/inactive filter |
+| 5.22 | Member: browse & join programs | ✅ Done | `/programs` card grid; `/programs/[id]` with join/leave buttons |
+| 5.23 | Member: leave program | ✅ Done | Leave button on program detail page |
 
 ### Checklist
 
+- [x] Design programs table + program_memberships table + RLS policies
+- [x] Build admin program creation page (`/admin/programs/create`)
+- [x] Build admin program list page with search/filter (`/admin/programs`)
+- [x] Build admin program detail page (`/admin/programs/[id]`)
+- [x] Build admin program edit page (`/admin/programs/[id]/edit`)
+- [x] Build admin program delete with confirmation
+- [x] Build member-facing program listing (`/programs`) with cards
+- [x] Build member-facing program detail page (`/programs/[id]`)
+- [x] Implement join/leave program functionality (free for now)
+- [x] Add programs to admin sidebar navigation
 - [ ] **Prerequisite**: Build family data model (Feature 2.7)
-- [ ] Design programs table + program_registrations table
-- [ ] Build admin program creation page (`/admin/programs/create`)
 - [ ] Build dynamic registration field configuration
 - [ ] Implement fee-per-registrant + family cap pricing logic
 - [ ] Build schedule builder UI
 - [ ] Build member-facing program registration flow (auto-fill, child select, review, pay)
 - [ ] Integrate Stripe checkout for program fees
 - [ ] Build confirmation email on registration
-- [ ] Build admin registration dashboard (`/admin/programs/[id]/registrations`)
 - [ ] Add sort / filter / group by age + gender
 - [ ] Build CSV export for participant lists
 - [ ] Implement full / partial refund with reason field
