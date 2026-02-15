@@ -39,12 +39,16 @@ export type AdminMembership = {
 export class AdminService {
   static async getAllProfiles(): Promise<AdminProfile[]> {
     const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
+      .from('users')
+      .select('id, email, full_name, is_admin, created_at, updated_at, role:roles(name)')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data || [];
+    // Map role join to flat string
+    return (data || []).map((u) => ({
+      ...u,
+      role: (u.role as unknown as { name: string } | null)?.name ?? null,
+    })) as AdminProfile[];
   }
 
   static async getAllClubs(): Promise<AdminClub[]> {
@@ -66,7 +70,7 @@ export class AdminService {
         user_id,
         role,
         created_at,
-        user:profiles!members_user_id_fkey (
+        user:users!members_user_id_fkey (
           id,
           email,
           full_name
@@ -74,7 +78,7 @@ export class AdminService {
         club:clubs!members_club_id_fkey (
           id,
           name,
-          slug
+          subdomain
         )
       `)
       .returns<AdminMembership[]>()

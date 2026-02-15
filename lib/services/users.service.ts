@@ -267,26 +267,61 @@ export class UsersService {
    */
   static async getUserProfile(): Promise<User & { preferences: UserPreferences }> {
     try {
+      // Try edge function first
       const { data, error } = await supabase.functions.invoke('users', {
         method: 'GET'
       });
       
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        throw error;
-      }
-      // Edge function returns { success, data }
+      if (error) throw error;
+
       type EdgeFunctionResponse<T> = { success?: boolean; data?: T; error?: unknown }
       const payload = data as EdgeFunctionResponse<User & { preferences: UserPreferences }>
       if (payload?.success && payload.data) {
         return payload.data
       }
-      const message = payload?.error ? String(payload.error) : 'Failed to load user profile'
-      throw new Error(message)
-    } catch (error) {
-      console.error('Error in getUserProfile:', error);
-      throw error;
+      throw new Error('Edge function returned unexpected format')
+    } catch {
+      // Fall back to direct Supabase query
+      console.warn('Users edge function unavailable, using direct query');
+      return this.getUserProfileDirect();
     }
+  }
+
+  /**
+   * Direct query fallback for getUserProfile
+   */
+  private static async getUserProfileDirect(): Promise<User & { preferences: UserPreferences }> {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) throw new Error('Not authenticated');
+
+    const { data: profile, error } = await supabase
+      .from('users')
+      .select('*, role:roles(name, permissions)')
+      .eq('id', authUser.id)
+      .single();
+
+    if (error) throw error;
+    if (!profile) throw new Error('User profile not found');
+
+    // Try to get preferences, return defaults if not found
+    const { data: prefs } = await supabase
+      .from('user_preferences')
+      .select('*')
+      .eq('user_id', authUser.id)
+      .maybeSingle();
+
+    const defaultPreferences: UserPreferences = {
+      user_id: authUser.id,
+      notify_comments: true,
+      notify_candidates: false,
+      notify_offers: false,
+      push_notifications: 'everything',
+    };
+
+    return {
+      ...profile,
+      preferences: prefs ?? defaultPreferences,
+    } as User & { preferences: UserPreferences };
   }
 
   /**
@@ -294,28 +329,71 @@ export class UsersService {
    */
   static async updateUserProfile(updates: UpdateUserProfileData): Promise<User> {
     try {
+      // Try edge function first
       const { data, error } = await supabase.functions.invoke('users', {
         method: 'PUT',
         body: updates
       });
       
-      if (error) {
-        console.error('Error updating user profile:', error);
-        throw error;
-      }
+      if (error) throw error;
+
       type EdgeFunctionResponse<T> = { success?: boolean; data?: T; error?: unknown }
       const payload = data as EdgeFunctionResponse<User>
       if (payload?.success && payload.data) {
         return payload.data
       }
-      const message = payload?.error ? String(payload.error) : 'Failed to update user profile'
-      const err = new Error(message) as Error & { status?: number }
-      err.status = 400
-      throw err
-    } catch (error) {
-      console.error('Error in updateUserProfile:', error);
-      throw error;
+      throw new Error('Edge function returned unexpected format')
+    } catch {
+      // Fall back to direct Supabase update
+      console.warn('Users edge function unavailable, using direct update');
+      return this.updateUserProfileDirect(updates);
     }
+  }
+
+  /**
+   * Direct update fallback for updateUserProfile
+   */
+  private static async updateUserProfileDirect(updates: UpdateUserProfileData): Promise<User> {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) throw new Error('Not authenticated');
+
+    // Build update payload, only include non-undefined fields
+    const payload: Record<string, unknown> = {};
+    const allowedKeys: (keyof UpdateUserProfileData)[] = [
+      'first_name', 'last_name', 'phone', 'avatar_url',
+      'username', 'bio', 'cover_url', 'country',
+      'street_address', 'city', 'region', 'postal_code',
+    ];
+
+    for (const key of allowedKeys) {
+      if (updates[key] !== undefined) {
+        payload[key] = updates[key];
+      }
+    }
+
+    // Build full_name from first + last
+    if (updates.first_name !== undefined || updates.last_name !== undefined) {
+      const first = updates.first_name ?? '';
+      const last = updates.last_name ?? '';
+      payload.full_name = `${first} ${last}`.trim();
+    }
+
+    payload.updated_at = new Date().toISOString();
+
+    const { data, error } = await supabase
+      .from('users')
+      .update(payload)
+      .eq('id', authUser.id)
+      .select()
+      .single();
+
+    if (error) {
+      const err = new Error(error.message) as Error & { status?: number };
+      err.status = 400;
+      throw err;
+    }
+
+    return data as User;
   }
 
   /**
@@ -323,25 +401,57 @@ export class UsersService {
    */
   static async updateUserPreferences(preferences: UpdateUserPreferencesData): Promise<UserPreferences> {
     try {
+      // Try edge function first
       const { data, error } = await supabase.functions.invoke('users', {
         method: 'PATCH',
         body: preferences
       });
       
-      if (error) {
-        console.error('Error updating user preferences:', error);
-        throw error;
-      }
+      if (error) throw error;
+
       type EdgeFunctionResponse<T> = { success?: boolean; data?: T; error?: unknown }
       const payload = data as EdgeFunctionResponse<UserPreferences>
       if (payload?.success && payload.data) {
         return payload.data
       }
-      const message = payload?.error ? String(payload.error) : 'Failed to update user preferences'
-      throw new Error(message)
-    } catch (error) {
-      console.error('Error in updateUserPreferences:', error);
-      throw error;
+      throw new Error('Edge function returned unexpected format')
+    } catch {
+      // Fall back — preferences table may not exist, just return defaults
+      console.warn('User preferences update via edge function failed, attempting direct upsert');
+      return this.updateUserPreferencesDirect(preferences);
+    }
+  }
+
+  /**
+   * Direct upsert fallback for updateUserPreferences
+   */
+  private static async updateUserPreferencesDirect(preferences: UpdateUserPreferencesData): Promise<UserPreferences> {
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    if (!authUser) throw new Error('Not authenticated');
+
+    // Try upserting into user_preferences; if the table doesn't exist, return defaults
+    try {
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .upsert({
+          user_id: authUser.id,
+          ...preferences,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'user_id' })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as UserPreferences;
+    } catch {
+      // Table may not exist — return defaults silently
+      return {
+        user_id: authUser.id,
+        notify_comments: preferences.notify_comments ?? true,
+        notify_candidates: preferences.notify_candidates ?? false,
+        notify_offers: preferences.notify_offers ?? false,
+        push_notifications: preferences.push_notifications ?? 'everything',
+      };
     }
   }
 }

@@ -89,7 +89,7 @@ export class EventsService {
    */
   static async getEvents(filters: EventFilters = {}): Promise<Event[]> {
     try {
-      // Use edge function via GET to match Postman collection usage
+      // Try edge function first
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
 
@@ -117,8 +117,7 @@ export class EventsService {
       });
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => '');
-        throw new Error(errorText || `Failed to fetch events: ${response.status}`);
+        throw new Error(`Edge function returned ${response.status}`);
       }
 
       const json = await response.json().catch(() => ([]));
@@ -130,8 +129,82 @@ export class EventsService {
         return json.data as Event[];
       }
       return [];
+    } catch {
+      // Edge function unavailable — fall back to direct Supabase query
+      console.warn('Events edge function unavailable, using direct query');
+      return this.getEventsDirect(filters);
+    }
+  }
+
+  /**
+   * Direct Supabase query fallback for getEvents
+   */
+  private static async getEventsDirect(filters: EventFilters = {}): Promise<Event[]> {
+    try {
+      let query = supabase
+        .from('events')
+        .select('*, programs(name, program_type)');
+
+      if (filters.club_id) query = query.eq('club_id', filters.club_id);
+      if (filters.program_id) query = query.eq('program_id', filters.program_id);
+      if (filters.is_active !== undefined) query = query.eq('is_active', filters.is_active);
+      if (filters.search) query = query.ilike('title', `%${filters.search}%`);
+
+      const sortBy = filters.sort_by || 'start_date';
+      const sortOrder = filters.sort_order === 'desc' ? false : true;
+      query = query.order(sortBy, { ascending: sortOrder });
+
+      if (filters.limit) query = query.limit(filters.limit);
+
+      const { data, error } = await query;
+      if (error) {
+        console.error('Direct events query failed:', error);
+        throw error;
+      }
+
+      // Transform DB rows to match Event interface
+      return (data ?? []).map((row) => {
+        const now = new Date();
+        const endDate = new Date(row.end_date);
+        const isPast = endDate < now;
+
+        return {
+          id: row.id,
+          club_id: row.club_id,
+          program_id: row.program_id,
+          title: row.title,
+          description: row.description,
+          event_type: row.event_type,
+          start_date: row.start_date,
+          end_date: row.end_date,
+          location: row.location,
+          max_capacity: row.max_capacity,
+          registration_deadline: row.registration_deadline,
+          price_member: row.price_member,
+          price_non_member: row.price_non_member,
+          is_active: row.is_active,
+          status: isPast ? 'completed' : 'upcoming',
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          is_upcoming: !isPast,
+          is_past: isPast,
+          capacity: {
+            max: row.max_capacity,
+            current: 0,
+            waitlist: false,
+          },
+          rsvp_count: {
+            going: 0,
+            maybe: 0,
+            not_going: 0,
+            not_responded: 0,
+            total: 0,
+          },
+          programs: row.programs as { name: string; program_type: string } | undefined,
+        } as Event;
+      });
     } catch (error) {
-      console.error('Error in getEvents:', error);
+      console.error('Error in getEventsDirect:', error);
       throw error;
     }
   }
@@ -141,20 +214,37 @@ export class EventsService {
    */
   static async createEvent(eventData: CreateEventData): Promise<Event[]> {
     try {
+      // Try edge function first
       const { data, error } = await supabase.functions.invoke('events', {
         method: 'POST',
         body: eventData
       });
       
-      if (error) {
-        console.error('Error creating event:', error);
-        throw error;
-      }
-      
+      if (error) throw error;
       return data || [];
-    } catch (error) {
-      console.error('Error in createEvent:', error);
-      throw error;
+    } catch {
+      // Fall back to direct insert
+      console.warn('Events edge function unavailable for create, using direct insert');
+      const { data, error } = await supabase
+        .from('events')
+        .insert({
+          club_id: eventData.club_id,
+          title: eventData.title,
+          description: eventData.description,
+          event_type: eventData.event_type,
+          start_date: eventData.start_date,
+          end_date: eventData.end_date,
+          location: eventData.location,
+          max_capacity: eventData.max_capacity,
+          registration_deadline: eventData.registration_deadline,
+          price_member: eventData.price_member,
+          price_non_member: eventData.price_non_member,
+          program_id: eventData.program_id,
+        })
+        .select();
+
+      if (error) throw error;
+      return (data ?? []) as Event[];
     }
   }
 
@@ -239,23 +329,15 @@ export class EventsService {
       });
 
       if (!response.ok) {
-        if (response.status === 404) {
-          return null; // Event not found
-        }
-        const errorText = await response.text().catch(() => '');
-        throw new Error(errorText || `Failed to fetch event: ${response.status}`);
+        if (response.status === 404) return null;
+        throw new Error(`Edge function returned ${response.status}`);
       }
 
       const json = await response.json().catch(() => null);
       
-      console.log('EventsService.getEventById response:', json);
-      
-      // Handle the wrapped response from Edge Function
       if (json && json.success && json.data) {
         return json.data as Event;
       }
-      
-      // Handle direct response (fallback)
       if (Array.isArray(json)) {
         return json[0] as Event || null;
       }
@@ -263,8 +345,70 @@ export class EventsService {
         return json as Event;
       }
       return null;
+    } catch {
+      // Fall back to direct Supabase query
+      console.warn('Events edge function unavailable for getEventById, using direct query');
+      return this.getEventByIdDirect(eventId);
+    }
+  }
+
+  /**
+   * Direct Supabase query fallback for getEventById
+   */
+  private static async getEventByIdDirect(eventId: string): Promise<Event | null> {
+    try {
+      const { data, error } = await supabase
+        .from('events')
+        .select('*, programs(name, program_type)')
+        .eq('id', eventId)
+        .single();
+
+      if (error) {
+        if ((error as { code?: string }).code === 'PGRST116') return null;
+        throw error;
+      }
+      if (!data) return null;
+
+      const now = new Date();
+      const endDate = new Date(data.end_date);
+      const isPast = endDate < now;
+
+      return {
+        id: data.id,
+        club_id: data.club_id,
+        program_id: data.program_id,
+        title: data.title,
+        description: data.description,
+        event_type: data.event_type,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        location: data.location,
+        max_capacity: data.max_capacity,
+        registration_deadline: data.registration_deadline,
+        price_member: data.price_member,
+        price_non_member: data.price_non_member,
+        is_active: data.is_active,
+        status: isPast ? 'completed' : 'upcoming',
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        is_upcoming: !isPast,
+        is_past: isPast,
+        capacity: {
+          max: data.max_capacity,
+          current: 0,
+          waitlist: false,
+        },
+        rsvp_count: {
+          going: 0,
+          maybe: 0,
+          not_going: 0,
+          not_responded: 0,
+          total: 0,
+        },
+        programs: data.programs as { name: string; program_type: string } | undefined,
+      } as Event;
     } catch (error) {
-      console.error('Error in getEventById:', error);
+      console.error('Error in getEventByIdDirect:', error);
       throw error;
     }
   }

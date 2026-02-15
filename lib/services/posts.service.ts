@@ -82,8 +82,37 @@ class PostsService {
     }
   }
 
+  /**
+   * Find the member_id for the current auth user within a given club.
+   * Required for writing to the posts table (author_member_id FK).
+   */
+  private async getMemberIdForCurrentUser(clubId: number): Promise<number | null> {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    const { data } = await supabase
+      .from('members')
+      .select('id')
+      .eq('club_id', clubId)
+      .eq('user_id', user.id)
+      .limit(1)
+      .maybeSingle()
+
+    return data?.id ?? null
+  }
+
   // Posts
   async getPosts(params: PostsQueryParams = {}): Promise<ApiResponse<Post[]>> {
+    // Try edge function first
+    const edgeResult = await this.getPostsViaEdge(params)
+    if (edgeResult.success) return edgeResult
+
+    // Fall back to direct Supabase query
+    console.warn('Posts edge function unavailable, using direct query')
+    return this.getPostsDirect(params)
+  }
+
+  private async getPostsViaEdge(params: PostsQueryParams): Promise<ApiResponse<Post[]>> {
     const searchParams = new URLSearchParams()
     
     Object.entries(params).forEach(([key, value]) => {
@@ -98,11 +127,128 @@ class PostsService {
     return this.makeRequest<Post[]>(endpoint)
   }
 
+  private async getPostsDirect(params: PostsQueryParams): Promise<ApiResponse<Post[]>> {
+    try {
+      let query = supabase
+        .from('posts')
+        .select(`
+          *,
+          author:members!posts_author_member_id_fkey (
+            id, first_name, last_name, email, user_id
+          ),
+          comments:post_comments (id),
+          reactions:post_reactions (kind)
+        `)
+
+      if (params.club_id) query = query.eq('club_id', params.club_id)
+      if (params.event_id) query = query.eq('event_id', params.event_id)
+
+      const sortBy = params.sort_by || 'created_at'
+      const ascending = params.sort_order === 'asc'
+      query = query.order(sortBy, { ascending })
+      query = query.limit(params.limit ?? 20)
+
+      const { data, error } = await query
+      if (error) throw error
+
+      // Transform DB rows → frontend Post shape
+      const posts: Post[] = (data ?? []).map((row) => {
+        const author = row.author as { id: number; first_name: string; last_name: string; email: string; user_id: string } | null
+        const commentCount = Array.isArray(row.comments) ? row.comments.length : 0
+        const likeCount = Array.isArray(row.reactions) ? row.reactions.length : 0
+
+        return {
+          id: row.id,
+          club_id: row.club_id,
+          content_type: row.kind === 'post' ? 'text' : row.kind,
+          content_text: row.body ?? '',
+          user_id: author?.user_id ?? '',
+          author_name: author ? `${author.first_name} ${author.last_name}` : 'Unknown',
+          author_avatar: null,
+          created_at: row.created_at,
+          updated_at: row.updated_at,
+          comments_count: commentCount,
+          reactions_count: likeCount,
+          event_id: row.event_id,
+          program_id: row.program_id,
+        } as unknown as Post
+      })
+
+      return { success: true, data: posts }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to load posts',
+      }
+    }
+  }
+
   async createPost(postData: CreatePostRequest): Promise<ApiResponse<Post>> {
-    return this.makeRequest<Post>('posts', {
+    // Try edge function first
+    const edgeResult = await this.makeRequest<Post>('posts', {
       method: 'POST',
       body: JSON.stringify(postData),
     })
+    if (edgeResult.success) return edgeResult
+
+    // Fall back to direct insert
+    console.warn('Posts edge function unavailable, using direct insert')
+    return this.createPostDirect(postData)
+  }
+
+  private async createPostDirect(postData: CreatePostRequest): Promise<ApiResponse<Post>> {
+    try {
+      const memberId = await this.getMemberIdForCurrentUser(postData.club_id)
+      if (!memberId) {
+        return { success: false, error: 'You must be a member of this club to post.' }
+      }
+
+      // Map content_type to post kind
+      const kind = postData.content_type === 'text' ? 'post'
+        : postData.content_type === 'event' ? 'event_update'
+        : postData.content_type === 'poll' ? 'post'
+        : 'post'
+
+      const richContent: Record<string, unknown> = {}
+      if (postData.poll_question && postData.poll_options) {
+        richContent.poll = {
+          question: postData.poll_question,
+          options: postData.poll_options,
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('posts')
+        .insert({
+          club_id: postData.club_id,
+          author_member_id: memberId,
+          kind,
+          body: postData.content_text,
+          rich: Object.keys(richContent).length > 0 ? richContent : null,
+          event_id: postData.event_id ?? null,
+        })
+        .select()
+        .single()
+
+      if (error) throw error
+
+      // Return a shape that the frontend expects
+      const post = {
+        id: data.id,
+        club_id: data.club_id,
+        content_type: postData.content_type,
+        content_text: data.body,
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+      } as unknown as Post
+
+      return { success: true, data: post }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to create post',
+      }
+    }
   }
 
   async updatePost(postId: number, postData: CreatePostRequest): Promise<ApiResponse<Post>> {
@@ -113,9 +259,23 @@ class PostsService {
   }
 
   async deletePost(postId: number): Promise<ApiResponse<{ success: boolean }>> {
-    return this.makeRequest<{ success: boolean }>(`posts/${postId}`, {
+    // Try edge function first
+    const edgeResult = await this.makeRequest<{ success: boolean }>(`posts/${postId}`, {
       method: 'DELETE',
     })
+    if (edgeResult.success) return edgeResult
+
+    // Fall back to direct delete
+    try {
+      const { error } = await supabase.from('posts').delete().eq('id', postId)
+      if (error) throw error
+      return { success: true, data: { success: true } }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to delete post',
+      }
+    }
   }
 
   // Comments

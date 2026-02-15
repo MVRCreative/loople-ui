@@ -42,9 +42,6 @@ export function ClubProvider({ children }: ClubProviderProps) {
       const userClubs = await ClubsService.getUserClubs();
       // Ensure we always have an array
       const clubsArr = Array.isArray(userClubs) ? userClubs : [];
-      // #region agent log
-      if (typeof fetch !== "undefined") fetch("http://127.0.0.1:7242/ingest/fa342421-bbc3-4297-9f03-9cfbd6477dbe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:"club-context.tsx:loadClubs",message:"Clubs loaded",data:{count:clubsArr.length,rawIsArray:Array.isArray(userClubs)},timestamp:Date.now(),hypothesisId:"C"})}).catch(()=>{});
-      // #endregion
       setClubs(clubsArr);
     } catch (err) {
       console.error('Error loading user clubs:', err);

@@ -48,7 +48,17 @@ export class WaitlistService {
       .order("position", { ascending: true })
       .order("created_at", { ascending: true });
 
-    if (error) return []; // No waitlist yet or RLS blocks access → treat as empty
+    if (error) {
+      // PGRST116 = no rows found — treat as empty, not an error
+      // 42P01 = table doesn't exist — also treat as empty
+      const code = (error as { code?: string }).code;
+      if (code === "PGRST116" || code === "42P01") {
+        return [];
+      }
+      console.error("Error fetching waitlist:", error);
+      // Return empty but log the actual error so it's visible
+      return [];
+    }
     return (data ?? []).map(normalizeWaitlistRow);
   }
 

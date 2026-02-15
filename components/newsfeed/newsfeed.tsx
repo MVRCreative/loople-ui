@@ -359,15 +359,8 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     !clubLoading &&
     hasNoClubs;
 
-  // #region agent log
-  if (typeof fetch !== "undefined") fetch("http://127.0.0.1:7242/ingest/fa342421-bbc3-4297-9f03-9cfbd6477dbe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:"newsfeed.tsx:branch",message:"Newsfeed state",data:{clubLoading,clubsLen:clubs?.length??-1,hasNoClubs,selectedClubId:selectedClub?.id??null,isAuthenticated,branch:isAuthenticated&&!clubLoading&&hasNoClubs?"noClubs":!clubLoading&&!selectedClub?.id?"noSelection":"feed"},timestamp:Date.now(),hypothesisId:"A"})}).catch(()=>{});
-  // #endregion
-
   // Show empty state when user has no clubs — never leave the main panel blank
   if (isBrandNewUser) {
-    // #region agent log
-    if (typeof fetch !== "undefined") fetch("http://127.0.0.1:7242/ingest/fa342421-bbc3-4297-9f03-9cfbd6477dbe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:"newsfeed.tsx:return",message:"Rendering NewUserEmptyState",data:{},timestamp:Date.now(),hypothesisId:"A"})}).catch(()=>{});
-    // #endregion
     return (
       <div className="w-full min-h-[400px] flex items-center justify-center">
         <NewUserEmptyState />
@@ -377,9 +370,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
 
   // Show empty state when no club selected (e.g. clubs exist but none selected yet)
   if (!clubLoading && !selectedClub?.id) {
-    // #region agent log
-    if (typeof fetch !== "undefined") fetch("http://127.0.0.1:7242/ingest/fa342421-bbc3-4297-9f03-9cfbd6477dbe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:"newsfeed.tsx:return",message:"Rendering SelectClub empty state",data:{},timestamp:Date.now(),hypothesisId:"A"})}).catch(()=>{});
-    // #endregion
     return (
       <div className="w-full min-h-[400px] flex items-center justify-center">
         <div className="text-center py-12 px-6">
@@ -395,9 +385,6 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
     );
   }
 
-  // #region agent log
-  if (typeof fetch !== "undefined") fetch("http://127.0.0.1:7242/ingest/fa342421-bbc3-4297-9f03-9cfbd6477dbe",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({location:"newsfeed.tsx:return",message:"Rendering feed (PostForm + posts)",data:{isLoadingUI,postsCount:posts.length},timestamp:Date.now(),hypothesisId:"A"})}).catch(()=>{});
-  // #endregion
   return (
     <div className="w-full">
       <PostForm currentUser={currentUser} onSubmit={handleCreatePost} isAuthenticated={isAuthenticated} isLoading={isCreatingPost} />

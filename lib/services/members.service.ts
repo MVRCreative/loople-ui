@@ -43,6 +43,7 @@ export class MembersService {
    * Get all members for a club
    */
   static async getClubMembers(clubId?: string): Promise<Member[]> {
+    // Try edge function first, fall back to direct Supabase query
     try {
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
@@ -58,16 +59,12 @@ export class MembersService {
       });
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => '');
-        throw new Error(errorText || `Failed to fetch members: ${response.status}`);
+        throw new Error(`Edge function returned ${response.status}`);
       }
 
       const json = await response.json().catch(() => ([]));
-      // Case 1: API directly returns an array of members
       if (Array.isArray(json)) return json;
-      // Case 2: API returns { data: Member[] }
       if (json && Array.isArray(json.data)) return json.data;
-      // Case 3: API returns { success, data: { ..., members: [] } }
       if (json && json.data && Array.isArray(json.data.members)) {
         const clubIdFromPayload = json.data.id != null ? String(json.data.id) : (clubId ?? "");
         type ApiMember = Partial<Record<keyof Member |
@@ -99,8 +96,33 @@ export class MembersService {
         return mapped;
       }
       return [];
+    } catch {
+      // Edge function unavailable — fall back to direct Supabase query
+      console.warn('Members edge function unavailable, using direct query');
+      return this.getClubMembersDirect(clubId);
+    }
+  }
+
+  /**
+   * Direct Supabase query fallback for getClubMembers
+   */
+  private static async getClubMembersDirect(clubId?: string): Promise<Member[]> {
+    try {
+      let query = supabase.from('members').select('*');
+      if (clubId) {
+        query = query.eq('club_id', clubId);
+      }
+      query = query.order('created_at', { ascending: false });
+
+      const { data, error } = await query;
+      if (error) {
+        console.error('Direct members query failed:', error);
+        throw error;
+      }
+
+      return (data ?? []).map((row) => this.mapApiRowToMember(row));
     } catch (error) {
-      console.error('Error in getClubMembers:', error);
+      console.error('Error in getClubMembersDirect:', error);
       throw error;
     }
   }
