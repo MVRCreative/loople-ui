@@ -19,10 +19,11 @@ export function CommentForm({
   onSubmit, 
   onCancel, 
   parentCommentId,
-  placeholder = "Write a comment..."
+  placeholder = "Post your reply"
 }: CommentFormProps) {
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +32,7 @@ export function CommentForm({
       try {
         await onSubmit(content.trim(), parentCommentId);
         setContent("");
+        setIsFocused(false);
       } finally {
         setIsSubmitting(false);
       }
@@ -38,41 +40,41 @@ export function CommentForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <div className="flex gap-3">
-        <Avatar className="h-8 w-8">
+    <form onSubmit={handleSubmit}>
+      <div className="flex gap-3 items-start">
+        <Avatar className="h-8 w-8 shrink-0 mt-1">
           <AvatarImage src={currentUser.avatar_url || ''} alt={currentUser.name} />
-          <AvatarFallback className="bg-primary/10 text-sm">
+          <AvatarFallback className="bg-primary/10 text-xs">
             {currentUser.avatar}
           </AvatarFallback>
         </Avatar>
         
-        <div className="flex-1">
-          <textarea
+        <div className="flex-1 min-w-0">
+          <input
+            type="text"
             value={content}
             onChange={(e) => setContent(e.target.value)}
+            onFocus={() => setIsFocused(true)}
             placeholder={placeholder}
-            className="w-full min-h-[60px] p-3 border border-input rounded-lg bg-background text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-            rows={2}
+            className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none py-2 border-b border-border focus:border-primary transition-colors"
             disabled={isSubmitting}
-            suppressHydrationWarning
           />
           
-          <div className="flex items-center justify-between mt-2">
-            <div className="text-xs text-muted-foreground">
-              {parentCommentId ? "Replying to comment" : "Commenting on post"}
-            </div>
-            
-            <div className="flex gap-2">
+          {/* Action row — only show when focused or has content */}
+          {(isFocused || content.trim()) && (
+            <div className="flex items-center justify-end gap-2 pt-2 pb-1">
               {onCancel && (
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  onClick={onCancel}
+                  onClick={() => {
+                    onCancel();
+                    setIsFocused(false);
+                    setContent("");
+                  }}
                   disabled={isSubmitting}
-                  className="h-8 px-3"
-                  suppressHydrationWarning
+                  className="h-8 px-3 text-muted-foreground"
                 >
                   Cancel
                 </Button>
@@ -80,20 +82,17 @@ export function CommentForm({
               <Button
                 type="submit"
                 disabled={!content.trim() || isSubmitting}
-                className="h-8 px-4"
-                suppressHydrationWarning
+                size="sm"
+                className="h-8 px-4 rounded-full font-semibold"
               >
                 {isSubmitting ? (
-                  <div className="flex items-center gap-2">
-                    <Loader size="sm" />
-                    Posting...
-                  </div>
+                  <Loader size="sm" />
                 ) : (
-                  'Post'
+                  'Reply'
                 )}
               </Button>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </form>

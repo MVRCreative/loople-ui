@@ -8,8 +8,6 @@ import { Comment as CommentType, User, ApiComment } from "@/lib/types";
 import { postsService } from "@/lib/services/posts.service";
 import { transformApiCommentsToComments } from "@/lib/utils/posts.utils";
 import { toast } from "sonner";
-import { MessageCircle } from "lucide-react";
-import { Loader } from "@/components/ui/loader";
 
 interface CommentsSectionProps {
   postId: string;
@@ -20,7 +18,6 @@ interface CommentsSectionProps {
 export function CommentsSection({ postId, currentUser, initialComments = [] }: CommentsSectionProps) {
   const [comments, setComments] = useState<CommentType[]>(initialComments);
   const [loading, setLoading] = useState(false);
-  const [showCommentForm, setShowCommentForm] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
 
@@ -63,8 +60,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
 
       if (response.success && response.data) {
         const [inserted] = transformApiCommentsToComments([response.data as unknown as ApiComment]);
-        setComments(prev => [...prev, inserted]);
-        toast.success("Comment posted!");
+        setComments(prev => [inserted, ...prev]);
       } else {
         toast.error(response.error || 'Failed to post comment');
       }
@@ -111,7 +107,6 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
         const deletedId = (typedPayload.old as Record<string, unknown>).id as number;
         setComments(prev => prev.filter(c => c.id !== String(deletedId)));
       } else if (eventType === 'UPDATE') {
-        // Reload the current page to reflect updates
         loadComments(page, false);
       }
     });
@@ -130,84 +125,58 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
   }, [postId, initialComments.length]);
 
   return (
-    <div className="border-t border-border pt-4 mt-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-sm text-card-foreground flex items-center gap-2">
-          <MessageCircle className="h-4 w-4" />
-          Comments ({comments.length})
-        </h3>
-        
-        {!showCommentForm && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowCommentForm(true)}
-            className="h-8 px-3"
-          >
-            Add Comment
-          </Button>
-        )}
-      </div>
+    <div className="border-t border-border pt-3 mt-1">
+      {/* Reply input — always visible, like Twitter */}
+      <CommentForm
+        currentUser={currentUser}
+        onSubmit={handleCreateComment}
+        placeholder="Post your reply"
+      />
 
-      {showCommentForm && (
-        <div className="mb-4">
-          <CommentForm
-            currentUser={currentUser}
-            onSubmit={handleCreateComment}
-            onCancel={() => setShowCommentForm(false)}
-            placeholder="Write a comment..."
-          />
+      {/* Comments list */}
+      {comments.length > 0 && (
+        <div className="mt-3 space-y-0">
+          {comments.map((comment) => (
+            <Comment
+              key={comment.id}
+              comment={comment}
+              currentUser={currentUser}
+              onReply={handleCreateComment}
+              onDelete={handleDeleteComment}
+            />
+          ))}
         </div>
       )}
 
-      <div className="space-y-4">
-        {comments.map((comment) => (
-          <Comment
-            key={comment.id}
-            comment={comment}
-            currentUser={currentUser}
-            onReply={handleCreateComment}
-            onDelete={handleDeleteComment}
-          />
-        ))}
-      </div>
-
+      {/* Loading skeleton */}
       {loading && (
-        <div className="space-y-3 py-2">
+        <div className="space-y-3 py-3">
           {[1, 2].map((i) => (
             <div key={i} className="flex gap-3">
-              <div className="h-8 w-8 rounded-full bg-accent animate-pulse shrink-0" />
+              <div className="h-8 w-8 rounded-full bg-foreground/[0.06] dark:bg-foreground/[0.08] animate-pulse shrink-0" />
               <div className="flex-1 space-y-2">
                 <div className="flex gap-2">
-                  <div className="h-3 w-20 bg-accent animate-pulse rounded" />
-                  <div className="h-3 w-12 bg-accent animate-pulse rounded" />
+                  <div className="h-3 w-20 bg-foreground/[0.06] dark:bg-foreground/[0.08] animate-pulse rounded" />
+                  <div className="h-3 w-12 bg-foreground/[0.06] dark:bg-foreground/[0.08] animate-pulse rounded" />
                 </div>
-                <div className="h-3 w-full bg-accent animate-pulse rounded" />
-                <div className="h-3 w-3/4 bg-accent animate-pulse rounded" />
+                <div className="h-3 w-full bg-foreground/[0.06] dark:bg-foreground/[0.08] animate-pulse rounded" />
               </div>
             </div>
           ))}
         </div>
       )}
 
-      {hasMore && !loading && (
-        <div className="flex items-center justify-center pt-4">
+      {/* Show more */}
+      {hasMore && !loading && comments.length > 0 && (
+        <div className="py-3">
           <Button
-            variant="outline"
+            variant="ghost"
             size="sm"
             onClick={loadMoreComments}
-            className="h-8 px-4"
+            className="text-primary hover:text-primary/80 hover:bg-transparent p-0 h-auto text-sm font-medium"
           >
-            Load More Comments
+            Show more replies
           </Button>
-        </div>
-      )}
-
-      {comments.length === 0 && !loading && (
-        <div className="text-center py-8 text-muted-foreground">
-          <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p className="text-sm">No comments yet</p>
-          <p className="text-xs">Be the first to comment!</p>
         </div>
       )}
     </div>

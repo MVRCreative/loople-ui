@@ -159,7 +159,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   }
 
   return (
-    <div className={`bg-card border-b border-border px-4 py-3 transition-colors hover:bg-accent/40 ${post.isOptimistic ? 'opacity-70' : ''}`}>
+    <div className={`bg-card border-b border-border px-4 py-3 transition-colors hover:bg-foreground/[0.02] dark:hover:bg-foreground/[0.03] ${post.isOptimistic ? 'opacity-70' : ''}`}>
       {/* Post Header */}
       <div className="flex items-start gap-3">
         <Link href={`/profile/${username}`} className="shrink-0">
