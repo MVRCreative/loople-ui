@@ -8,6 +8,7 @@ import { NewUserEmptyState } from "@/components/home/new-user-empty-state";
 import { Post, User, ApiPost } from "@/lib/types";
 import { postsService, CreatePostRequest } from "@/lib/services/posts.service";
 import { transformApiPostsToPosts } from "@/lib/utils/posts.utils";
+import { mentionsService } from "@/lib/services/mentions.service";
 import { useClub } from "@/lib/club-context";
 import { toast } from "sonner";
 import { MessageCircle } from "lucide-react";
@@ -251,6 +252,15 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
         setTimeout(() => {
           isHandlingOptimisticPost.current = false;
         }, 1000);
+
+        // Process @mentions in the post text
+        if (selectedClub?.id) {
+          mentionsService.processMentions({
+            text: contentText,
+            clubId: parseInt(selectedClub.id),
+            postId: parseInt(response.data.id),
+          }).catch((err) => console.error('Failed to process mentions:', err));
+        }
         
         toast.success("Post created successfully!");
       } else {

@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader } from "@/components/ui/loader";
 import { Image as ImageIcon, List, Smile, X } from "lucide-react";
 import { User } from "@/lib/types";
 import { toast } from "sonner";
+import { MentionInput } from "@/components/mentions/mention-input";
+import { useClub } from "@/lib/club-context";
 
 interface PostFormProps {
   currentUser: User;
@@ -27,15 +29,8 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
   const [attachments, setAttachments] = useState<File[]>([]);
   const [uploadedItems, setUploadedItems] = useState<Array<{ url: string; name: string; size: number; type: string }>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Auto-resize textarea on content change (capped at ~200px)
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + 'px';
-    }
-  }, [content]);
+  const { selectedClub } = useClub();
+  const clubId = selectedClub?.id ? parseInt(selectedClub.id) : 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,12 +123,13 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
           </Avatar>
           
           <div className="flex-1">
-            <textarea
-              ref={textareaRef}
+            <MentionInput
               value={content}
-              onChange={(e) => setContent(e.target.value)}
+              onChange={setContent}
+              clubId={clubId}
               placeholder={isAuthenticated ? "What's happening?" : "Sign in to share your thoughts..."}
               className="w-full min-h-[60px] max-h-[200px] p-0 text-[15px] leading-relaxed resize-none focus:outline-none text-foreground placeholder:text-muted-foreground bg-transparent overflow-y-auto"
+              as="textarea"
               rows={1}
               disabled={!isAuthenticated}
             />

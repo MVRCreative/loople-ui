@@ -7,6 +7,7 @@ import { Comment as CommentType, User } from "@/lib/types";
 import { CommentForm } from "./comment-form";
 import { MoreHorizontal, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { MentionText } from "@/components/mentions/mention-text";
 
 interface CommentProps {
   comment: CommentType;
@@ -99,7 +100,7 @@ export function Comment({ comment, currentUser, onReply, onDelete, isReply = fal
           
           {/* Comment content */}
           <p className="text-sm text-foreground mt-0.5 leading-relaxed">
-            {comment.content}
+            <MentionText text={comment.content} />
           </p>
           
           {/* Reply action — subtle text link */}

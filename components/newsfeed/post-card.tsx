@@ -22,6 +22,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MentionText } from "@/components/mentions/mention-text";
 
 interface PostCardProps {
   post: Post;
@@ -233,7 +234,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
           
           {/* Post Content */}
           <p className="text-card-foreground text-[15px] leading-relaxed whitespace-pre-wrap">
-            {post.content.text}
+            <MentionText text={post.content.text} />
           </p>
         
           {/* Event Card */}

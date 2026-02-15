@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader } from "@/components/ui/loader";
 import { User } from "@/lib/types";
+import { MentionInput } from "@/components/mentions/mention-input";
+import { useClub } from "@/lib/club-context";
 
 interface CommentFormProps {
   currentUser: User;
@@ -24,6 +26,8 @@ export function CommentForm({
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
+  const { selectedClub } = useClub();
+  const clubId = selectedClub?.id ? parseInt(selectedClub.id) : 0;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,11 +54,11 @@ export function CommentForm({
         </Avatar>
         
         <div className="flex-1 min-w-0">
-          <input
-            type="text"
+          <MentionInput
             value={content}
-            onChange={(e) => setContent(e.target.value)}
-            onFocus={() => setIsFocused(true)}
+            onChange={(val) => { setContent(val); if (!isFocused) setIsFocused(true); }}
+            clubId={clubId}
+            as="input"
             placeholder={placeholder}
             className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none py-2 border-b border-border focus:border-primary transition-colors"
             disabled={isSubmitting}

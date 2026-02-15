@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/sidebar"
 import { ClubSwitcher } from "@/components/club-switcher"
 import { NavUser } from "@/components/nav-user"
+import { NotificationBell } from "@/components/notifications/notification-bell"
 
 const navigation = [
   {
@@ -85,8 +86,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
-        {/* Logo */}
-        <div className="flex h-16 items-center px-6">
+        {/* Logo + Notifications */}
+        <div className="flex h-16 items-center justify-between px-6">
           <Image 
             src="/app/loople-logo3.svg" 
             alt="Loople Logo" 
@@ -94,6 +95,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             height={32}
             className="h-8 w-auto"
           />
+          <NotificationBell />
         </div>
         
         {/* Club Switcher */}

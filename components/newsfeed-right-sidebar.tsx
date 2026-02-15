@@ -3,9 +3,9 @@
 import { useEffect, useMemo } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Search, Clock, ChevronRight } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { Clock, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { SearchCommand } from "@/components/search/search-command"
 import { useEvents, usePrograms } from "@/lib/events/hooks"
 import { useClub } from "@/lib/club-context"
 import { EventCardSkeleton, ProgramCardSkeleton } from "@/components/newsfeed/sidebar-skeleton"
@@ -76,13 +76,7 @@ export function NewsfeedRightSidebar() {
     <div className="w-full bg-background border-l border-border p-4 sticky top-0 h-screen flex flex-col">
       {/* Search */}
       <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search..."
-            className="pl-10 bg-muted border-0 rounded-full h-10 text-sm focus-visible:ring-1 focus-visible:ring-ring"
-          />
-        </div>
+        <SearchCommand />
       </div>
 
       {/* Split area: Upcoming Events + Your Programs each 50% height */}

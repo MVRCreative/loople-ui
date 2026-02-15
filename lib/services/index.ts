@@ -11,3 +11,7 @@ export * from './permissions.service';
 export * from './club-inquiry.service';
 export * from './notifications.service';
 export * from './waitlist.service';
+export * from './messages.service';
+export * from './in-app-notifications.service';
+export * from './mentions.service';
+export * from './search.service';
