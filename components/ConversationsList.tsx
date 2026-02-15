@@ -3,12 +3,11 @@
 import { useEffect, useState, useCallback, useRef } from "react"
 import Link from "next/link"
 import { Input } from "@/components/ui/input"
-import { Mail, Loader2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Mail, Loader2, Plus } from "lucide-react"
 import { messagesService, type Conversation } from "@/lib/services/messages.service"
-import { NewConversationDialog } from "@/components/messages/new-conversation-dialog"
 import { useClub } from "@/lib/club-context"
 import { useAuth } from "@/lib/auth-context"
-import { useRouter } from "next/navigation"
 import { getRelativeTime } from "@/lib/utils/posts.utils"
 
 interface ConversationsListProps {
@@ -16,7 +15,6 @@ interface ConversationsListProps {
 }
 
 export function ConversationsList({ selectedId }: ConversationsListProps) {
-  const router = useRouter()
   const { selectedClub } = useClub()
   const { user, isAuthenticated } = useAuth()
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -73,15 +71,6 @@ export function ConversationsList({ selectedId }: ConversationsListProps) {
     }
   }, [loadConversations])
 
-  const handleConversationCreated = (conversation: Conversation) => {
-    setConversations((prev) => {
-      const exists = prev.find((c) => c.id === conversation.id)
-      if (exists) return prev
-      return [conversation, ...prev]
-    })
-    router.push(`/messages/${conversation.id}`)
-  }
-
   /** Get the display name for a conversation (other participant's name or group title). */
   const getDisplayName = (conv: Conversation): string => {
     if (conv.title) return conv.title
@@ -136,7 +125,11 @@ export function ConversationsList({ selectedId }: ConversationsListProps) {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <NewConversationDialog onConversationCreated={handleConversationCreated} />
+          <Button size="icon" variant="ghost" aria-label="New message" className="shrink-0" asChild>
+            <Link href="/messages/new">
+              <Plus className="h-5 w-5" />
+            </Link>
+          </Button>
         </div>
       </div>
 
