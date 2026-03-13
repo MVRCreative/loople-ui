@@ -403,7 +403,7 @@ export function MessageThread({ id }: MessageThreadProps) {
   useEffect(() => {
     const trimmedDraft = draft.trim()
     const typingChannel = typingChannelRef.current
-    if (!typingChannel) return
+    if (!typingChannel || !user?.id) return
 
     if (!trimmedDraft) {
       if (typingIdleTimeoutRef.current) {
@@ -412,14 +412,14 @@ export function MessageThread({ id }: MessageThreadProps) {
 
       if (isTypingRef.current) {
         isTypingRef.current = false
-        void messagesService.sendTypingEvent(typingChannel, false)
+        void messagesService.sendTypingEvent(typingChannel, user.id, conversationId, false)
       }
       return
     }
 
     if (!isTypingRef.current) {
       isTypingRef.current = true
-      void messagesService.sendTypingEvent(typingChannel, true)
+      void messagesService.sendTypingEvent(typingChannel, user.id, conversationId, true)
     }
 
     if (typingIdleTimeoutRef.current) {
@@ -427,11 +427,11 @@ export function MessageThread({ id }: MessageThreadProps) {
     }
 
     typingIdleTimeoutRef.current = window.setTimeout(() => {
-      if (!typingChannelRef.current || !isTypingRef.current) return
+      if (!typingChannelRef.current || !isTypingRef.current || !user?.id) return
       isTypingRef.current = false
-      void messagesService.sendTypingEvent(typingChannelRef.current, false)
+      void messagesService.sendTypingEvent(typingChannelRef.current, user.id, conversationId, false)
     }, 2500)
-  }, [draft])
+  }, [draft, user?.id, conversationId])
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -445,9 +445,9 @@ export function MessageThread({ id }: MessageThreadProps) {
       window.clearTimeout(typingIdleTimeoutRef.current)
     }
 
-    if (typingChannelRef.current && isTypingRef.current) {
+    if (typingChannelRef.current && isTypingRef.current && user?.id) {
       isTypingRef.current = false
-      void messagesService.sendTypingEvent(typingChannelRef.current, false)
+      void messagesService.sendTypingEvent(typingChannelRef.current, user.id, conversationId, false)
     }
 
     const clientId =

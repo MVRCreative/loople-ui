@@ -451,22 +451,31 @@ class MessagesService {
     return waitForSubscription(channel)
   }
 
-  async sendTypingEvent(channel: RealtimeChannel, isTyping: boolean): Promise<void> {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+  async sendTypingEvent(
+    channel: RealtimeChannel,
+    userId: string,
+    conversationId: number,
+    isTyping: boolean
+  ): Promise<void> {
+    const event = isTyping ? 'typing_started' : 'typing_stopped'
+    const payload = {
+      conversation_id: conversationId,
+      user_id: userId,
+      is_typing: isTyping,
+      sent_at: new Date().toISOString(),
+    }
 
-    if (!user) return
+    console.info('[typing] sending:', event, 'conversation:', conversationId)
 
-    await channel.send({
+    const result = await channel.send({
       type: 'broadcast',
-      event: isTyping ? 'typing_started' : 'typing_stopped',
-      payload: {
-        user_id: user.id,
-        is_typing: isTyping,
-        sent_at: new Date().toISOString(),
-      },
+      event,
+      payload,
     })
+
+    if (result !== 'ok') {
+      console.warn('[typing] send result:', result, event, conversationId)
+    }
   }
 
   removeChannel(channel: RealtimeChannel | null) {
