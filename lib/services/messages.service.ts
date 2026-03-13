@@ -208,32 +208,16 @@ class MessagesService {
   }
 
   async fetchMessageById(messageId: number): Promise<Message | null> {
-    const { data, error } = await supabase
-      .from('messages')
-      .select(`
-        id,
-        conversation_id,
-        sender_id,
-        body,
-        created_at,
-        updated_at,
-        client_id,
-        sender:users!messages_sender_id_fkey (
-          id,
-          first_name,
-          last_name,
-          username,
-          avatar_url
-        )
-      `)
-      .eq('id', messageId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('get_message_by_id', {
+      p_message_id: messageId,
+    })
 
     if (error || !data) {
       return null
     }
 
-    return toMessage(data)
+    const row = Array.isArray(data) ? data[0] : data
+    return row ? toMessage(row) : null
   }
 
   async sendMessage(conversationId: number, clientId: string, body: string): Promise<Message | null> {

@@ -567,6 +567,49 @@ begin
 end;
 $$;
 
+create or replace function public.get_message_by_id(
+  p_message_id bigint
+)
+returns table (
+  id bigint,
+  conversation_id bigint,
+  sender_id text,
+  body text,
+  created_at timestamptz,
+  updated_at timestamptz,
+  client_id uuid,
+  sender jsonb
+)
+language sql
+security definer
+set search_path = ''
+stable
+as $$
+  select
+    public.messages.id,
+    public.messages.conversation_id,
+    public.messages.sender_id,
+    public.messages.body,
+    public.messages.created_at,
+    public.messages.updated_at,
+    public.messages.client_id,
+    jsonb_build_object(
+      'id', public.users.id,
+      'first_name', public.users.first_name,
+      'last_name', public.users.last_name,
+      'username', public.users.username,
+      'avatar_url', public.users.avatar_url
+    ) as sender
+  from public.messages
+  left join public.users
+    on public.users.id = public.messages.sender_id
+  where public.messages.id = p_message_id
+    and public.is_conversation_participant(
+      public.messages.conversation_id,
+      (select auth.uid())::text
+    );
+$$;
+
 -- ============================================================================
 -- step 3: realtime helper functions and triggers
 -- ============================================================================
