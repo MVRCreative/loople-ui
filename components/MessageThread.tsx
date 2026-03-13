@@ -533,23 +533,29 @@ export function MessageThread({ id }: MessageThreadProps) {
       </div>
 
       {/* Composer */}
-      <div className="bg-background p-3 border-t border-border shrink-0">
+      <div className="bg-background px-4 py-4 border-t border-border shrink-0">
         {typingUserId && otherParticipant?.id === typingUserId && (
           <p className="mb-2 text-xs text-muted-foreground">
             {displayName} is typing...
           </p>
         )}
-        <form onSubmit={handleSend} className="flex items-center gap-2">
+        <form onSubmit={handleSend} className="flex items-end gap-3">
           <MentionInput
             value={draft}
             onChange={setDraft}
             clubId={selectedClub?.id ? parseInt(selectedClub.id) : 0}
-            placeholder="Write a message"
-            as="input"
-            className="flex-1 h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            placeholder="Message"
+            as="textarea"
+            rows={2}
+            className="min-h-12 max-h-32 w-full resize-none rounded-2xl border border-input bg-muted/30 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
           />
-          <Button type="submit" disabled={!draft.trim() || sending}>
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
+          <Button
+            type="submit"
+            disabled={!draft.trim() || sending}
+            size="default"
+            className="h-12 px-5 shrink-0 rounded-2xl"
+          >
+            {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Send"}
           </Button>
         </form>
       </div>
