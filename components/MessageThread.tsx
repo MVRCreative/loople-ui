@@ -113,7 +113,27 @@ export function MessageThread({ id }: MessageThreadProps) {
 
     try {
       const page = await messagesService.getMessages(conversationId, null, 30)
-      setMessages(page.messages)
+      setMessages((previous) => {
+        if (previous.length === 0) return page.messages
+
+        const fetchedIds = new Set(page.messages.map((m) => m.id))
+        const fetchedClientIds = new Set(
+          page.messages
+            .filter((m) => m.client_id != null)
+            .map((m) => m.client_id!)
+        )
+        const maxFetchedId = page.messages.at(-1)?.id ?? 0
+
+        const extra = previous.filter((msg) => {
+          if (fetchedIds.has(msg.id)) return false
+          if (msg.client_id != null && fetchedClientIds.has(msg.client_id))
+            return false
+          return msg.id < 0 || msg.id > maxFetchedId
+        })
+
+        if (extra.length === 0) return page.messages
+        return [...page.messages, ...extra]
+      })
       setHasMore(page.next_cursor !== null)
       lastMarkedReadIdRef.current = null
 
@@ -127,6 +147,58 @@ export function MessageThread({ id }: MessageThreadProps) {
       setLoading(false)
     }
   }, [conversationId, scrollToBottom])
+
+  const gapFillMessages = useCallback(async () => {
+    if (isNaN(conversationId)) return
+
+    try {
+      const page = await messagesService.getMessages(conversationId, null, 30)
+
+      setMessages((previous) => {
+        const result = [...previous]
+        let changed = false
+
+        for (const incoming of page.messages) {
+          const existingIndex = result.findIndex(
+            (m) =>
+              m.id === incoming.id ||
+              (incoming.client_id != null &&
+                m.client_id != null &&
+                m.client_id === incoming.client_id)
+          )
+
+          if (existingIndex >= 0) {
+            const existing = result[existingIndex]
+            if (existing && (existing.id < 0 || existing.delivery_state === "pending")) {
+              result[existingIndex] = { ...incoming, delivery_state: "sent" }
+              changed = true
+            }
+          } else {
+            result.push({ ...incoming, delivery_state: "sent" })
+            changed = true
+          }
+        }
+
+        if (!changed) return previous
+
+        result.sort((a, b) => {
+          if (a.id < 0 && b.id >= 0) return 1
+          if (a.id >= 0 && b.id < 0) return -1
+          return a.id - b.id
+        })
+
+        return result
+      })
+
+      if (isAtBottomRef.current) {
+        window.requestAnimationFrame(() => scrollToBottom("smooth"))
+      }
+
+      void refreshConversations()
+    } catch (_error) {
+      // Best-effort recovery; transient failures expected during focus/visibility changes
+    }
+  }, [conversationId, refreshConversations, scrollToBottom])
 
   useEffect(() => {
     void loadMessages()
@@ -224,14 +296,25 @@ export function MessageThread({ id }: MessageThreadProps) {
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState !== "visible") {
+      if (document.visibilityState === "visible") {
+        void gapFillMessages()
+      } else {
         setTypingUserId(null)
       }
     }
 
+    const handleWindowFocus = () => {
+      void gapFillMessages()
+    }
+
     document.addEventListener("visibilitychange", handleVisibilityChange)
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
-  }, [])
+    window.addEventListener("focus", handleWindowFocus)
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
+      window.removeEventListener("focus", handleWindowFocus)
+    }
+  }, [gapFillMessages])
 
   // Get display info
   const otherParticipant = useMemo(() => {

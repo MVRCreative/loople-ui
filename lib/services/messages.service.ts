@@ -18,6 +18,9 @@ interface BroadcastPayload {
   payload?: JsonRecord
   new?: JsonRecord
   old?: JsonRecord
+  new_record?: JsonRecord
+  old_record?: JsonRecord
+  record?: JsonRecord
 }
 
 function asRecord(value: unknown): JsonRecord | null {
@@ -110,16 +113,24 @@ function extractRealtimePayload(payload: unknown): JsonRecord | null {
 
 function extractRowId(payload: unknown): number | null {
   const payloadRecord = extractRealtimePayload(payload)
-  if (!payloadRecord) return null
+  if (!payloadRecord) {
+    console.warn('[messages] extractRowId: could not unwrap payload', payload)
+    return null
+  }
 
-  const newRecord = asRecord(payloadRecord.new)
+  const newRecord =
+    asRecord(payloadRecord.new_record) ??
+    asRecord(payloadRecord.new) ??
+    asRecord(payloadRecord.record)
   if (newRecord?.id != null) return toNumber(newRecord.id)
 
-  const oldRecord = asRecord(payloadRecord.old)
+  const oldRecord =
+    asRecord(payloadRecord.old_record) ?? asRecord(payloadRecord.old)
   if (oldRecord?.id != null) return toNumber(oldRecord.id)
 
   if (payloadRecord.id != null) return toNumber(payloadRecord.id)
 
+  console.warn('[messages] extractRowId: no message id found in payload', payloadRecord)
   return null
 }
 
@@ -137,10 +148,12 @@ async function waitForSubscription(channel: RealtimeChannel): Promise<RealtimeCh
   return new Promise((resolve, reject) => {
     channel.subscribe((status, err) => {
       if (status === 'SUBSCRIBED') {
+        console.info('[messages] channel subscribed:', channel.topic)
         resolve(channel)
       }
 
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.error('[messages] channel subscription failed:', channel.topic, status, err)
         reject(err ?? new Error(`Realtime subscription failed with status ${status}.`))
       }
     })
@@ -316,26 +329,38 @@ class MessagesService {
     channel
       .on('broadcast', { event: 'message_created' }, async (payload) => {
         const messageId = extractRowId(payload as BroadcastPayload)
-        if (!messageId) return
+        if (!messageId) {
+          console.warn('[messages] message_created: failed to extract message id', payload)
+          return
+        }
 
         const message = await this.fetchMessageById(messageId)
         if (message) {
           callbacks.onCreated?.(message)
+        } else {
+          console.warn('[messages] message_created: fetchMessageById returned null for id', messageId)
         }
       })
       .on('broadcast', { event: 'message_updated' }, async (payload) => {
         const messageId = extractRowId(payload as BroadcastPayload)
-        if (!messageId) return
+        if (!messageId) {
+          console.warn('[messages] message_updated: failed to extract message id', payload)
+          return
+        }
 
         const message = await this.fetchMessageById(messageId)
         if (message) {
           callbacks.onUpdated?.(message)
+        } else {
+          console.warn('[messages] message_updated: fetchMessageById returned null for id', messageId)
         }
       })
       .on('broadcast', { event: 'message_deleted' }, (payload) => {
         const messageId = extractRowId(payload as BroadcastPayload)
         if (messageId) {
           callbacks.onDeleted?.(messageId)
+        } else {
+          console.warn('[messages] message_deleted: failed to extract message id', payload)
         }
       })
 
@@ -356,12 +381,31 @@ class MessagesService {
 
     channel.on('broadcast', { event: 'conversation_updated' }, (payload) => {
       const eventPayload = extractRealtimePayload(payload as BroadcastPayload)
-      if (!eventPayload) return
+      if (!eventPayload) {
+        console.warn('[conversations] conversation_updated: could not extract payload', payload)
+        return
+      }
 
-      callback({
-        conversation_id: toNumber(eventPayload.conversation_id),
-        club_id: toNumber(eventPayload.club_id),
-      })
+      const record =
+        asRecord(eventPayload.new_record) ??
+        asRecord(eventPayload.new) ??
+        asRecord(eventPayload.record)
+
+      const conversationId = record?.id != null
+        ? toNumber(record.id)
+        : toNumber(eventPayload.conversation_id)
+
+      const clubId = record?.club_id != null
+        ? toNumber(record.club_id)
+        : toNumber(eventPayload.club_id)
+
+      if (!conversationId) {
+        console.warn('[conversations] conversation_updated: no conversation id in payload', eventPayload)
+        return
+      }
+
+      console.info('[conversations] conversation_updated:', conversationId)
+      callback({ conversation_id: conversationId, club_id: clubId })
     })
 
     return waitForSubscription(channel)

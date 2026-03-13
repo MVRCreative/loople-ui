@@ -6,13 +6,16 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react"
+import type { RealtimeChannel } from "@supabase/supabase-js"
 import { useAuth } from "./auth-context"
 import { useClub } from "./club-context"
 import { messagesService } from "./services/messages.service"
 import type { Conversation } from "./types/messages"
+import { supabase } from "./supabase"
 
 interface MessagesContextValue {
   conversations: Conversation[]
@@ -38,6 +41,8 @@ export function MessagesProvider({ children }: MessagesProviderProps) {
   const { selectedClub } = useClub()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [loading, setLoading] = useState(false)
+  const refreshingRef = useRef(false)
+  const staleRef = useRef(false)
 
   const refreshConversations = useCallback(async () => {
     if (!isAuthenticated || !selectedClub?.id) {
@@ -46,6 +51,12 @@ export function MessagesProvider({ children }: MessagesProviderProps) {
       return
     }
 
+    if (refreshingRef.current) {
+      staleRef.current = true
+      return
+    }
+
+    refreshingRef.current = true
     setLoading(true)
 
     try {
@@ -57,6 +68,11 @@ export function MessagesProvider({ children }: MessagesProviderProps) {
       setConversations([])
     } finally {
       setLoading(false)
+      refreshingRef.current = false
+      if (staleRef.current) {
+        staleRef.current = false
+        void refreshConversations()
+      }
     }
   }, [isAuthenticated, selectedClub?.id])
 
@@ -69,7 +85,7 @@ export function MessagesProvider({ children }: MessagesProviderProps) {
 
     const interval = setInterval(() => {
       void refreshConversations()
-    }, 15_000)
+    }, 60_000)
 
     const handleFocus = () => void refreshConversations()
     window.addEventListener("focus", handleFocus)
@@ -79,6 +95,53 @@ export function MessagesProvider({ children }: MessagesProviderProps) {
       window.removeEventListener("focus", handleFocus)
     }
   }, [isAuthenticated, refreshConversations, selectedClub?.id])
+
+  useEffect(() => {
+    if (!user?.id || !isAuthenticated) return
+
+    let channel: RealtimeChannel | null = null
+    let cancelled = false
+
+    const setup = async () => {
+      try {
+        channel = await messagesService.subscribeToConversationList(
+          user.id,
+          () => {
+            if (cancelled) return
+            void refreshConversations()
+          }
+        )
+      } catch (error) {
+        console.error("[conversations] failed to subscribe to conversation updates:", error)
+      }
+    }
+
+    void setup()
+
+    return () => {
+      cancelled = true
+      void messagesService.removeChannel(channel)
+      channel = null
+    }
+  }, [user?.id, isAuthenticated, refreshConversations])
+
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === "TOKEN_REFRESHED" && session?.access_token) {
+        try {
+          await supabase.realtime.setAuth(session.access_token)
+        } catch (error) {
+          console.error("[messages] failed to refresh realtime auth:", error)
+        }
+      }
+    })
+
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [])
 
   const unreadConversationCount = useMemo(
     () => conversations.filter((conversation) => conversation.unread_count > 0).length,
