@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useRef, useCallback } from "react"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Loader2 } from "lucide-react"
+import { Loader2, Send } from "lucide-react"
 import { toast } from "sonner"
 import { messagesService, type Message } from "@/lib/services/messages.service"
 import { mentionsService } from "@/lib/services/mentions.service"
@@ -532,14 +532,14 @@ export function MessageThread({ id }: MessageThreadProps) {
         )}
       </div>
 
-      {/* Composer */}
-      <div className="bg-background px-4 py-4 border-t border-border shrink-0">
+      {/* Composer — full-width bar, input dominant (X-style) */}
+      <div className="bg-background border-t border-border shrink-0 w-full">
         {typingUserId && otherParticipant?.id === typingUserId && (
-          <p className="mb-2 text-xs text-muted-foreground">
+          <p className="px-4 pt-2 text-xs text-muted-foreground">
             {displayName} is typing...
           </p>
         )}
-        <form onSubmit={handleSend} className="flex items-end gap-3">
+        <form onSubmit={handleSend} className="flex w-full items-end gap-2 p-4">
           <MentionInput
             value={draft}
             onChange={setDraft}
@@ -547,15 +547,16 @@ export function MessageThread({ id }: MessageThreadProps) {
             placeholder="Message"
             as="textarea"
             rows={2}
-            className="min-h-12 max-h-32 w-full resize-none rounded-2xl border border-input bg-muted/30 px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            className="min-h-[52px] max-h-32 flex-1 min-w-0 resize-none rounded-2xl border border-input bg-muted/40 py-3.5 px-4 text-[15px] leading-snug placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
           />
           <Button
             type="submit"
             disabled={!draft.trim() || sending}
-            size="default"
-            className="h-12 px-5 shrink-0 rounded-2xl"
+            size="icon"
+            className="h-[52px] w-12 shrink-0 rounded-2xl"
+            aria-label="Send message"
           >
-            {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Send"}
+            {sending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
           </Button>
         </form>
       </div>
