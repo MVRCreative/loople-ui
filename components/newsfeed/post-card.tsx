@@ -51,8 +51,7 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   const commentsCount =
     Array.isArray(post.comments) ? post.comments.length : Number(post.comments ?? 0);
   
-  // Get username - all users should have usernames after migration
-  const username = post.user.username || 'user';
+  const username = post.user.username?.trim() || null;
 
   const handleCommentClick = () => {
     setShowComments(!showComments);
@@ -163,25 +162,42 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
     <div className={`bg-card border-b border-border px-4 py-3 transition-colors hover:bg-foreground/[0.02] dark:hover:bg-foreground/[0.03] ${post.isOptimistic ? 'opacity-70' : ''}`}>
       {/* Post Header */}
       <div className="flex items-start gap-3">
-        <Link href={`/profile/${username}`} className="shrink-0">
+        {username ? (
+          <Link href={`/profile/${username}`} className="shrink-0">
+            <Avatar className="h-10 w-10 transition-opacity hover:opacity-80">
+              <AvatarImage src={post.user.avatar_url || ''} alt={post.user.name} />
+              <AvatarFallback className="bg-primary/10 text-lg">
+                {post.user.avatar}
+              </AvatarFallback>
+            </Avatar>
+          </Link>
+        ) : (
           <Avatar className="h-10 w-10 transition-opacity hover:opacity-80">
             <AvatarImage src={post.user.avatar_url || ''} alt={post.user.name} />
             <AvatarFallback className="bg-primary/10 text-lg">
               {post.user.avatar}
             </AvatarFallback>
           </Avatar>
-        </Link>
+        )}
         
         <div className="flex-1 min-w-0">
           {/* Header Row with Name, Username, Role, Date */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 flex-wrap min-w-0">
-              <Link href={`/profile/${username}`} className="font-semibold text-[15px] text-card-foreground hover:underline truncate">
-                {post.user.name}
-              </Link>
-              <span className="text-sm text-muted-foreground truncate">
-                @{username}
-              </span>
+              {username ? (
+                <Link href={`/profile/${username}`} className="font-semibold text-[15px] text-card-foreground hover:underline truncate">
+                  {post.user.name}
+                </Link>
+              ) : (
+                <span className="font-semibold text-[15px] text-card-foreground truncate">
+                  {post.user.name}
+                </span>
+              )}
+              {username && (
+                <span className="text-sm text-muted-foreground truncate">
+                  @{username}
+                </span>
+              )}
               <span className="text-muted-foreground">·</span>
               <span className="text-sm text-muted-foreground whitespace-nowrap">
                 {post.timestamp}

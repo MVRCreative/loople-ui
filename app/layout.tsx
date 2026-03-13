@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { ConditionalSidebar } from "@/components/conditional-sidebar"
 import { AuthProvider } from "@/lib/auth-context"
 import { ClubProvider } from "@/lib/club-context"
+import { MessagesProvider } from "@/lib/messages-context"
 import { Suspense } from "react"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
@@ -43,9 +44,11 @@ export default function RootLayout({
           <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
             <AuthProvider>
               <ClubProvider>
-                <ConditionalSidebar>
-                  {children}
-                </ConditionalSidebar>
+                <MessagesProvider>
+                  <ConditionalSidebar>
+                    {children}
+                  </ConditionalSidebar>
+                </MessagesProvider>
               </ClubProvider>
             </AuthProvider>
           </ThemeProvider>

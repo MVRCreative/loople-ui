@@ -25,12 +25,13 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
+import { useMessages } from "@/lib/messages-context"
 
 type NavigationItem = {
   name: string
   href: string
   icon: React.ComponentType<{ className?: string }>
-  badge?: string
+  badgeCount?: number
   needsUsername?: boolean
 }
 
@@ -38,14 +39,15 @@ const baseNavigation: NavigationItem[] = [
   { name: "Home", href: "/", icon: Home },
   { name: "Programs", href: "/programs", icon: Users },
   { name: "Events", href: "/events", icon: Bell },
-  { name: "Messages", href: "/messages", icon: MessageSquare, badge: "3" },
-  { name: "Notifications", href: "#", icon: Bell, badge: "5" },
+  { name: "Messages", href: "/messages", icon: MessageSquare },
+  { name: "Notifications", href: "#", icon: Bell },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
 
 export function NewsfeedSidebar() {
   const { user, isAuthenticated, signOut } = useAuth()
   const { clubs, selectedClub, selectClub } = useClub()
+  const { unreadMessageCount } = useMessages()
   const pathname = usePathname()
   const router = useRouter()
   const [userProfile, setUserProfile] = useState<{ username?: string | null; avatar_url?: string | null } | null>(null)
@@ -74,7 +76,11 @@ export function NewsfeedSidebar() {
 
   // Create navigation with dynamic profile link
   const navigation = React.useMemo(() => {
-    const nav = [...baseNavigation]
+    const nav = baseNavigation.map((item) =>
+      item.name === "Messages"
+        ? { ...item, badgeCount: unreadMessageCount }
+        : item
+    )
     
     if (isAuthenticated && userProfile) {
       if (userProfile.username) {
@@ -96,7 +102,7 @@ export function NewsfeedSidebar() {
     }
     
     return nav
-  }, [isAuthenticated, userProfile])
+  }, [isAuthenticated, unreadMessageCount, userProfile])
 
   const handleProfileClick = (e: React.MouseEvent) => {
     if (!userProfile?.username) {
@@ -156,8 +162,10 @@ export function NewsfeedSidebar() {
               <>
                 <div className="relative">
                   <item.icon className={`h-5 w-5 sm:h-5 sm:w-5 md:h-6 md:w-6 transition-colors group-hover:text-foreground ${isActive ? 'text-foreground' : 'text-muted-foreground'}`} />
-                  {item.badge && (
-                    <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-destructive border-2 border-background" />
+                  {item.badgeCount && item.badgeCount > 0 && (
+                    <div className="absolute -top-2 -right-2 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
+                      {item.badgeCount > 99 ? "99+" : item.badgeCount}
+                    </div>
                   )}
                 </div>
                 <span className={`text-lg font-normal transition-colors group-hover:text-foreground ${isActive ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>{item.name}</span>

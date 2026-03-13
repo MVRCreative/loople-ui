@@ -55,8 +55,9 @@ export function createUserFromApi(apiUser: Record<string, unknown>): User {
     ? `${firstName} ${lastName}`.trim()
     : (fullNameFromMeta || email || 'Unknown User')
 
-  const avatarInitialSource = firstName || fullNameFromMeta || email || 'U'
-  const avatarInitial = avatarInitialSource.charAt(0).toUpperCase()
+  const avatarInitial = firstName && lastName
+    ? `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase()
+    : (firstName || fullNameFromMeta || email || 'U').charAt(0).toUpperCase()
   
   const avatarUrl = (apiUser.avatar_url as string | undefined) || undefined
   

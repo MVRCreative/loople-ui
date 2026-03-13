@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useState } from "react"
 import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Mail, Loader2, Plus } from "lucide-react"
-import { messagesService, type Conversation } from "@/lib/services/messages.service"
-import { useClub } from "@/lib/club-context"
+import type { Conversation } from "@/lib/types/messages"
 import { useAuth } from "@/lib/auth-context"
+import { useMessages } from "@/lib/messages-context"
 import { getRelativeTime } from "@/lib/utils/posts.utils"
 
 interface ConversationsListProps {
@@ -15,61 +15,9 @@ interface ConversationsListProps {
 }
 
 export function ConversationsList({ selectedId }: ConversationsListProps) {
-  const { selectedClub } = useClub()
-  const { user, isAuthenticated } = useAuth()
-  const [conversations, setConversations] = useState<Conversation[]>([])
-  const [loading, setLoading] = useState(true)
+  const { user } = useAuth()
+  const { conversations, loading } = useMessages()
   const [search, setSearch] = useState("")
-  const channelRef = useRef<ReturnType<typeof messagesService.subscribeToConversations> | null>(null)
-
-  const loadConversations = useCallback(async () => {
-    if (!isAuthenticated || !selectedClub?.id) {
-      setConversations([])
-      setLoading(false)
-      return
-    }
-
-    setLoading(true)
-    try {
-      const data = await messagesService.getConversations(parseInt(selectedClub.id))
-      setConversations(data)
-    } catch (err) {
-      console.error("Failed to load conversations:", err)
-    } finally {
-      setLoading(false)
-    }
-  }, [isAuthenticated, selectedClub?.id])
-
-  useEffect(() => {
-    loadConversations()
-  }, [loadConversations])
-
-  // Mark selected conversation as read
-  useEffect(() => {
-    if (selectedId) {
-      const convId = parseInt(selectedId)
-      if (!isNaN(convId)) {
-        messagesService.markConversationRead(convId)
-        // Update local unread count
-        setConversations((prev) =>
-          prev.map((c) => (c.id === convId ? { ...c, unread_count: 0 } : c))
-        )
-      }
-    }
-  }, [selectedId])
-
-  // Real-time: reload conversations on any change
-  useEffect(() => {
-    channelRef.current = messagesService.subscribeToConversations(() => {
-      loadConversations()
-    })
-
-    return () => {
-      if (channelRef.current) {
-        messagesService.removeChannel(channelRef.current)
-      }
-    }
-  }, [loadConversations])
 
   /** Get the display name for a conversation (other participant's name or group title). */
   const getDisplayName = (conv: Conversation): string => {
@@ -109,11 +57,11 @@ export function ConversationsList({ selectedId }: ConversationsListProps) {
     return other?.user?.avatar_url ?? undefined
   }
 
-  const filtered = search.trim()
-    ? conversations.filter((c) =>
-        getDisplayName(c).toLowerCase().includes(search.toLowerCase())
+  const filtered = !search.trim()
+    ? conversations
+    : conversations.filter((conversation) =>
+        getDisplayName(conversation).toLowerCase().includes(search.toLowerCase())
       )
-    : conversations
 
   return (
     <div className="w-[350px] border-l border-r border-border bg-background text-foreground h-screen sticky top-0 flex flex-col">

@@ -13,8 +13,10 @@ import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ArrowLeft, Loader2, Search, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { toast } from "sonner"
 import { messagesService } from "@/lib/services/messages.service"
 import { useClub } from "@/lib/club-context"
+import { useMessages } from "@/lib/messages-context"
 
 interface SearchResult {
   user_id: string
@@ -27,6 +29,7 @@ interface SearchResult {
 export function NewMessageCompose() {
   const router = useRouter()
   const { selectedClub } = useClub()
+  const { refreshConversations } = useMessages()
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<SearchResult[]>([])
   const [searching, setSearching] = useState(false)
@@ -78,9 +81,13 @@ export function NewMessageCompose() {
         user.user_id
       )
       if (conversation) {
+        await refreshConversations()
         router.replace(`/messages/${conversation.id}`)
       }
-    } catch {
+    } catch (error: unknown) {
+      const err = error as Record<string, unknown> | undefined
+      console.error("Failed to open conversation:", err?.message ?? err?.code ?? JSON.stringify(error))
+      toast.error(typeof err?.message === "string" ? err.message : "Failed to open conversation")
       // If creation fails, reset
       setSelectedUser(null)
       setCreating(false)

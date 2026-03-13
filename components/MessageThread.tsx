@@ -1,15 +1,18 @@
 "use client"
 
 import { useEffect, useMemo, useState, useRef, useCallback } from "react"
+import type { RealtimeChannel } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Loader2 } from "lucide-react"
-import { messagesService, type Message, type Conversation } from "@/lib/services/messages.service"
+import { toast } from "sonner"
+import { messagesService, type Message } from "@/lib/services/messages.service"
 import { mentionsService } from "@/lib/services/mentions.service"
 import { MentionInput } from "@/components/mentions/mention-input"
 import { MentionText } from "@/components/mentions/mention-text"
 import { useAuth } from "@/lib/auth-context"
 import { useClub } from "@/lib/club-context"
+import { useMessages } from "@/lib/messages-context"
 import { getRelativeTime } from "@/lib/utils/posts.utils"
 
 interface MessageThreadProps {
@@ -20,73 +23,215 @@ export function MessageThread({ id }: MessageThreadProps) {
   const conversationId = parseInt(id)
   const { user } = useAuth()
   const { selectedClub } = useClub()
+  const {
+    conversations,
+    refreshConversations,
+    setConversationUnreadCount,
+    updateConversationReadPointer,
+  } = useMessages()
   const [messages, setMessages] = useState<Message[]>([])
-  const [conversation, setConversation] = useState<Conversation | null>(null)
   const [loading, setLoading] = useState(true)
+  const [loadingOlder, setLoadingOlder] = useState(false)
+  const [hasMore, setHasMore] = useState(false)
   const [draft, setDraft] = useState("")
   const [sending, setSending] = useState(false)
+  const [showNewMessages, setShowNewMessages] = useState(false)
+  const [isAtBottom, setIsAtBottom] = useState(true)
+  const [typingUserId, setTypingUserId] = useState<string | null>(null)
+  const [animatedMessageIds, setAnimatedMessageIds] = useState<number[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
-  const channelRef = useRef<ReturnType<typeof messagesService.subscribeToMessages> | null>(null)
+  const messageChannelRef = useRef<RealtimeChannel | null>(null)
+  const typingChannelRef = useRef<RealtimeChannel | null>(null)
+  const typingIdleTimeoutRef = useRef<number | null>(null)
+  const typingExpiryTimeoutRef = useRef<number | null>(null)
+  const isTypingRef = useRef(false)
+  const isAtBottomRef = useRef(true)
+  const lastMarkedReadIdRef = useRef<number | null>(null)
 
-  // Load conversation metadata
-  useEffect(() => {
-    if (isNaN(conversationId) || !selectedClub?.id) return
+  const conversation = useMemo(
+    () => conversations.find((item) => item.id === conversationId) ?? null,
+    [conversationId, conversations]
+  )
 
-    const load = async () => {
-      const conversations = await messagesService.getConversations(parseInt(selectedClub.id))
-      const found = conversations.find((c) => c.id === conversationId) ?? null
-      setConversation(found)
-    }
-    load()
-  }, [conversationId, selectedClub?.id])
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    if (!scrollRef.current) return
 
-  // Load messages
+    scrollRef.current.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior,
+    })
+    setShowNewMessages(false)
+    setIsAtBottom(true)
+    isAtBottomRef.current = true
+  }, [])
+
+  const appendAnimatedMessage = useCallback((messageId: number) => {
+    setAnimatedMessageIds((previous) =>
+      previous.includes(messageId) ? previous : [...previous, messageId]
+    )
+
+    window.setTimeout(() => {
+      setAnimatedMessageIds((previous) => previous.filter((idValue) => idValue !== messageId))
+    }, 1200)
+  }, [])
+
+  const mergeIncomingMessage = useCallback(
+    (incomingMessage: Message, options?: { animate?: boolean }) => {
+      setMessages((previous) => {
+        const existingIndex = previous.findIndex(
+          (message) =>
+            message.id === incomingMessage.id ||
+            (incomingMessage.client_id != null &&
+              message.client_id != null &&
+              message.client_id === incomingMessage.client_id)
+        )
+
+        if (existingIndex >= 0) {
+          const nextMessages = [...previous]
+          nextMessages[existingIndex] = {
+            ...incomingMessage,
+            delivery_state: "sent",
+          }
+          return nextMessages
+        }
+
+        return [...previous, { ...incomingMessage, delivery_state: "sent" }]
+      })
+
+      if (options?.animate && incomingMessage.sender_id !== user?.id) {
+        appendAnimatedMessage(incomingMessage.id)
+      }
+
+    },
+    [appendAnimatedMessage, user?.id]
+  )
+
   const loadMessages = useCallback(async () => {
     if (isNaN(conversationId)) return
+
     setLoading(true)
+
     try {
-      const data = await messagesService.getMessages(conversationId)
-      setMessages(data)
-      // Mark as read
-      await messagesService.markConversationRead(conversationId)
+      const page = await messagesService.getMessages(conversationId, null, 30)
+      setMessages(page.messages)
+      setHasMore(page.next_cursor !== null)
+      lastMarkedReadIdRef.current = null
+
+      window.requestAnimationFrame(() => {
+        scrollToBottom("auto")
+      })
     } catch (err) {
       console.error("Failed to load messages:", err)
+      toast.error("Failed to load messages")
     } finally {
       setLoading(false)
     }
-  }, [conversationId])
+  }, [conversationId, scrollToBottom])
 
   useEffect(() => {
-    loadMessages()
+    void loadMessages()
   }, [loadMessages])
 
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
-    }
-  }, [messages])
-
-  // Real-time: new messages
   useEffect(() => {
     if (isNaN(conversationId)) return
 
-    channelRef.current = messagesService.subscribeToMessages(conversationId, (newMsg) => {
-      setMessages((prev) => {
-        // Deduplicate — the optimistic message we added on send has the same body
-        if (prev.some((m) => m.id === newMsg.id)) return prev
-        return [...prev, newMsg]
-      })
-      // Mark as read since we're viewing the thread
-      messagesService.markConversationRead(conversationId)
-    })
+    let cancelled = false
 
-    return () => {
-      if (channelRef.current) {
-        messagesService.removeChannel(channelRef.current)
+    const setupRealtime = async () => {
+      try {
+        const [messageChannel, typingChannel] = await Promise.all([
+          messagesService.subscribeToMessages(conversationId, {
+            onCreated: (newMessage) => {
+              if (cancelled) return
+
+              mergeIncomingMessage(newMessage, { animate: true })
+
+              if (newMessage.sender_id === user?.id || isAtBottomRef.current) {
+                window.requestAnimationFrame(() => {
+                  scrollToBottom(newMessage.sender_id === user?.id ? "auto" : "smooth")
+                })
+              } else {
+                setShowNewMessages(true)
+              }
+
+              void refreshConversations()
+            },
+            onUpdated: (updatedMessage) => {
+              if (cancelled) return
+              mergeIncomingMessage(updatedMessage)
+            },
+            onDeleted: (deletedMessageId) => {
+              if (cancelled) return
+              setMessages((previous) =>
+                previous.filter((message) => message.id !== deletedMessageId)
+              )
+            },
+          }),
+          user?.id
+            ? messagesService.subscribeToTyping(conversationId, user.id, (event) => {
+                if (cancelled) return
+
+                setTypingUserId(event.is_typing ? event.user_id : null)
+
+                if (typingExpiryTimeoutRef.current) {
+                  window.clearTimeout(typingExpiryTimeoutRef.current)
+                }
+
+                if (event.is_typing) {
+                  typingExpiryTimeoutRef.current = window.setTimeout(() => {
+                    setTypingUserId(null)
+                  }, 3000)
+                }
+              })
+            : Promise.resolve(null),
+        ])
+
+        if (cancelled) {
+          await Promise.all([
+            messagesService.removeChannel(messageChannel),
+            messagesService.removeChannel(typingChannel),
+          ])
+          return
+        }
+
+        messageChannelRef.current = messageChannel
+        typingChannelRef.current = typingChannel
+      } catch (error) {
+        console.error("Failed to subscribe to message channels:", error)
       }
     }
-  }, [conversationId])
+
+    void setupRealtime()
+
+    return () => {
+      cancelled = true
+      void messagesService.removeChannel(messageChannelRef.current)
+      void messagesService.removeChannel(typingChannelRef.current)
+      messageChannelRef.current = null
+      typingChannelRef.current = null
+
+      if (typingIdleTimeoutRef.current) {
+        window.clearTimeout(typingIdleTimeoutRef.current)
+      }
+
+      if (typingExpiryTimeoutRef.current) {
+        window.clearTimeout(typingExpiryTimeoutRef.current)
+      }
+
+      setTypingUserId(null)
+    }
+  }, [conversationId, mergeIncomingMessage, refreshConversations, scrollToBottom, user?.id])
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState !== "visible") {
+        setTypingUserId(null)
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
+  }, [])
 
   // Get display info
   const otherParticipant = useMemo(() => {
@@ -99,6 +244,112 @@ export function MessageThread({ id }: MessageThreadProps) {
     ? `${otherParticipant.first_name} ${otherParticipant.last_name}`.trim()
     : conversation?.title ?? "Conversation"
 
+  const markVisibleMessagesRead = useCallback(async () => {
+    const latestMessage = messages[messages.length - 1]
+    if (!latestMessage) return
+    if (!isAtBottom) return
+    if (document.visibilityState !== "visible") return
+    if (lastMarkedReadIdRef.current === latestMessage.id) return
+
+    try {
+      const result = await messagesService.markConversationRead(conversationId, latestMessage.id)
+      const nextReadMessageId = result?.last_read_message_id ?? latestMessage.id
+      lastMarkedReadIdRef.current = nextReadMessageId
+      updateConversationReadPointer(conversationId, nextReadMessageId)
+      setConversationUnreadCount(conversationId, 0)
+    } catch (error) {
+      console.error("Failed to mark conversation as read:", error)
+    }
+  }, [
+    conversationId,
+    isAtBottom,
+    messages,
+    setConversationUnreadCount,
+    updateConversationReadPointer,
+  ])
+
+  useEffect(() => {
+    void markVisibleMessagesRead()
+  }, [markVisibleMessagesRead])
+
+  const handleLoadOlderMessages = async () => {
+    if (loadingOlder || !hasMore || messages.length === 0) return
+
+    const firstMessageId = messages[0]?.id
+    if (!firstMessageId) return
+
+    setLoadingOlder(true)
+
+    try {
+      const previousScrollHeight = scrollRef.current?.scrollHeight ?? 0
+      const page = await messagesService.getMessages(conversationId, firstMessageId, 30)
+      if (page.messages.length > 0) {
+        setMessages((previous) => [...page.messages, ...previous])
+      }
+      setHasMore(page.next_cursor !== null)
+
+      window.requestAnimationFrame(() => {
+        if (!scrollRef.current) return
+        const nextScrollHeight = scrollRef.current.scrollHeight
+        scrollRef.current.scrollTop += nextScrollHeight - previousScrollHeight
+      })
+    } catch (error) {
+      console.error("Failed to load older messages:", error)
+      toast.error("Failed to load older messages")
+    } finally {
+      setLoadingOlder(false)
+    }
+  }
+
+  const handleScroll = useCallback(() => {
+    if (!scrollRef.current) return
+
+    const distanceFromBottom =
+      scrollRef.current.scrollHeight -
+      scrollRef.current.scrollTop -
+      scrollRef.current.clientHeight
+    const nextIsAtBottom = distanceFromBottom < 96
+    setIsAtBottom(nextIsAtBottom)
+    isAtBottomRef.current = nextIsAtBottom
+
+    if (nextIsAtBottom) {
+      setShowNewMessages(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    const trimmedDraft = draft.trim()
+    const typingChannel = typingChannelRef.current
+    if (!typingChannel) return
+
+    if (!trimmedDraft) {
+      if (typingIdleTimeoutRef.current) {
+        window.clearTimeout(typingIdleTimeoutRef.current)
+      }
+
+      if (isTypingRef.current) {
+        isTypingRef.current = false
+        void messagesService.sendTypingEvent(typingChannel, false)
+      }
+      return
+    }
+
+    if (!isTypingRef.current) {
+      isTypingRef.current = true
+      void messagesService.sendTypingEvent(typingChannel, true)
+    }
+
+    if (typingIdleTimeoutRef.current) {
+      window.clearTimeout(typingIdleTimeoutRef.current)
+    }
+
+    typingIdleTimeoutRef.current = window.setTimeout(() => {
+      if (!typingChannelRef.current || !isTypingRef.current) return
+      isTypingRef.current = false
+      void messagesService.sendTypingEvent(typingChannelRef.current, false)
+    }, 2500)
+  }, [draft])
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
     const trimmed = draft.trim()
@@ -106,6 +357,20 @@ export function MessageThread({ id }: MessageThreadProps) {
 
     setSending(true)
     setDraft("")
+
+    if (typingIdleTimeoutRef.current) {
+      window.clearTimeout(typingIdleTimeoutRef.current)
+    }
+
+    if (typingChannelRef.current && isTypingRef.current) {
+      isTypingRef.current = false
+      void messagesService.sendTypingEvent(typingChannelRef.current, false)
+    }
+
+    const clientId =
+      typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`
 
     // Optimistic message
     const optimistic: Message = {
@@ -115,16 +380,22 @@ export function MessageThread({ id }: MessageThreadProps) {
       body: trimmed,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      client_id: clientId,
+      sender: null,
+      delivery_state: "pending",
     }
     setMessages((prev) => [...prev, optimistic])
+    window.requestAnimationFrame(() => {
+      scrollToBottom("auto")
+    })
 
     try {
-      const sent = await messagesService.sendMessage(conversationId, trimmed)
+      const sent = await messagesService.sendMessage(conversationId, clientId, trimmed)
       if (sent) {
-        // Replace optimistic with real message
-        setMessages((prev) =>
-          prev.map((m) => (m.id === optimistic.id ? sent : m))
-        )
+        mergeIncomingMessage(sent)
+        window.requestAnimationFrame(() => {
+          scrollToBottom("smooth")
+        })
         // Process @mentions
         if (selectedClub?.id) {
           await mentionsService.processMentions({
@@ -136,8 +407,14 @@ export function MessageThread({ id }: MessageThreadProps) {
       }
     } catch (err) {
       console.error("Failed to send message:", err)
-      // Remove optimistic message on failure
-      setMessages((prev) => prev.filter((m) => m.id !== optimistic.id))
+      toast.error("Failed to send message")
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === optimistic.id
+            ? { ...message, delivery_state: "failed" }
+            : message
+        )
+      )
       setDraft(trimmed)
     } finally {
       setSending(false)
@@ -173,7 +450,11 @@ export function MessageThread({ id }: MessageThreadProps) {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div
+        ref={scrollRef}
+        className="relative flex-1 overflow-y-auto px-4 py-4 space-y-3"
+        onScroll={handleScroll}
+      >
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -185,54 +466,85 @@ export function MessageThread({ id }: MessageThreadProps) {
             </p>
           </div>
         ) : (
-          messages.map((m) => {
-            const isMe = m.sender_id === user?.id
-            const senderName = m.sender
-              ? `${m.sender.first_name} ${m.sender.last_name}`.trim()
-              : isMe
-              ? "You"
-              : "Unknown"
+          <>
+            {hasMore && (
+              <div className="flex justify-center pb-2">
+                <Button variant="outline" size="sm" onClick={handleLoadOlderMessages} disabled={loadingOlder}>
+                  {loadingOlder ? <Loader2 className="h-4 w-4 animate-spin" /> : "Load older messages"}
+                </Button>
+              </div>
+            )}
 
-            return (
-              <div key={m.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                <div className="flex items-end gap-2 max-w-[75%]">
-                  {!isMe && (
-                    <Avatar className="h-7 w-7 shrink-0">
-                      <AvatarImage src={m.sender?.avatar_url ?? undefined} />
-                      <AvatarFallback className="bg-muted text-xs">
-                        {senderName.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                  )}
-                  <div>
-                    <div
-                      className={`rounded-2xl px-3 py-2 text-sm ${
-                        isMe
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-foreground"
-                      }`}
-                    >
-                      <MentionText text={m.body} />
+            {messages.map((message) => {
+              const isMe = message.sender_id === user?.id
+              const senderName = message.sender
+                ? `${message.sender.first_name} ${message.sender.last_name}`.trim()
+                : isMe
+                  ? "You"
+                  : "Unknown"
+              const isAnimated = animatedMessageIds.includes(message.id)
+
+              return (
+                <div
+                  key={message.id}
+                  className={`flex ${isMe ? "justify-end" : "justify-start"} ${
+                    isAnimated ? "animate-in fade-in slide-in-from-bottom-2 duration-300" : ""
+                  }`}
+                >
+                  <div className="flex items-end gap-2 max-w-[75%]">
+                    {!isMe && (
+                      <Avatar className="h-7 w-7 shrink-0">
+                        <AvatarImage src={message.sender?.avatar_url ?? undefined} />
+                        <AvatarFallback className="bg-muted text-xs">
+                          {senderName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                    <div>
+                      <div
+                        className={`rounded-2xl px-3 py-2 text-sm ${
+                          isMe
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted text-foreground"
+                        }`}
+                      >
+                        <MentionText text={message.body} />
+                      </div>
+                      <p className="mt-1 px-1 text-[10px] text-muted-foreground">
+                        {getRelativeTime(message.created_at)}
+                        {message.delivery_state === "pending" && " • sending"}
+                        {message.delivery_state === "failed" && " • failed"}
+                      </p>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-1 px-1">
-                      {getRelativeTime(m.created_at)}
-                    </p>
                   </div>
                 </div>
-              </div>
-            )
-          })
+              )
+            })}
+          </>
+        )}
+
+        {showNewMessages && (
+          <div className="sticky bottom-4 flex justify-center">
+            <Button size="sm" className="rounded-full shadow-sm" onClick={() => scrollToBottom("smooth")}>
+              New messages
+            </Button>
+          </div>
         )}
       </div>
 
       {/* Composer */}
       <div className="bg-background p-3 border-t border-border shrink-0">
+        {typingUserId && otherParticipant?.id === typingUserId && (
+          <p className="mb-2 text-xs text-muted-foreground">
+            {displayName} is typing...
+          </p>
+        )}
         <form onSubmit={handleSend} className="flex items-center gap-2">
           <MentionInput
             value={draft}
             onChange={setDraft}
             clubId={selectedClub?.id ? parseInt(selectedClub.id) : 0}
-            placeholder="Start a new message"
+            placeholder="Write a message"
             as="input"
             className="flex-1 h-10 px-3 rounded-lg border border-input bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
           />

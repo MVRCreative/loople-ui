@@ -49,6 +49,24 @@ export interface ApiResponse<T> {
 }
 
 class PostsService {
+  private async getCurrentUserProfile() {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
+
+    const { data: profile, error } = await supabase
+      .from('users')
+      .select('id, email, first_name, last_name, username, avatar_url')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Error fetching current user profile for post fallback:', error)
+      return null
+    }
+
+    return profile
+  }
+
   private async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -103,12 +121,6 @@ class PostsService {
 
   // Posts
   async getPosts(params: PostsQueryParams = {}): Promise<ApiResponse<Post[]>> {
-    // Try edge function first
-    const edgeResult = await this.getPostsViaEdge(params)
-    if (edgeResult.success) return edgeResult
-
-    // Fall back to direct Supabase query
-    console.warn('Posts edge function unavailable, using direct query')
     return this.getPostsDirect(params)
   }
 
@@ -129,6 +141,8 @@ class PostsService {
 
   private async getPostsDirect(params: PostsQueryParams): Promise<ApiResponse<Post[]>> {
     try {
+      const currentUserProfile = await this.getCurrentUserProfile()
+
       let query = supabase
         .from('posts')
         .select(`
@@ -151,23 +165,30 @@ class PostsService {
       const { data, error } = await query
       if (error) throw error
 
-      // Look up avatar_url and username for each unique user_id from the users table
+      // Look up profile data for each linked user_id from the users table.
       const userIds = [...new Set(
         (data ?? [])
           .map((row) => (row.author as { user_id?: string } | null)?.user_id)
           .filter((id): id is string => Boolean(id))
       )]
 
-      let usersMap: Record<string, { avatar_url?: string; username?: string }> = {}
+      let usersMap: Record<string, {
+        id: string
+        email?: string | null
+        first_name?: string | null
+        last_name?: string | null
+        avatar_url?: string | null
+        username?: string | null
+      }> = {}
       if (userIds.length > 0) {
         const { data: usersData } = await supabase
           .from('users')
-          .select('id, avatar_url, username')
+          .select('id, email, first_name, last_name, avatar_url, username')
           .in('id', userIds)
 
         if (usersData) {
           usersMap = Object.fromEntries(
-            usersData.map((u) => [u.id, { avatar_url: u.avatar_url, username: u.username }])
+            usersData.map((u) => [u.id, u])
           )
         }
       }
@@ -177,7 +198,24 @@ class PostsService {
         const author = row.author as { id: number; first_name: string; last_name: string; email: string; user_id: string } | null
         const commentCount = Array.isArray(row.comments) ? row.comments.length : 0
         const likeCount = Array.isArray(row.reactions) ? row.reactions.length : 0
-        const userExtra = author?.user_id ? usersMap[author.user_id] : undefined
+        const linkedUser = author?.user_id ? usersMap[author.user_id] : undefined
+        const isCurrentUserAuthor =
+          !!currentUserProfile &&
+          !author?.user_id &&
+          (
+            (
+              !!author?.first_name &&
+              !!author?.last_name &&
+              author.first_name.toLowerCase() === String(currentUserProfile.first_name ?? '').toLowerCase() &&
+              author.last_name.toLowerCase() === String(currentUserProfile.last_name ?? '').toLowerCase()
+            ) ||
+            (
+              !!author?.email &&
+              author.email.toLowerCase() === String(currentUserProfile.email ?? '').toLowerCase()
+            )
+          )
+
+        const resolvedUser = linkedUser ?? (isCurrentUserAuthor ? currentUserProfile : undefined)
 
         return {
           id: row.id,
@@ -193,12 +231,12 @@ class PostsService {
           comment_count: commentCount,
           // Provide `users` object so transformApiPostToPost can build proper User display
           users: author ? {
-            id: author.user_id ?? '',
-            email: author.email ?? '',
-            first_name: author.first_name ?? '',
-            last_name: author.last_name ?? '',
-            avatar_url: userExtra?.avatar_url,
-            username: userExtra?.username,
+            id: resolvedUser?.id ?? author.user_id ?? '',
+            email: resolvedUser?.email ?? author.email ?? '',
+            first_name: resolvedUser?.first_name ?? author.first_name ?? '',
+            last_name: resolvedUser?.last_name ?? author.last_name ?? '',
+            avatar_url: resolvedUser?.avatar_url ?? undefined,
+            username: resolvedUser?.username ?? undefined,
           } : undefined,
           // Include poll data from the `rich` JSONB column
           ...(row.rich && typeof row.rich === 'object' && 'poll' in (row.rich as Record<string, unknown>)

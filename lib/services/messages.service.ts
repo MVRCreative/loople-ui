@@ -1,342 +1,281 @@
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from '../supabase'
+import type {
+  Conversation,
+  ConversationUpdateEvent,
+  DirectConversationResult,
+  Message,
+  MessageCursorPage,
+  MessageSearchResult,
+  MessageUserSummary,
+  ReadReceiptResult,
+  TypingEventPayload,
+} from '../types/messages'
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+type JsonRecord = Record<string, unknown>
 
-export interface Conversation {
-  id: number
-  club_id: number
-  title: string | null
-  is_group: boolean
-  created_by: string
-  created_at: string
-  updated_at: string
-  /** Joined participants (user profiles) */
-  participants: ConversationParticipant[]
-  /** Latest message preview */
-  last_message?: Message | null
-  /** Unread count for the current user */
-  unread_count?: number
+interface BroadcastPayload {
+  payload?: JsonRecord
+  new?: JsonRecord
+  old?: JsonRecord
 }
 
-export interface ConversationParticipant {
-  id: number
-  conversation_id: number
-  user_id: string
-  joined_at: string
-  last_read_at: string | null
-  /** Joined user profile */
-  user?: {
-    id: string
-    first_name: string
-    last_name: string
-    username: string | null
-    avatar_url: string | null
+function asRecord(value: unknown): JsonRecord | null {
+  return value !== null && typeof value === 'object' ? (value as JsonRecord) : null
+}
+
+function toNumber(value: unknown): number {
+  if (typeof value === 'number') return value
+  if (typeof value === 'string') return Number.parseInt(value, 10)
+  return 0
+}
+
+function toStringOrNull(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+function toBoolean(value: unknown): boolean {
+  return value === true
+}
+
+function toUserSummary(value: unknown): MessageUserSummary | null {
+  const record = asRecord(value)
+  if (!record) return null
+
+  return {
+    id: toStringOrNull(record.id) ?? '',
+    first_name: toStringOrNull(record.first_name) ?? '',
+    last_name: toStringOrNull(record.last_name) ?? '',
+    username: toStringOrNull(record.username),
+    avatar_url: toStringOrNull(record.avatar_url),
   }
 }
 
-export interface Message {
-  id: number
-  conversation_id: number
-  sender_id: string
-  body: string
-  created_at: string
-  updated_at: string
-  /** Joined sender profile */
-  sender?: {
-    id: string
-    first_name: string
-    last_name: string
-    username: string | null
-    avatar_url: string | null
+function toMessage(value: unknown): Message {
+  const record = asRecord(value) ?? {}
+
+  return {
+    id: toNumber(record.id),
+    conversation_id: toNumber(record.conversation_id),
+    sender_id: toStringOrNull(record.sender_id) ?? '',
+    body: toStringOrNull(record.body) ?? '',
+    created_at: toStringOrNull(record.created_at) ?? new Date(0).toISOString(),
+    updated_at: toStringOrNull(record.updated_at) ?? new Date(0).toISOString(),
+    client_id: toStringOrNull(record.client_id),
+    sender: toUserSummary(record.sender),
+    delivery_state: 'sent',
   }
 }
 
-export interface CreateConversationRequest {
-  club_id: number
-  participant_user_ids: string[]
-  title?: string
-  initial_message?: string
+function toConversation(value: unknown): Conversation {
+  const record = asRecord(value) ?? {}
+  const participantsValue = Array.isArray(record.participants) ? record.participants : []
+
+  return {
+    id: toNumber(record.id),
+    club_id: toNumber(record.club_id),
+    title: toStringOrNull(record.title),
+    is_group: toBoolean(record.is_group),
+    created_by: toStringOrNull(record.created_by) ?? '',
+    created_at: toStringOrNull(record.created_at) ?? new Date(0).toISOString(),
+    updated_at: toStringOrNull(record.updated_at) ?? new Date(0).toISOString(),
+    direct_key: toStringOrNull(record.direct_key),
+    unread_count: toNumber(record.unread_count),
+    participants: participantsValue.map((participant) => {
+      const participantRecord = asRecord(participant) ?? {}
+      return {
+        id: toNumber(participantRecord.id),
+        conversation_id: toNumber(participantRecord.conversation_id),
+        user_id: toStringOrNull(participantRecord.user_id) ?? '',
+        joined_at: toStringOrNull(participantRecord.joined_at) ?? new Date(0).toISOString(),
+        last_read_at: toStringOrNull(participantRecord.last_read_at),
+        last_read_message_id:
+          participantRecord.last_read_message_id == null
+            ? null
+            : toNumber(participantRecord.last_read_message_id),
+        user: toUserSummary(participantRecord.user),
+      }
+    }),
+    last_message: record.last_message ? toMessage(record.last_message) : null,
+  }
 }
 
-// ---------------------------------------------------------------------------
-// Service
-// ---------------------------------------------------------------------------
+function extractRealtimePayload(payload: unknown): JsonRecord | null {
+  const payloadRecord = asRecord(payload)
+  if (!payloadRecord) return null
 
-class MessagesService {
-  /**
-   * List all conversations for the current user, ordered by most recent activity.
-   * Includes participant profiles and the latest message.
-   */
-  async getConversations(clubId?: number): Promise<Conversation[]> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return []
+  const nestedPayload = asRecord(payloadRecord.payload)
+  return nestedPayload ?? payloadRecord
+}
 
-    let query = supabase
-      .from('conversations')
-      .select(`
-        *,
-        participants:conversation_participants (
-          id,
-          conversation_id,
-          user_id,
-          joined_at,
-          last_read_at,
-          user:users!conversation_participants_user_id_fkey (
-            id, first_name, last_name, username, avatar_url
-          )
-        )
-      `)
-      .order('updated_at', { ascending: false })
+function extractRowId(payload: unknown): number | null {
+  const payloadRecord = extractRealtimePayload(payload)
+  if (!payloadRecord) return null
 
-    if (clubId) {
-      query = query.eq('club_id', clubId)
-    }
+  const newRecord = asRecord(payloadRecord.new)
+  if (newRecord?.id != null) return toNumber(newRecord.id)
 
-    const { data, error } = await query
+  const oldRecord = asRecord(payloadRecord.old)
+  if (oldRecord?.id != null) return toNumber(oldRecord.id)
 
-    if (error) {
-      console.error('Failed to fetch conversations:', error)
-      return []
-    }
+  if (payloadRecord.id != null) return toNumber(payloadRecord.id)
 
-    // Fetch the latest message for each conversation
-    const conversations: Conversation[] = []
-    for (const row of data ?? []) {
-      const { data: lastMsgData } = await supabase
-        .from('messages')
-        .select(`
-          *,
-          sender:users!messages_sender_id_fkey (
-            id, first_name, last_name, username, avatar_url
-          )
-        `)
-        .eq('conversation_id', row.id)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle()
+  return null
+}
 
-      // Count unread messages (messages created after last_read_at)
-      const myParticipation = (row.participants as ConversationParticipant[])
-        ?.find((p) => p.user_id === user.id)
-      let unreadCount = 0
-      if (myParticipation) {
-        let countQuery = supabase
-          .from('messages')
-          .select('id', { count: 'exact', head: true })
-          .eq('conversation_id', row.id)
-          .neq('sender_id', user.id)
-        if (myParticipation.last_read_at) {
-          countQuery = countQuery.gt('created_at', myParticipation.last_read_at)
-        }
-        const { count } = await countQuery
-        unreadCount = count ?? 0
+async function ensureRealtimeAuth(): Promise<void> {
+  const { data } = await supabase.auth.getSession()
+  const accessToken = data.session?.access_token
+  if (!accessToken) {
+    throw new Error('Realtime authentication requires an active session.')
+  }
+
+  await supabase.realtime.setAuth(accessToken)
+}
+
+async function waitForSubscription(channel: RealtimeChannel): Promise<RealtimeChannel> {
+  return new Promise((resolve, reject) => {
+    channel.subscribe((status, err) => {
+      if (status === 'SUBSCRIBED') {
+        resolve(channel)
       }
 
-      conversations.push({
-        ...row,
-        participants: row.participants as ConversationParticipant[],
-        last_message: lastMsgData as Message | null,
-        unread_count: unreadCount,
-      })
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        reject(err ?? new Error(`Realtime subscription failed with status ${status}.`))
+      }
+    })
+  })
+}
+
+class MessagesService {
+  async getConversations(clubId: number): Promise<Conversation[]> {
+    const { data, error } = await supabase.rpc('list_conversations', {
+      p_club_id: clubId,
+      p_cursor: null,
+      p_page_size: 50,
+    })
+
+    if (error) {
+      throw error
     }
 
-    return conversations
+    return ((data ?? []) as unknown[]).map((row: unknown) => toConversation(row))
   }
 
-  /**
-   * Get or create a 1:1 conversation between the current user and another user.
-   */
   async getOrCreateDirectConversation(
     clubId: number,
     otherUserId: string
   ): Promise<Conversation | null> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
-
-    // Look for existing 1:1 conversation between these two users in this club
-    const { data: myConversationIds } = await supabase
-      .from('conversation_participants')
-      .select('conversation_id')
-      .eq('user_id', user.id)
-
-    if (myConversationIds && myConversationIds.length > 0) {
-      const ids = myConversationIds.map((c) => c.conversation_id)
-
-      const { data: theirConversationIds } = await supabase
-        .from('conversation_participants')
-        .select('conversation_id')
-        .eq('user_id', otherUserId)
-        .in('conversation_id', ids)
-
-      if (theirConversationIds && theirConversationIds.length > 0) {
-        const sharedIds = theirConversationIds.map((c) => c.conversation_id)
-
-        // Find a non-group conversation in this club
-        const { data: existing } = await supabase
-          .from('conversations')
-          .select('id')
-          .in('id', sharedIds)
-          .eq('club_id', clubId)
-          .eq('is_group', false)
-          .limit(1)
-          .maybeSingle()
-
-        if (existing) {
-          const conversations = await this.getConversations(clubId)
-          return conversations.find((c) => c.id === existing.id) ?? null
-        }
-      }
-    }
-
-    // No existing conversation — create one
-    return this.createConversation({
-      club_id: clubId,
-      participant_user_ids: [otherUserId],
+    const { data, error } = await supabase.rpc('get_or_create_direct_conversation', {
+      p_club_id: clubId,
+      p_other_user_id: otherUserId,
     })
-  }
 
-  /**
-   * Create a new conversation with one or more participants.
-   */
-  async createConversation(req: CreateConversationRequest): Promise<Conversation | null> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
+    if (error) {
+      throw error
+    }
 
-    const isGroup = req.participant_user_ids.length > 1
-    const { data: convo, error: convoErr } = await supabase
-      .from('conversations')
-      .insert({
-        club_id: req.club_id,
-        title: req.title ?? null,
-        is_group: isGroup,
-        created_by: user.id,
-      })
-      .select()
-      .single()
-
-    if (convoErr || !convo) {
-      console.error('Failed to create conversation:', convoErr)
+    const result = Array.isArray(data) ? (data[0] as DirectConversationResult | undefined) : undefined
+    const conversationId = result?.conversation_id
+    if (!conversationId) {
       return null
     }
 
-    // Add all participants (including the creator)
-    const allUserIds = [...new Set([user.id, ...req.participant_user_ids])]
-    const participantRows = allUserIds.map((uid) => ({
-      conversation_id: convo.id,
-      user_id: uid,
-    }))
-
-    const { error: partErr } = await supabase
-      .from('conversation_participants')
-      .insert(participantRows)
-
-    if (partErr) {
-      console.error('Failed to add participants:', partErr)
-    }
-
-    // Send initial message if provided
-    if (req.initial_message?.trim()) {
-      await this.sendMessage(convo.id, req.initial_message.trim())
-    }
-
-    // Return the full conversation object
-    const conversations = await this.getConversations(req.club_id)
-    return conversations.find((c) => c.id === convo.id) ?? null
+    const conversations = await this.getConversations(clubId)
+    return conversations.find((conversation) => conversation.id === conversationId) ?? null
   }
 
-  /**
-   * Get all messages for a conversation, ordered oldest-first.
-   */
-  async getMessages(conversationId: number, limit = 50, offset = 0): Promise<Message[]> {
+  async getMessages(
+    conversationId: number,
+    cursor: number | null = null,
+    limit = 30
+  ): Promise<MessageCursorPage> {
+    const { data, error } = await supabase.rpc('list_messages', {
+      p_conversation_id: conversationId,
+      p_cursor: cursor,
+      p_page_size: limit,
+    })
+
+    if (error) {
+      throw error
+    }
+
+    const messages = ((data ?? []) as unknown[]).map((row: unknown) => toMessage(row))
+    return {
+      messages,
+      next_cursor: messages.length === limit ? messages[0]?.id ?? null : null,
+    }
+  }
+
+  async fetchMessageById(messageId: number): Promise<Message | null> {
     const { data, error } = await supabase
       .from('messages')
       .select(`
-        *,
-        sender:users!messages_sender_id_fkey (
-          id, first_name, last_name, username, avatar_url
-        )
-      `)
-      .eq('conversation_id', conversationId)
-      .order('created_at', { ascending: true })
-      .range(offset, offset + limit - 1)
-
-    if (error) {
-      console.error('Failed to fetch messages:', error)
-      return []
-    }
-
-    return (data ?? []) as Message[]
-  }
-
-  /**
-   * Send a message in a conversation.
-   */
-  async sendMessage(conversationId: number, body: string): Promise<Message | null> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return null
-
-    const { data, error } = await supabase
-      .from('messages')
-      .insert({
-        conversation_id: conversationId,
-        sender_id: user.id,
+        id,
+        conversation_id,
+        sender_id,
         body,
-      })
-      .select(`
-        *,
+        created_at,
+        updated_at,
+        client_id,
         sender:users!messages_sender_id_fkey (
-          id, first_name, last_name, username, avatar_url
+          id,
+          first_name,
+          last_name,
+          username,
+          avatar_url
         )
       `)
-      .single()
+      .eq('id', messageId)
+      .maybeSingle()
 
-    if (error) {
-      console.error('Failed to send message:', error)
+    if (error || !data) {
       return null
     }
 
-    return data as Message
+    return toMessage(data)
   }
 
-  /**
-   * Mark all messages in a conversation as read for the current user.
-   */
-  async markConversationRead(conversationId: number): Promise<void> {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return
+  async sendMessage(conversationId: number, clientId: string, body: string): Promise<Message | null> {
+    const { data, error } = await supabase.rpc('send_message', {
+      p_conversation_id: conversationId,
+      p_client_id: clientId,
+      p_body: body,
+    })
 
-    await supabase
-      .from('conversation_participants')
-      .update({ last_read_at: new Date().toISOString() })
-      .eq('conversation_id', conversationId)
-      .eq('user_id', user.id)
+    if (error) {
+      throw error
+    }
+
+    const result = Array.isArray(data) ? data[0] : null
+    return result ? toMessage(result) : null
   }
 
-  /**
-   * Delete a message.
-   */
-  async deleteMessage(messageId: number): Promise<boolean> {
-    const { error } = await supabase.from('messages').delete().eq('id', messageId)
-    return !error
+  async markConversationRead(
+    conversationId: number,
+    lastReadMessageId: number
+  ): Promise<ReadReceiptResult | null> {
+    const { data, error } = await supabase.rpc('mark_conversation_read', {
+      p_conversation_id: conversationId,
+      p_last_read_message_id: lastReadMessageId,
+    })
+
+    if (error) {
+      throw error
+    }
+
+    const result = Array.isArray(data) ? (data[0] as ReadReceiptResult | undefined) : undefined
+    return result ?? null
   }
 
-  /**
-   * Search club members for "new conversation" user picker.
-   */
-  async searchMembers(clubId: number, query: string): Promise<Array<{
-    user_id: string
-    first_name: string
-    last_name: string
-    username: string | null
-    avatar_url: string | null
-  }>> {
-    const { data: { user } } = await supabase.auth.getUser()
+  async searchMembers(clubId: number, query: string): Promise<MessageSearchResult[]> {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
     if (!user) return []
 
     const searchTerm = `%${query}%`
-
     const { data, error } = await supabase
       .from('members')
       .select('user_id, first_name, last_name')
@@ -347,8 +286,10 @@ class MessagesService {
 
     if (error || !data) return []
 
-    // Fetch user profiles (username, avatar) for matched members
-    const userIds = data.map((m) => m.user_id).filter(Boolean) as string[]
+    const userIds = data
+      .map((member) => member.user_id)
+      .filter((memberId): memberId is string => typeof memberId === 'string')
+
     if (userIds.length === 0) return []
 
     const { data: users } = await supabase
@@ -356,85 +297,163 @@ class MessagesService {
       .select('id, first_name, last_name, username, avatar_url')
       .in('id', userIds)
 
-    const usersMap = new Map(
-      (users ?? []).map((u) => [u.id, u])
-    )
+    const usersMap = new Map((users ?? []).map((member) => [member.id, member]))
 
     return data
-      .filter((m) => m.user_id && usersMap.has(m.user_id))
-      .map((m) => {
-        const u = usersMap.get(m.user_id!)!
+      .filter((member) => typeof member.user_id === 'string' && usersMap.has(member.user_id))
+      .map((member) => {
+        const profile = usersMap.get(member.user_id as string)
         return {
-          user_id: u.id,
-          first_name: u.first_name,
-          last_name: u.last_name,
-          username: u.username,
-          avatar_url: u.avatar_url,
+          user_id: profile?.id ?? '',
+          first_name: profile?.first_name ?? '',
+          last_name: profile?.last_name ?? '',
+          username: profile?.username ?? null,
+          avatar_url: profile?.avatar_url ?? null,
         }
       })
   }
 
-  // ---------------------------------------------------------------------------
-  // Real-time subscriptions
-  // ---------------------------------------------------------------------------
+  async subscribeToMessages(
+    conversationId: number,
+    callbacks: {
+      onCreated?: (message: Message) => void
+      onUpdated?: (message: Message) => void
+      onDeleted?: (messageId: number) => void
+    }
+  ): Promise<RealtimeChannel> {
+    await ensureRealtimeAuth()
 
-  /**
-   * Subscribe to new messages in a conversation.
-   */
-  subscribeToMessages(conversationId: number, callback: (message: Message) => void) {
-    return supabase
-      .channel(`messages:${conversationId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`,
-        },
-        async (payload) => {
-          // Fetch full message with sender profile
-          const { data } = await supabase
-            .from('messages')
-            .select(`
-              *,
-              sender:users!messages_sender_id_fkey (
-                id, first_name, last_name, username, avatar_url
-              )
-            `)
-            .eq('id', (payload.new as { id: number }).id)
-            .single()
+    const channel = supabase.channel(`conversation:${conversationId}:messages`, {
+      config: {
+        private: true,
+      },
+    })
 
-          if (data) callback(data as Message)
+    channel
+      .on('broadcast', { event: 'message_created' }, async (payload) => {
+        const messageId = extractRowId(payload as BroadcastPayload)
+        if (!messageId) return
+
+        const message = await this.fetchMessageById(messageId)
+        if (message) {
+          callbacks.onCreated?.(message)
         }
-      )
-      .subscribe()
+      })
+      .on('broadcast', { event: 'message_updated' }, async (payload) => {
+        const messageId = extractRowId(payload as BroadcastPayload)
+        if (!messageId) return
+
+        const message = await this.fetchMessageById(messageId)
+        if (message) {
+          callbacks.onUpdated?.(message)
+        }
+      })
+      .on('broadcast', { event: 'message_deleted' }, (payload) => {
+        const messageId = extractRowId(payload as BroadcastPayload)
+        if (messageId) {
+          callbacks.onDeleted?.(messageId)
+        }
+      })
+
+    return waitForSubscription(channel)
   }
 
-  /**
-   * Subscribe to conversation list updates (new conversations, updated timestamps).
-   */
-  subscribeToConversations(callback: (payload: unknown) => void) {
-    return supabase
-      .channel('conversations:list')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'conversations',
-        },
-        callback
-      )
-      .subscribe()
+  async subscribeToConversationList(
+    userId: string,
+    callback: (event: ConversationUpdateEvent) => void
+  ): Promise<RealtimeChannel> {
+    await ensureRealtimeAuth()
+
+    const channel = supabase.channel(`user:${userId}:conversations`, {
+      config: {
+        private: true,
+      },
+    })
+
+    channel.on('broadcast', { event: 'conversation_updated' }, (payload) => {
+      const eventPayload = extractRealtimePayload(payload as BroadcastPayload)
+      if (!eventPayload) return
+
+      callback({
+        conversation_id: toNumber(eventPayload.conversation_id),
+        club_id: toNumber(eventPayload.club_id),
+      })
+    })
+
+    return waitForSubscription(channel)
   }
 
-  /**
-   * Remove a realtime channel.
-   */
-  removeChannel(channel: ReturnType<typeof supabase.channel>) {
+  async subscribeToTyping(
+    conversationId: number,
+    currentUserId: string,
+    callback: (event: TypingEventPayload) => void
+  ): Promise<RealtimeChannel> {
+    await ensureRealtimeAuth()
+
+    const channel = supabase.channel(`conversation:${conversationId}:presence`, {
+      config: {
+        private: true,
+        broadcast: { self: false, ack: true },
+      },
+    })
+
+    const handleTypingEvent = (payload: unknown, isTyping: boolean) => {
+      const eventPayload = extractRealtimePayload(payload)
+      if (!eventPayload) return
+
+      const userId = toStringOrNull(eventPayload.user_id)
+      if (!userId || userId === currentUserId) return
+
+      callback({
+        conversation_id: conversationId,
+        user_id: userId,
+        is_typing: isTyping,
+        sent_at: toStringOrNull(eventPayload.sent_at) ?? new Date().toISOString(),
+      })
+    }
+
+    channel
+      .on('broadcast', { event: 'typing_started' }, (payload) => {
+        handleTypingEvent(payload, true)
+      })
+      .on('broadcast', { event: 'typing_stopped' }, (payload) => {
+        handleTypingEvent(payload, false)
+      })
+
+    return waitForSubscription(channel)
+  }
+
+  async sendTypingEvent(channel: RealtimeChannel, isTyping: boolean): Promise<void> {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) return
+
+    await channel.send({
+      type: 'broadcast',
+      event: isTyping ? 'typing_started' : 'typing_stopped',
+      payload: {
+        user_id: user.id,
+        is_typing: isTyping,
+        sent_at: new Date().toISOString(),
+      },
+    })
+  }
+
+  removeChannel(channel: RealtimeChannel | null) {
+    if (!channel) return Promise.resolve('ok')
     return supabase.removeChannel(channel)
   }
 }
 
 export const messagesService = new MessagesService()
+
+export type {
+  Conversation,
+  ConversationUpdateEvent,
+  Message,
+  MessageCursorPage,
+  MessageSearchResult,
+  TypingEventPayload,
+}

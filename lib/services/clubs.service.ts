@@ -62,7 +62,65 @@ type ClubLike = {
   updated_at?: unknown;
 };
 
+function normalizeClub(club: unknown): Club {
+  const c = club as ClubLike;
+
+  return {
+    id: String(c.id ?? ''),
+    name: (c.name as string) ?? '',
+    subdomain: (c.subdomain as string) ?? '',
+    description: (c.description as string | undefined) ?? undefined,
+    contact_email: (c.contact_email as string | undefined) ?? undefined,
+    contact_phone: (c.contact_phone as string | undefined) ?? undefined,
+    address: (c.address as string | undefined) ?? undefined,
+    city: (c.city as string | undefined) ?? undefined,
+    state: (c.state as string | undefined) ?? undefined,
+    zip_code: (c.zip_code as string | undefined) ?? undefined,
+    owner_id: String(c.owner_id ?? ''),
+    onboarding_completed: Boolean((c.onboarding_completed as boolean | undefined) ?? false),
+    created_at: (c.created_at as string) ?? '',
+    updated_at: (c.updated_at as string) ?? ''
+  };
+}
+
 export class ClubsService {
+  private static async getUserClubsFallback(): Promise<Club[]> {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user?.id) {
+      return [];
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .from('users')
+      .select('club_id')
+      .eq('id', user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('Error fetching fallback user club:', profileError);
+      return [];
+    }
+
+    const clubId = profile?.club_id;
+    if (!clubId) {
+      return [];
+    }
+
+    const { data: club, error: clubError } = await supabase
+      .from('clubs')
+      .select('*')
+      .eq('id', clubId)
+      .maybeSingle();
+
+    if (clubError) {
+      console.error('Error fetching fallback club details:', clubError);
+      return [];
+    }
+
+    return club ? [normalizeClub(club)] : [];
+  }
+
   /**
    * Get all clubs where the user is a member or owner
    */
@@ -89,30 +147,21 @@ export class ClubsService {
         clubsRaw = [];
       }
 
-      // Normalize to our Club shape and ensure string ids
-      const normalizedClubs: Club[] = clubsRaw.map((club: unknown) => {
-        const c = club as ClubLike;
-        return {
-          id: String(c.id ?? ''),
-          name: (c.name as string) ?? '',
-          subdomain: (c.subdomain as string) ?? '',
-          description: (c.description as string | undefined) ?? undefined,
-          contact_email: (c.contact_email as string | undefined) ?? undefined,
-          contact_phone: (c.contact_phone as string | undefined) ?? undefined,
-          address: (c.address as string | undefined) ?? undefined,
-          city: (c.city as string | undefined) ?? undefined,
-          state: (c.state as string | undefined) ?? undefined,
-          zip_code: (c.zip_code as string | undefined) ?? undefined,
-          owner_id: String(c.owner_id ?? ''),
-          onboarding_completed: Boolean((c.onboarding_completed as boolean | undefined) ?? false),
-          created_at: (c.created_at as string) ?? '',
-          updated_at: (c.updated_at as string) ?? ''
-        };
-      });
+      const normalizedClubs = clubsRaw.map(normalizeClub);
 
-      return normalizedClubs;
+      if (normalizedClubs.length > 0) {
+        return normalizedClubs;
+      }
+
+      // Temporary resilience for legacy/incomplete data where the user has
+      // users.club_id populated but no active members row yet.
+      return await this.getUserClubsFallback();
     } catch (error) {
       console.error('Error in getUserClubs:', error);
+      const fallbackClubs = await this.getUserClubsFallback();
+      if (fallbackClubs.length > 0) {
+        return fallbackClubs;
+      }
       throw error;
     }
   }

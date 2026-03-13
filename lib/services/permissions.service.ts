@@ -25,10 +25,32 @@ export async function getUserClubRole(
       return 'owner';
     }
 
-    // 2. Check members table for user's role in this club
+    // 2. Fall back to the user's primary club assignment in the users table.
+    // This covers accounts that have users.club_id populated before a members row exists.
+    const { data: userProfile, error: userProfileError } = await supabase
+      .from('users')
+      .select('club_id, is_admin, is_super_admin, role')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!userProfileError && String(userProfile?.club_id ?? '') === clubId) {
+      const normalizedRole = String(userProfile?.role ?? '').toLowerCase();
+      if (
+        userProfile?.is_admin === true ||
+        userProfile?.is_super_admin === true ||
+        normalizedRole === 'admin' ||
+        normalizedRole === 'owner'
+      ) {
+        return normalizedRole === 'owner' ? 'owner' : 'admin';
+      }
+
+      return 'member';
+    }
+
+    // 3. Check members table for active membership presence.
     const { data: member, error: memberError } = await supabase
       .from('members')
-      .select('role')
+      .select('id, membership_status')
       .eq('club_id', clubId)
       .eq('user_id', userId)
       .maybeSingle();
@@ -42,12 +64,7 @@ export async function getUserClubRole(
       return null;
     }
 
-    const role = (member.role as string)?.toLowerCase?.();
-    if (role === 'admin' || role === 'owner') {
-      return role as 'admin' | 'owner';
-    }
-
-    return 'member';
+    return member.membership_status === 'active' ? 'member' : null;
   } catch (error) {
     console.error('Error in getUserClubRole:', error);
     return null;
