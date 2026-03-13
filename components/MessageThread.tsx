@@ -623,15 +623,17 @@ export function MessageThread({ id }: MessageThreadProps) {
           </p>
         )}
         <form onSubmit={handleSend} className="flex w-full items-end gap-2 p-4">
-          <MentionInput
-            value={draft}
-            onChange={setDraft}
-            clubId={selectedClub?.id ? parseInt(selectedClub.id) : 0}
-            placeholder="Message"
-            as="textarea"
-            rows={2}
-            className="min-h-[52px] max-h-32 flex-1 min-w-0 resize-none rounded-2xl border border-input bg-muted/40 py-3.5 px-4 text-[15px] leading-snug placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
-          />
+          <div className="min-w-0 flex-1">
+            <MentionInput
+              value={draft}
+              onChange={setDraft}
+              clubId={selectedClub?.id ? parseInt(selectedClub.id) : 0}
+              placeholder="Message"
+              as="textarea"
+              rows={2}
+              className="w-full min-h-[52px] max-h-32 resize-none rounded-2xl border border-input bg-muted/40 py-3.5 px-4 text-[15px] leading-snug placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent"
+            />
+          </div>
           <Button
             type="submit"
             disabled={!draft.trim() || sending}
