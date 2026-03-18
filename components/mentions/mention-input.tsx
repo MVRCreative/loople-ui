@@ -197,7 +197,7 @@ export function MentionInput({
     as === "textarea" && autoResize ? { maxHeight: TEXTAREA_MAX_HEIGHT_PX } : undefined
 
   return (
-    <div className="relative w-full min-w-0 h-full">
+    <div className="relative w-full min-w-0">
       {as === "textarea" ? (
         <textarea {...sharedProps} style={textareaStyle} />
       ) : (

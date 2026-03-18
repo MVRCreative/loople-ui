@@ -6,7 +6,6 @@ import UserInfoLogger from "@/components/user-info-logger"
 import { UserRoleBadge } from "@/components/settings/user-role-badge"
 import { UsersService, ClubsService } from "@/lib/services"
 import { useAuth } from "@/lib/auth-context"
-import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { UserPreferences } from "@/lib/services/users.service"
 import { ThemeSwitch } from "@/components/ui/theme-switch"
@@ -14,7 +13,6 @@ import { Moon } from "lucide-react"
 
 export default function Page() {
   const { user, isAuthenticated, loading } = useAuth()
-  const router = useRouter()
   const [userData, setUserData] = useState<{
     email: string;
     first_name?: string;
@@ -38,12 +36,7 @@ export default function Page() {
   }[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      router.push("/auth/login")
-    }
-  }, [isAuthenticated, loading, router])
+  // Middleware ensures only signed-in users reach this route; avoid client redirect races.
 
   // Load user data when authenticated
   useEffect(() => {

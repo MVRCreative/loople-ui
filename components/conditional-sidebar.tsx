@@ -7,9 +7,6 @@ import { NewsfeedRightSidebar } from "@/components/newsfeed-right-sidebar";
 // import { MessagesSidebar } from "@/components/MessagesSidebar";
 // import { MessageThread } from "@/components/MessageThread";
 // import { SidebarProvider } from "@/components/ui/sidebar";
-import { useAuth } from "@/lib/auth-context";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 
 interface ConditionalSidebarProps {
   children: React.ReactNode;
@@ -17,27 +14,16 @@ interface ConditionalSidebarProps {
 
 export function ConditionalSidebar({ children }: ConditionalSidebarProps) {
   const pathname = usePathname();
-  const { isAuthenticated, loading } = useAuth();
-  const router = useRouter();
   // const _isNewsfeedRoute = pathname === "/";
   const isMessagesRoute = pathname.startsWith("/messages");
   // const _isSettingsRoute = pathname.startsWith("/settings");
   // const _isProfileRoute = pathname.startsWith("/profile");
   const isAuthRoute = pathname.startsWith("/auth");
-  const isRootRoute = pathname === "/";
   const isAdminRoute = pathname.startsWith("/admin");
   const isWaitlistApplyRoute = pathname.startsWith("/waitlist/apply");
-  // const _isFeedPage = pathname === "/";
-  // const _isClubManagementPage = pathname.startsWith("/admin/club-management");
 
-  // Redirect to login if not authenticated and trying to access protected routes
-  // Exclude public routes: auth, root, and waitlist apply (public form for non-members)
-  useEffect(() => {
-    if (!loading && !isAuthenticated && !isAuthRoute && !isRootRoute && !isWaitlistApplyRoute) {
-      router.push("/auth/login");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, loading, isAuthRoute, isRootRoute, isWaitlistApplyRoute, router]);
+  // Auth redirects: rely on middleware for /settings, /messages, etc. Client-side redirect here
+  // caused false "logouts" when opening Settings (brief !isAuthenticated while session is fine).
 
   const isClubManagementPage = pathname.startsWith("/admin/club-management");
   // Show auth pages without sidebar (these pages manage their own loading/errors)

@@ -102,172 +102,162 @@ export function PostForm({ currentUser, onSubmit, isAuthenticated = false, isLoa
   const hasContent = content.trim().length > 0;
 
   return (
-    <div className="bg-card px-4 pt-3 pb-2 relative">
-      {/* Loading Overlay */}
+    <div className="relative px-4 py-3">
       {isLoading && (
-        <div className="absolute inset-0 bg-background/40 backdrop-blur-sm z-50 flex items-center justify-center rounded-xl">
+        <div className="absolute inset-0 z-50 flex items-center justify-center rounded-xl bg-background/60 backdrop-blur-sm">
           <div className="flex flex-col items-center gap-3">
             <Loader />
-            <p className="text-sm text-muted-foreground font-medium">Creating post...</p>
+            <p className="text-sm font-medium text-muted-foreground">Creating post…</p>
           </div>
         </div>
       )}
-      
-      <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="flex gap-3">
+
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-xl border border-border bg-card shadow-sm"
+      >
+        {/* Top: avatar + composer — single visual block */}
+        <div className="flex gap-3 p-4 pb-3">
           <Avatar className="h-10 w-10 shrink-0">
             <AvatarImage src={currentUser.avatar_url || ''} alt={currentUser.name} />
             <AvatarFallback className="bg-primary/10 text-lg">
               {currentUser.avatar}
             </AvatarFallback>
           </Avatar>
-          
-          <div className="flex-1">
+          <div className="min-w-0 flex-1">
             <MentionInput
               value={content}
               onChange={setContent}
               clubId={clubId}
-              placeholder={isAuthenticated ? "What's happening?" : "Sign in to share your thoughts..."}
-              className="w-full min-h-[60px] max-h-[200px] p-0 text-[15px] leading-relaxed resize-none focus:outline-none text-foreground placeholder:text-muted-foreground bg-transparent overflow-y-auto"
+              placeholder={isAuthenticated ? "What's happening?" : "Sign in to share your thoughts…"}
+              className="min-h-[72px] w-full max-h-[200px] resize-none overflow-y-auto border-0 bg-transparent p-0 text-[15px] leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0"
               as="textarea"
-              rows={1}
+              rows={2}
               disabled={!isAuthenticated}
             />
-            
-            {/* Poll form fields */}
-            {postType === "poll" && isAuthenticated && (
-              <div className="space-y-3 mt-3 p-3 rounded-xl border border-border bg-muted/30">
-                <input
-                  type="text"
-                  value={pollQuestion}
-                  onChange={(e) => setPollQuestion(e.target.value)}
-                  placeholder="Poll question..."
-                  className="w-full p-2 border border-input rounded-lg bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                />
-                <div className="space-y-2">
-                  {pollOptions.map((option, index) => (
-                    <div key={index} className="flex gap-2">
-                      <input
-                        type="text"
-                        value={option}
-                        onChange={(e) => updatePollOption(index, e.target.value)}
-                        placeholder={`Option ${index + 1}`}
-                        className="flex-1 p-2 border border-input rounded-lg bg-background text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-                      />
-                      {pollOptions.length > 2 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => removePollOption(index)}
-                          className="h-9 w-9 p-0 text-muted-foreground hover:text-destructive"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={addPollOption}
-                    className="h-8 px-3"
-                  >
-                    Add Option
-                  </Button>
-                </div>
-              </div>
-            )}
+          </div>
+        </div>
 
-            {/* Image Preview Grid */}
-            {attachments.length > 0 && (
-              <div className="mt-3">
-                <div className={`grid gap-2 ${attachments.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
-                  {attachments.slice(0, 4).map((file, index) => (
-                    <div key={index} className="relative rounded-xl overflow-hidden border border-border/50">
-                      {file.type.startsWith('image/') ? (
-                        <>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={URL.createObjectURL(file)}
-                            alt={file.name}
-                            className="w-full h-auto max-h-80 object-cover"
-                          />
-                        </>
-                      ) : (
-                        <div className="w-full h-48 bg-muted flex items-center justify-center">
-                          <span className="text-sm text-muted-foreground">{file.name}</span>
-                        </div>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => removeAttachment(index)}
-                        className="absolute top-2 right-2 p-1.5 bg-background/80 hover:bg-background rounded-full backdrop-blur-sm transition-colors"
-                        aria-label="Remove image"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ))}
+        {postType === "poll" && isAuthenticated && (
+          <div className="space-y-3 border-t border-border/60 px-4 py-3">
+            <input
+              type="text"
+              value={pollQuestion}
+              onChange={(e) => setPollQuestion(e.target.value)}
+              placeholder="Poll question…"
+              className="w-full rounded-lg border border-input bg-background p-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            />
+            <div className="space-y-2">
+              {pollOptions.map((option, index) => (
+                <div key={index} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={option}
+                    onChange={(e) => updatePollOption(index, e.target.value)}
+                    placeholder={`Option ${index + 1}`}
+                    className="min-w-0 flex-1 rounded-lg border border-input bg-background p-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  {pollOptions.length > 2 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removePollOption(index)}
+                      className="h-9 w-9 shrink-0 p-0 text-muted-foreground hover:text-destructive"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
-                {attachments.length > 4 && (
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    +{attachments.length - 4} more files
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Action bar */}
-            <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
-              <div className="flex gap-0.5">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={!isAuthenticated}
-                  className="p-2 rounded-full transition-colors text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-40 disabled:pointer-events-none"
-                  aria-label="Add image"
-                >
-                  <ImageIcon className="h-5 w-5" />
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => setPostType(postType === "poll" ? "text" : "poll")}
-                  disabled={!isAuthenticated}
-                  className={`p-2 rounded-full transition-colors disabled:opacity-40 disabled:pointer-events-none ${
-                    postType === "poll"
-                      ? "text-primary bg-primary/10"
-                      : "text-muted-foreground hover:text-primary hover:bg-primary/10"
-                  }`}
-                  aria-label="Create poll"
-                >
-                  <List className="h-5 w-5" />
-                </button>
-                
-                <button
-                  type="button"
-                  disabled={!isAuthenticated}
-                  className="p-2 rounded-full transition-colors text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-40 disabled:pointer-events-none"
-                  aria-label="Add emoji"
-                >
-                  <Smile className="h-5 w-5" />
-                </button>
-              </div>
-              
-              <Button
-                type="submit"
-                disabled={!isAuthenticated || !hasContent || (postType === "poll" && (!pollQuestion.trim() || pollOptions.filter(o => o.trim()).length < 2))}
-                className="h-9 px-5 rounded-full font-semibold"
-              >
-                {isAuthenticated ? "Post" : "Sign In"}
+              ))}
+              <Button type="button" variant="outline" size="sm" onClick={addPollOption} className="h-8 px-3">
+                Add option
               </Button>
             </div>
           </div>
+        )}
+
+        {attachments.length > 0 && (
+          <div className="border-t border-border/60 px-4 py-3">
+            <div className={`grid gap-2 ${attachments.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
+              {attachments.slice(0, 4).map((file, index) => (
+                <div key={index} className="relative overflow-hidden rounded-xl border border-border/50">
+                  {file.type.startsWith('image/') ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="max-h-80 h-auto w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-48 w-full items-center justify-center bg-muted">
+                      <span className="text-sm text-muted-foreground">{file.name}</span>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => removeAttachment(index)}
+                    className="absolute right-2 top-2 rounded-full bg-background/80 p-1.5 backdrop-blur-sm transition-colors hover:bg-background"
+                    aria-label="Remove attachment"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+            {attachments.length > 4 && (
+              <p className="mt-2 text-xs text-muted-foreground">+{attachments.length - 4} more files</p>
+            )}
+          </div>
+        )}
+
+        {/* Toolbar + Post — always inside the same card, below the text area */}
+        <div className="flex items-center justify-between gap-3 border-t border-border px-4 py-3">
+          <div className="flex shrink-0 gap-0.5">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={!isAuthenticated}
+              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-primary disabled:pointer-events-none disabled:opacity-40"
+              aria-label="Add image or file"
+            >
+              <ImageIcon className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPostType(postType === "poll" ? "text" : "poll")}
+              disabled={!isAuthenticated}
+              className={`rounded-full p-2 transition-colors disabled:pointer-events-none disabled:opacity-40 ${
+                postType === "poll"
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted hover:text-primary"
+              }`}
+              aria-label="Poll"
+            >
+              <List className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              disabled={!isAuthenticated}
+              className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-primary disabled:pointer-events-none disabled:opacity-40"
+              aria-label="Emoji"
+            >
+              <Smile className="h-5 w-5" />
+            </button>
+          </div>
+          <Button
+            type="submit"
+            disabled={
+              !isAuthenticated ||
+              !hasContent ||
+              (postType === "poll" && (!pollQuestion.trim() || pollOptions.filter((o) => o.trim()).length < 2))
+            }
+            className="h-9 shrink-0 rounded-full px-6 font-semibold"
+          >
+            {isAuthenticated ? "Post" : "Sign in"}
+          </Button>
         </div>
-        
-        {/* Hidden file input */}
+
         <input
           ref={fileInputRef}
           type="file"

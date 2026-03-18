@@ -370,20 +370,22 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
   }
 
   return (
-    <div className="w-full">
-      <PostForm currentUser={currentUser} onSubmit={handleCreatePost} isAuthenticated={isAuthenticated} isLoading={isCreatingPost} />
-
-      {/* Separator between composer and feed */}
-      <div className="h-2 bg-muted/50 border-y border-border" />
+    <div className="w-full flex flex-col">
+      {/* Sticky below Home title (~3.5rem); high z-index so feed never covers the composer */}
+      <div className="sticky top-14 z-30 border-b border-border bg-background pb-2 supports-[backdrop-filter]:bg-background/95 supports-[backdrop-filter]:backdrop-blur-sm">
+        <PostForm currentUser={currentUser} onSubmit={handleCreatePost} isAuthenticated={isAuthenticated} isLoading={isCreatingPost} />
+      </div>
 
       {isLoadingUI ? (
-        <PostCardSkeletonList count={5} />
+        <div className="relative z-0">
+          <PostCardSkeletonList count={5} />
+        </div>
       ) : (
-        <div>
+        <div className="relative z-0 isolate">
           {posts.map((post, index) => (
             <div
               key={post.id}
-              className="animate-in fade-in-0 slide-in-from-bottom-2"
+              className="relative z-0 animate-in fade-in-0 slide-in-from-bottom-2"
               style={{ animationDelay: `${Math.min(index * 50, 250)}ms`, animationFillMode: 'both' }}
             >
               <PostCard
