@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase'
-import { Post, Comment, ApiPost } from '@/lib/types'
+import { Post, Comment, ApiPost, ApiComment } from '@/lib/types'
+import { transformApiCommentToComment, transformApiPostToPost } from '@/lib/utils/posts.utils'
 
 export interface CreatePostRequest {
   club_id: number
@@ -259,6 +260,326 @@ class PostsService {
     }
   }
 
+  /**
+   * Single post by id (same shape as club feed) + like count (kind=like) + user_has_liked.
+   */
+  async getPostById(postId: number): Promise<ApiResponse<Post>> {
+    try {
+      const currentUserProfile = await this.getCurrentUserProfile()
+      const { data: row, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          author:members!posts_author_member_id_fkey (
+            id, first_name, last_name, email, user_id
+          ),
+          comments:post_comments (id),
+          reactions:post_reactions (kind, member_id)
+        `)
+        .eq('id', postId)
+        .maybeSingle()
+
+      if (error) throw error
+      if (!row) {
+        return { success: false, error: 'Post not found' }
+      }
+
+      const { data: { user } } = await supabase.auth.getUser()
+      const myMemberIds = new Set<number>()
+      if (user?.id && row.club_id != null) {
+        const { data: memberRows } = await supabase
+          .from('members')
+          .select('id')
+          .eq('club_id', row.club_id)
+          .eq('user_id', user.id)
+        for (const m of memberRows ?? []) {
+          if (typeof m.id === 'number') myMemberIds.add(m.id)
+        }
+      }
+
+      const reactions = (row.reactions as { kind?: string; member_id?: number }[]) ?? []
+      const likeReactions = reactions.filter((r) => r.kind === 'like')
+      const userHasLiked = likeReactions.some(
+        (r) => r.member_id != null && myMemberIds.has(r.member_id),
+      )
+
+      const author = row.author as {
+        id: number
+        first_name: string
+        last_name: string
+        email: string
+        user_id: string
+      } | null
+      const commentCount = Array.isArray(row.comments) ? row.comments.length : 0
+
+      let usersMap: Record<string, {
+        id: string
+        email?: string | null
+        first_name?: string | null
+        last_name?: string | null
+        avatar_url?: string | null
+        username?: string | null
+      }> = {}
+      if (author?.user_id) {
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id, email, first_name, last_name, avatar_url, username')
+          .eq('id', author.user_id)
+          .maybeSingle()
+        if (usersData) {
+          usersMap = { [usersData.id]: usersData }
+        }
+      }
+
+      const linkedUser = author?.user_id ? usersMap[author.user_id] : undefined
+      const isCurrentUserAuthor =
+        !!currentUserProfile &&
+        !author?.user_id &&
+        (
+          (
+            !!author?.first_name &&
+            !!author?.last_name &&
+            author.first_name.toLowerCase() === String(currentUserProfile.first_name ?? '').toLowerCase() &&
+            author.last_name.toLowerCase() === String(currentUserProfile.last_name ?? '').toLowerCase()
+          ) ||
+          (
+            !!author?.email &&
+            author.email.toLowerCase() === String(currentUserProfile.email ?? '').toLowerCase()
+          )
+        )
+      const resolvedUser = linkedUser ?? (isCurrentUserAuthor ? currentUserProfile : undefined)
+
+      const apiPost = {
+        id: row.id,
+        club_id: row.club_id,
+        user_id: author?.user_id ?? '',
+        content_type: row.kind === 'post' ? 'text' : row.kind === 'event_update' ? 'event' : 'text',
+        content_text: row.body ?? '',
+        is_active: true,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        event_id: row.event_id ?? undefined,
+        reaction_count: likeReactions.length,
+        comment_count: commentCount,
+        users: author
+          ? {
+              id: resolvedUser?.id ?? author.user_id ?? '',
+              email: resolvedUser?.email ?? author.email ?? '',
+              first_name: resolvedUser?.first_name ?? author.first_name ?? '',
+              last_name: resolvedUser?.last_name ?? author.last_name ?? '',
+              avatar_url: resolvedUser?.avatar_url ?? undefined,
+              username: resolvedUser?.username ?? undefined,
+            }
+          : undefined,
+        ...(row.rich && typeof row.rich === 'object' && 'poll' in (row.rich as Record<string, unknown>)
+          ? {
+              poll_question: ((row.rich as Record<string, unknown>).poll as Record<string, unknown>)
+                ?.question as string,
+              poll_options: JSON.stringify(
+                ((row.rich as Record<string, unknown>).poll as Record<string, unknown>)?.options ?? [],
+              ),
+            }
+          : {}),
+      } as ApiPost
+
+      const mediaResp = await this.getMediaAttachments(postId)
+      if (mediaResp.success && mediaResp.data?.length) {
+        ;(apiPost as { media_attachments?: typeof mediaResp.data }).media_attachments = mediaResp.data
+      }
+
+      const post = transformApiPostToPost(apiPost)
+      return {
+        success: true,
+        data: { ...post, isLiked: userHasLiked },
+      }
+    } catch (e) {
+      return {
+        success: false,
+        error: e instanceof Error ? e.message : 'Failed to load post',
+      }
+    }
+  }
+
+  /**
+   * Comments for a post (Supabase direct; same join pattern as mobile).
+   */
+  async getCommentsDirect(postId: number): Promise<ApiResponse<Comment[]>> {
+    try {
+      const { data: rows, error } = await supabase
+        .from('post_comments')
+        .select('*')
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true })
+
+      if (error) throw error
+      const list = rows ?? []
+      const memberIds = [
+        ...new Set(
+          list
+            .map((r) => (r as { author_member_id?: number }).author_member_id)
+            .filter((id): id is number => typeof id === 'number'),
+        ),
+      ]
+
+      let membersMap: Record<number, {
+        id: number
+        first_name: string
+        last_name: string
+        email: string
+        user_id: string | null
+      }> = {}
+      if (memberIds.length > 0) {
+        const { data: mems } = await supabase
+          .from('members')
+          .select('id, first_name, last_name, email, user_id')
+          .in('id', memberIds)
+        for (const m of mems ?? []) {
+          membersMap[m.id as number] = m as (typeof membersMap)[number]
+        }
+      }
+
+      const userIds = [
+        ...new Set(
+          Object.values(membersMap)
+            .map((m) => m.user_id)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ]
+      let usersMap: Record<string, {
+        id: string
+        email?: string | null
+        first_name?: string | null
+        last_name?: string | null
+        avatar_url?: string | null
+        username?: string | null
+      }> = {}
+      if (userIds.length > 0) {
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id, email, first_name, last_name, avatar_url, username')
+          .in('id', userIds)
+        if (usersData) {
+          usersMap = Object.fromEntries(usersData.map((u) => [u.id, u]))
+        }
+      }
+
+      const apiComments: ApiComment[] = list.map((raw) => {
+        const r = raw as Record<string, unknown>
+        const mid = r.author_member_id as number | undefined
+        const mem = mid != null ? membersMap[mid] : null
+        const u = mem?.user_id ? usersMap[mem.user_id] : null
+        const text =
+          String(r.body ?? r.content ?? r.text ?? '')
+        return {
+          id: r.id as number,
+          post_id: r.post_id as number,
+          user_id: mem?.user_id ?? '',
+          parent_comment_id: (r.parent_comment_id as number | undefined) ?? undefined,
+          content: text,
+          is_active: true,
+          created_at: String(r.created_at ?? ''),
+          updated_at: String(r.updated_at ?? r.created_at ?? ''),
+          users: mem
+            ? {
+                id: u?.id ?? mem.user_id ?? '',
+                email: u?.email ?? mem.email ?? '',
+                first_name: u?.first_name ?? mem.first_name ?? '',
+                last_name: u?.last_name ?? mem.last_name ?? '',
+                avatar_url: u?.avatar_url ?? undefined,
+                username: u?.username ?? undefined,
+              }
+            : undefined,
+        }
+      })
+
+      const comments = apiComments.map(transformApiCommentToComment)
+      return { success: true, data: comments }
+    } catch (e) {
+      return {
+        success: false,
+        error: e instanceof Error ? e.message : 'Failed to load comments',
+      }
+    }
+  }
+
+  private async createCommentDirect(
+    postId: number,
+    content: string,
+    parentCommentId?: number,
+  ): Promise<ApiResponse<Comment>> {
+    try {
+      const { data: postRow, error: pe } = await supabase
+        .from('posts')
+        .select('club_id')
+        .eq('id', postId)
+        .maybeSingle()
+      if (pe || !postRow?.club_id) {
+        return { success: false, error: 'Post not found' }
+      }
+      const memberId = await this.getMemberIdForCurrentUser(postRow.club_id as number)
+      if (!memberId) {
+        return { success: false, error: 'You must be a member of this club to comment.' }
+      }
+
+      const insertPayload: Record<string, unknown> = {
+        post_id: postId,
+        author_member_id: memberId,
+        body: content,
+      }
+      if (parentCommentId != null) insertPayload.parent_comment_id = parentCommentId
+
+      let ins = await supabase.from('post_comments').insert(insertPayload).select('*').single()
+      if (ins.error && String(ins.error.message).toLowerCase().includes('body')) {
+        const alt = { ...insertPayload }
+        delete alt.body
+        alt.content = content
+        ins = await supabase.from('post_comments').insert(alt).select('*').single()
+      }
+      if (ins.error) throw ins.error
+      const r = ins.data as Record<string, unknown>
+      const apiComment: ApiComment = {
+        id: r.id as number,
+        post_id: r.post_id as number,
+        user_id: '',
+        parent_comment_id: (r.parent_comment_id as number | undefined) ?? undefined,
+        content: String(r.body ?? r.content ?? r.text ?? ''),
+        is_active: true,
+        created_at: String(r.created_at ?? ''),
+        updated_at: String(r.updated_at ?? r.created_at ?? ''),
+      }
+      const memId = r.author_member_id as number | undefined
+      if (memId) {
+        const { data: mem } = await supabase
+          .from('members')
+          .select('id, first_name, last_name, email, user_id')
+          .eq('id', memId)
+          .maybeSingle()
+        if (mem?.user_id) {
+          const { data: u } = await supabase
+            .from('users')
+            .select('id, email, first_name, last_name, avatar_url, username')
+            .eq('id', mem.user_id)
+            .maybeSingle()
+          apiComment.user_id = mem.user_id
+          apiComment.users = {
+            id: u?.id ?? mem.user_id,
+            email: u?.email ?? mem.email ?? '',
+            first_name: u?.first_name ?? mem.first_name ?? '',
+            last_name: u?.last_name ?? mem.last_name ?? '',
+            avatar_url: u?.avatar_url ?? undefined,
+            username: u?.username ?? undefined,
+          }
+        }
+      }
+      return { success: true, data: transformApiCommentToComment(apiComment) }
+    } catch (e) {
+      return {
+        success: false,
+        error: e instanceof Error ? e.message : 'Failed to create comment',
+      }
+    }
+  }
+
   async createPost(postData: CreatePostRequest): Promise<ApiResponse<Post>> {
     // Try edge function first
     const edgeResult = await this.makeRequest<Post>('posts', {
@@ -387,7 +708,7 @@ class PostsService {
   // Comments
   async getComments(postId: number, params: { page?: number; limit?: number } = {}): Promise<ApiResponse<Comment[]>> {
     const searchParams = new URLSearchParams()
-    
+
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null) {
         searchParams.append(key, value.toString())
@@ -396,15 +717,17 @@ class PostsService {
 
     const queryString = searchParams.toString()
     const endpoint = `posts/${postId}/comments${queryString ? `?${queryString}` : ''}`
-    
+
     return this.makeRequest<Comment[]>(endpoint)
   }
 
   async createComment(postId: number, commentData: CreateCommentRequest): Promise<ApiResponse<Comment>> {
-    return this.makeRequest<Comment>(`posts/${postId}/comments`, {
+    const edge = await this.makeRequest<Comment>(`posts/${postId}/comments`, {
       method: 'POST',
       body: JSON.stringify(commentData),
     })
+    if (edge.success) return edge
+    return this.createCommentDirect(postId, commentData.content, commentData.parent_comment_id)
   }
 
   async deleteComment(commentId: number): Promise<ApiResponse<{ success: boolean }>> {

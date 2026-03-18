@@ -216,10 +216,10 @@ class AuthService {
     }
   }
 
-  // Sign out user
+  // Sign out user (local scope: only this browser/device; other sessions stay active)
   async signOut(): Promise<ApiResponse> {
     try {
-      const { error } = await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut({ scope: 'local' });
       
       if (error) {
         throw error;

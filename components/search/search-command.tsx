@@ -131,7 +131,7 @@ export function SearchCommand() {
                       key={post.id}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => {
-                        router.push(`/post/${post.id}`)
+                        router.push(`/status/${post.id}`)
                         setQuery("")
                         setIsOpen(false)
                       }}

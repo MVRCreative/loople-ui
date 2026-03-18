@@ -318,10 +318,10 @@ export function Newsfeed({ initialPosts, currentUser, isAuthenticated = false }:
       navigator.share({
         title: "Check out this post",
         text: "Shared from Loople",
-        url: `${window.location.origin}/post/${postId}`,
+        url: `${window.location.origin}/status/${postId}`,
       });
     } else {
-      navigator.clipboard.writeText(`${window.location.origin}/post/${postId}`);
+      navigator.clipboard.writeText(`${window.location.origin}/status/${postId}`);
       toast.success("Link copied to clipboard!");
     }
   };

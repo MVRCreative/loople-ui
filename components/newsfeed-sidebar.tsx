@@ -74,11 +74,11 @@ export function NewsfeedSidebar() {
     }
   }, [isAuthenticated, user])
 
-  // Create navigation with dynamic profile link
+  // Create navigation with dynamic profile link (badge only when unread > 0)
   const navigation = React.useMemo(() => {
     const nav = baseNavigation.map((item) =>
       item.name === "Messages"
-        ? { ...item, badgeCount: unreadMessageCount }
+        ? { ...item, badgeCount: unreadMessageCount > 0 ? unreadMessageCount : undefined }
         : item
     )
     
@@ -159,17 +159,20 @@ export function NewsfeedSidebar() {
           {navigation.map((item) => {
             const isActive = item.href && item.href !== "#" && pathname === item.href
             const content = (
-              <>
-                <div className="relative">
+              <span className="flex items-center gap-2 md:gap-3 w-full">
+                <span className="relative inline-flex shrink-0">
                   <item.icon className={`h-5 w-5 sm:h-5 sm:w-5 md:h-6 md:w-6 transition-colors group-hover:text-foreground ${isActive ? 'text-foreground' : 'text-muted-foreground'}`} />
-                  {item.badgeCount && item.badgeCount > 0 && (
-                    <div className="absolute -top-2 -right-2 flex min-h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-semibold text-destructive-foreground">
+                  {item.badgeCount != null && item.badgeCount > 0 && (
+                    <span
+                      className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground"
+                      aria-label={`${item.badgeCount} unread messages`}
+                    >
                       {item.badgeCount > 99 ? "99+" : item.badgeCount}
-                    </div>
+                    </span>
                   )}
-                </div>
+                </span>
                 <span className={`text-lg font-normal transition-colors group-hover:text-foreground ${isActive ? 'text-foreground font-semibold' : 'text-muted-foreground'}`}>{item.name}</span>
-              </>
+              </span>
             )
 
             return (

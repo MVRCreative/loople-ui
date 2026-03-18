@@ -54,7 +54,10 @@ export function PollVoting({ postId, pollQuestion, pollOptions, pollVotes, userV
   };
 
   return (
-    <div className="bg-gradient-to-br from-muted/30 to-muted/60 border border-border rounded-xl p-5 mt-3 shadow-sm">
+    <div
+      data-poll-root
+      className="bg-gradient-to-br from-muted/30 to-muted/60 border border-border rounded-xl p-5 mt-3 shadow-sm"
+    >
       <div className="flex items-center gap-2 mb-4">
         <div className="h-2 w-2 bg-primary rounded-full"></div>
         <h3 className="font-semibold text-card-foreground text-base">{pollQuestion}</h3>

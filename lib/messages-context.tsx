@@ -10,7 +10,6 @@ import {
   useState,
   type ReactNode,
 } from "react"
-import type { RealtimeChannel } from "@supabase/supabase-js"
 import { useAuth } from "./auth-context"
 import { useClub } from "./club-context"
 import { messagesService } from "./services/messages.service"
@@ -96,40 +95,29 @@ export function MessagesProvider({ children }: MessagesProviderProps) {
     }
   }, [isAuthenticated, refreshConversations, selectedClub?.id])
 
+  // Do not subscribe to user:{userId}:conversations — not supported on Supabase Cloud (realtime.send unavailable).
+  // Conversation list updates are handled by refresh on focus and the 60s timer above.
+
+  // Keep realtime auth in sync so private channels (messages, typing) work for all tabs
   useEffect(() => {
-    if (!user?.id || !isAuthenticated) return
-
-    let channel: RealtimeChannel | null = null
-    let cancelled = false
-
-    const setup = async () => {
-      try {
-        channel = await messagesService.subscribeToConversationList(
-          user.id,
-          () => {
-            if (cancelled) return
-            void refreshConversations()
-          }
-        )
-      } catch (error) {
-        console.error("[conversations] failed to subscribe to conversation updates:", error)
+    const syncRealtimeAuth = async () => {
+      const { data } = await supabase.auth.getSession()
+      const token = data.session?.access_token
+      if (token) {
+        try {
+          await supabase.realtime.setAuth(token)
+        } catch (error) {
+          console.error("[messages] failed to set realtime auth:", error)
+        }
       }
     }
 
-    void setup()
+    void syncRealtimeAuth()
 
-    return () => {
-      cancelled = true
-      void messagesService.removeChannel(channel)
-      channel = null
-    }
-  }, [user?.id, isAuthenticated, refreshConversations])
-
-  useEffect(() => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "TOKEN_REFRESHED" && session?.access_token) {
+      if (session?.access_token && (event === "TOKEN_REFRESHED" || event === "SIGNED_IN")) {
         try {
           await supabase.realtime.setAuth(session.access_token)
         } catch (error) {

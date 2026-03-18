@@ -165,3 +165,9 @@
 .animate-like-pop {
   animation: like-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+
+/* Override Next.js portal positioning (persisted from browser preview) */
+nextjs-portal {
+  left: unset;
+  top: unset;
+}

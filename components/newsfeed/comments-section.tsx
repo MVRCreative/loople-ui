@@ -13,9 +13,16 @@ interface CommentsSectionProps {
   postId: string;
   currentUser: User;
   initialComments?: CommentType[];
+  /** Load via Supabase (same as mobile); use on post detail page. */
+  useDirectComments?: boolean;
 }
 
-export function CommentsSection({ postId, currentUser, initialComments = [] }: CommentsSectionProps) {
+export function CommentsSection({
+  postId,
+  currentUser,
+  initialComments = [],
+  useDirectComments = false,
+}: CommentsSectionProps) {
   const [comments, setComments] = useState<CommentType[]>(initialComments);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -24,21 +31,25 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
   const loadComments = useCallback(async (pageNum: number = 1, append: boolean = false) => {
     setLoading(true);
     try {
-      const response = await postsService.getComments(parseInt(postId), {
-        page: pageNum,
-        limit: 10
-      });
+      const response = useDirectComments
+        ? await postsService.getCommentsDirect(parseInt(postId, 10))
+        : await postsService.getComments(parseInt(postId, 10), {
+            page: pageNum,
+            limit: 10,
+          });
 
       if (response.success && response.data) {
-        const transformed = transformApiCommentsToComments(response.data as unknown as ApiComment[]);
-        
-        if (append) {
-          setComments(prev => [...prev, ...transformed]);
+        const transformed = useDirectComments
+          ? (response.data as CommentType[])
+          : transformApiCommentsToComments(response.data as unknown as ApiComment[]);
+
+        if (append && !useDirectComments) {
+          setComments((prev) => [...prev, ...transformed]);
         } else {
           setComments(transformed);
         }
-        
-        setHasMore(transformed.length === 10);
+
+        setHasMore(useDirectComments ? false : transformed.length === 10);
       } else {
         toast.error(response.error || 'Failed to load comments');
       }
@@ -48,7 +59,7 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
     } finally {
       setLoading(false);
     }
-  }, [postId]);
+  }, [postId, useDirectComments]);
 
   const handleCreateComment = async (content: string, parentCommentId?: number) => {
     try {
@@ -59,8 +70,12 @@ export function CommentsSection({ postId, currentUser, initialComments = [] }: C
       });
 
       if (response.success && response.data) {
-        const [inserted] = transformApiCommentsToComments([response.data as unknown as ApiComment]);
-        setComments(prev => [inserted, ...prev]);
+        const raw = response.data as unknown as Record<string, unknown>;
+        const inserted: CommentType =
+          raw && typeof raw.postId === "string"
+            ? (response.data as CommentType)
+            : transformApiCommentsToComments([response.data as unknown as ApiComment])[0];
+        setComments((prev) => [inserted, ...prev]);
       } else {
         toast.error(response.error || 'Failed to post comment');
       }

@@ -153,8 +153,13 @@ async function waitForSubscription(channel: RealtimeChannel): Promise<RealtimeCh
       }
 
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        console.error('[messages] channel subscription failed:', channel.topic, status, err)
-        reject(err ?? new Error(`Realtime subscription failed with status ${status}.`))
+        const isConnectionClose = err === undefined
+        if (isConnectionClose) {
+          console.warn('[messages] realtime connection closed for channel:', channel.topic, '(will reconnect)')
+        } else {
+          console.error('[messages] channel subscription failed:', channel.topic, status, err)
+        }
+        reject(err ?? new Error(`Realtime ${isConnectionClose ? 'connection closed' : 'subscription failed'} (${status}).`))
       }
     })
   })
@@ -196,6 +201,62 @@ class MessagesService {
 
     const conversations = await this.getConversations(clubId)
     return conversations.find((conversation) => conversation.id === conversationId) ?? null
+  }
+
+  async createGroupConversation(
+    clubId: number,
+    title: string | null,
+    userIds: string[]
+  ): Promise<Conversation | null> {
+    const { data, error } = await supabase.rpc('create_group_conversation', {
+      p_club_id: clubId,
+      p_title: title ?? null,
+      p_user_ids: userIds,
+    })
+
+    if (error) {
+      throw error
+    }
+
+    const result = Array.isArray(data) ? (data[0] as { conversation_id: number } | undefined) : undefined
+    const conversationId = result?.conversation_id
+    if (conversationId == null) {
+      return null
+    }
+
+    const conversations = await this.getConversations(clubId)
+    return conversations.find((c) => c.id === conversationId) ?? null
+  }
+
+  async addParticipantsToConversation(
+    conversationId: number,
+    userIds: string[]
+  ): Promise<number> {
+    const { data, error } = await supabase.rpc('add_participants_to_conversation', {
+      p_conversation_id: conversationId,
+      p_user_ids: userIds,
+    })
+
+    if (error) {
+      throw error
+    }
+
+    const result = Array.isArray(data) ? (data[0] as { added_count: number } | undefined) : undefined
+    return result?.added_count ?? 0
+  }
+
+  async updateConversationTitle(
+    conversationId: number,
+    title: string
+  ): Promise<void> {
+    const { error } = await supabase.rpc('update_conversation_title', {
+      p_conversation_id: conversationId,
+      p_title: title,
+    })
+
+    if (error) {
+      throw error
+    }
   }
 
   async getMessages(
@@ -258,7 +319,9 @@ class MessagesService {
     })
 
     if (error) {
-      throw error
+      const message =
+        (error as { message?: string })?.message ?? JSON.stringify(error)
+      throw new Error(`mark_conversation_read: ${message}`)
     }
 
     const result = Array.isArray(data) ? (data[0] as ReadReceiptResult | undefined) : undefined
@@ -426,17 +489,31 @@ class MessagesService {
     })
 
     const handleTypingEvent = (payload: unknown, isTyping: boolean) => {
-      const eventPayload = extractRealtimePayload(payload)
-      if (!eventPayload) return
+      const payloadRecord = asRecord(payload)
+      // Realtime can send { payload: { user_id, ... } } or { event, payload: { user_id, ... } }
+      const inner = asRecord(payloadRecord?.payload)
+      const data = inner ?? payloadRecord
+      if (!data) {
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('[typing] no payload data:', payload)
+        }
+        return
+      }
 
-      const userId = toStringOrNull(eventPayload.user_id)
+      const userId =
+        toStringOrNull(data.user_id) ??
+        toStringOrNull((payloadRecord?.payload as JsonRecord)?.user_id)
       if (!userId || userId === currentUserId) return
+
+      if (process.env.NODE_ENV === 'development') {
+        console.info('[typing] received:', isTyping ? 'typing_started' : 'typing_stopped', 'user_id:', userId)
+      }
 
       callback({
         conversation_id: conversationId,
         user_id: userId,
         is_typing: isTyping,
-        sent_at: toStringOrNull(eventPayload.sent_at) ?? new Date().toISOString(),
+        sent_at: toStringOrNull(data.sent_at) ?? new Date().toISOString(),
       })
     }
 

@@ -10,7 +10,8 @@ import { PostEditForm } from "./post-edit-form";
 import { postsService } from "@/lib/services/posts.service";
 import { toast } from "sonner";
 import { useClub } from "@/lib/club-context";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import NextImage from "next/image";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
@@ -23,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MentionText } from "@/components/mentions/mention-text";
+import { cachePostForDetail, postStatusPath } from "@/lib/utils/post-detail-cache";
 
 interface PostCardProps {
   post: Post;
@@ -33,14 +35,58 @@ interface PostCardProps {
   onPostUpdate?: (post: Post) => void;
   onPostDelete?: (postId: string) => void;
   isFirst?: boolean;
+  /** Full-page post view: no inline comment thread (comments live below). */
+  detailMode?: boolean;
 }
 
-export function PostCard({ post, currentUser, onReaction, onComment, onShare, onPostUpdate, onPostDelete, isFirst: _isFirst = false }: PostCardProps) {
+export function PostCard({
+  post,
+  currentUser,
+  onReaction,
+  onComment,
+  onShare,
+  onPostUpdate,
+  onPostDelete,
+  isFirst: _isFirst = false,
+  detailMode = false,
+}: PostCardProps) {
   const [showComments, setShowComments] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [heroImageUrl, setHeroImageUrl] = useState<string | null>(null);
   const { selectedClub } = useClub();
+  const router = useRouter();
+
+  const openStatusPage = useCallback(() => {
+    if (post.isOptimistic || detailMode) return;
+    cachePostForDetail(post);
+    router.push(postStatusPath(post.id));
+  }, [post, router, detailMode]);
+
+  const handlePostBodyClick = (e: React.MouseEvent<HTMLElement>) => {
+    if (detailMode || post.isOptimistic) return;
+    const t = e.target;
+    if (!(t instanceof Element)) return;
+    if (
+      t.closest(
+        "a[href], button, input, textarea, select, [role='button'], [data-poll-root]",
+      )
+    ) {
+      return;
+    }
+    openStatusPage();
+  };
+
+  const handlePostBodyKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
+    if (detailMode || post.isOptimistic) return;
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const t = e.target;
+    if (t instanceof Element && t.closest("[data-poll-root], button, input, a[href]")) {
+      return;
+    }
+    e.preventDefault();
+    openStatusPage();
+  };
 
   const reactionsCount =
     typeof post.reactions === "number"
@@ -54,7 +100,9 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
   const username = post.user.username?.trim() || null;
 
   const handleCommentClick = () => {
-    setShowComments(!showComments);
+    if (!detailMode) {
+      setShowComments(!showComments);
+    }
     onComment(post.id);
   };
 
@@ -181,41 +229,56 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
         )}
         
         <div className="flex-1 min-w-0">
-          {/* Header Row with Name, Username, Role, Date */}
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+          {/* Header: single truncated line + reserved column for ⋮ (no overlap) */}
+          <div className="flex items-start gap-2 min-w-0">
+            <p className="min-w-0 flex-1 truncate text-[15px] leading-snug text-card-foreground">
               {username ? (
-                <Link href={`/profile/${username}`} className="font-semibold text-[15px] text-card-foreground hover:underline truncate">
+                <Link
+                  href={`/profile/${username}`}
+                  className="font-semibold hover:underline"
+                  onClick={(ev) => ev.stopPropagation()}
+                >
                   {post.user.name}
                 </Link>
               ) : (
-                <span className="font-semibold text-[15px] text-card-foreground truncate">
-                  {post.user.name}
-                </span>
+                <span className="font-semibold">{post.user.name}</span>
               )}
               {username && (
-                <span className="text-sm text-muted-foreground truncate">
+                <span className="text-muted-foreground font-normal">
+                  {" "}
                   @{username}
                 </span>
               )}
-              <span className="text-muted-foreground">·</span>
-              <span className="text-sm text-muted-foreground whitespace-nowrap">
-                {post.timestamp}
-              </span>
-            </div>
-            
-            {/* Dropdown menu */}
+              <span className="text-muted-foreground font-normal"> · </span>
+              {!post.isOptimistic && !detailMode ? (
+                <Link
+                  href={postStatusPath(post.id)}
+                  onClick={(ev) => {
+                    ev.stopPropagation();
+                    cachePostForDetail(post);
+                  }}
+                  className="text-muted-foreground font-normal hover:text-primary hover:underline"
+                >
+                  {post.timestamp}
+                </Link>
+              ) : (
+                <span className="text-muted-foreground font-normal">{post.timestamp}</span>
+              )}
+            </p>
             {(canEdit || canDelete) && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 rounded-full shrink-0 text-muted-foreground hover:text-foreground hover:bg-accent"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
+              <div className="shrink-0 relative z-20">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground hover:bg-accent"
+                      aria-label="Post options"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-44">
                   {canEdit && (
                     <DropdownMenuItem onClick={handleEdit}>
@@ -234,67 +297,87 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
                     </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
-              </DropdownMenu>
+                </DropdownMenu>
+              </div>
             )}
           </div>
 
-          {/* Role badge (below name row, subtle) */}
-          <div className="flex items-center gap-2 mt-0.5 mb-2">
-            <Badge variant="secondary" className="text-xs">
-              {post.user.role}
-            </Badge>
-            {Boolean(post.content.event) && (
-              <Badge variant="outline" className="text-xs">Event</Badge>
-            )}
-          </div>
-          
-          {/* Post Content */}
-          <p className="text-card-foreground text-[15px] leading-relaxed whitespace-pre-wrap">
-            <MentionText text={post.content.text} />
-          </p>
-        
-          {/* Event Card */}
-          {post.content.event && (
-            <EventCard event={post.content.event} />
-          )}
-          
-          {/* Poll Voting */}
-          {post.content.poll && (
-            <PollVoting
-              postId={post.id}
-              pollQuestion={post.content.poll.question}
-              pollOptions={post.content.poll.options}
-              pollVotes={post.content.poll.votes}
-              userVote={post.content.poll.userVote ?? null}
-            />
-          )}
-          
-          {/* Media (moved below content, near bottom) */}
-          {heroImageUrl && (
-            <div className="mt-3 rounded-xl overflow-hidden border border-border/60 bg-muted/20">
-              {heroImageUrl.startsWith('blob:') ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={heroImageUrl}
-                    alt={post.content.text.slice(0, 64) || 'Post image'}
-                    className="w-full h-auto object-cover"
-                  />
-                </>
-              ) : (
-                <NextImage
-                  src={heroImageUrl}
-                  alt={post.content.text.slice(0, 64) || 'Post image'}
-                  width={1200}
-                  height={675}
-                  className="w-full h-auto object-cover"
-                />
+          {/* Clickable body: opens /status/{id} (excludes poll / links / buttons) */}
+          <div
+            role={!detailMode && !post.isOptimistic ? "link" : undefined}
+            tabIndex={!detailMode && !post.isOptimistic ? 0 : undefined}
+            aria-label={
+              !detailMode && !post.isOptimistic
+                ? `Open post by ${post.user.name}`
+                : undefined
+            }
+            className={
+              !detailMode && !post.isOptimistic
+                ? "cursor-pointer rounded-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                : undefined
+            }
+            onClick={handlePostBodyClick}
+            onKeyDown={handlePostBodyKeyDown}
+          >
+            {/* Role badge (below name row, subtle) */}
+            <div className="flex items-center gap-2 mt-0.5 mb-2">
+              <Badge variant="secondary" className="text-xs">
+                {post.user.role}
+              </Badge>
+              {Boolean(post.content.event) && (
+                <Badge variant="outline" className="text-xs">
+                  Event
+                </Badge>
               )}
             </div>
-          )}
+
+            {/* Post Content */}
+            <p className="text-card-foreground text-[15px] leading-relaxed whitespace-pre-wrap">
+              <MentionText text={post.content.text} />
+            </p>
+
+            {/* Event Card */}
+            {post.content.event && <EventCard event={post.content.event} />}
+
+            {/* Poll Voting */}
+            {post.content.poll && (
+              <PollVoting
+                postId={post.id}
+                pollQuestion={post.content.poll.question}
+                pollOptions={post.content.poll.options}
+                pollVotes={post.content.poll.votes}
+                userVote={post.content.poll.userVote ?? null}
+              />
+            )}
+
+            {/* Media */}
+            {heroImageUrl && (
+              <div className="mt-3 rounded-xl overflow-hidden border border-border/60 bg-muted/20 pointer-events-none">
+                {heroImageUrl.startsWith("blob:") ? (
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={heroImageUrl}
+                      alt={post.content.text.slice(0, 64) || "Post image"}
+                      className="w-full h-auto object-cover"
+                    />
+                  </>
+                ) : (
+                  <NextImage
+                    src={heroImageUrl}
+                    alt={post.content.text.slice(0, 64) || "Post image"}
+                    width={1200}
+                    height={675}
+                    className="w-full h-auto object-cover"
+                  />
+                )}
+              </div>
+            )}
+          </div>
 
           {/* Post Actions */}
           <PostActions
+            key={`${post.id}-${reactionsCount}-${isLiked}`}
             postId={post.id}
             reactions={reactionsCount}
             comments={commentsCount}
@@ -307,23 +390,25 @@ export function PostCard({ post, currentUser, onReaction, onComment, onShare, on
         </div>
       </div>
       
-      {/* Comments Section — animated expand */}
-      <div
-        className={`grid transition-all duration-300 ease-out ${
-          showComments ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-        }`}
-      >
-        <div className="overflow-hidden">
-          {showComments && (
-            <div className="ml-13">
-              <CommentsSection
-                postId={post.id}
-                currentUser={currentUser}
-              />
-            </div>
-          )}
+      {/* Comments Section — animated expand (feed only) */}
+      {!detailMode && (
+        <div
+          className={`grid transition-all duration-300 ease-out ${
+            showComments ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          }`}
+        >
+          <div className="overflow-hidden">
+            {showComments && (
+              <div className="ml-13">
+                <CommentsSection
+                  postId={post.id}
+                  currentUser={currentUser}
+                />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

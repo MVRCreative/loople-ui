@@ -18,6 +18,8 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { mentionsService, type MentionableUser } from "@/lib/services/mentions.service"
 
+const TEXTAREA_MAX_HEIGHT_PX = 240 // max-h-60
+
 interface MentionInputProps {
   value: string
   onChange: (value: string) => void
@@ -28,6 +30,10 @@ interface MentionInputProps {
   /** Render as textarea (default) or input */
   as?: "textarea" | "input"
   rows?: number
+  /** When true (and as="textarea"), height follows content up to max (no min height) */
+  autoResize?: boolean
+  /** When set, Enter (without Shift) calls this instead of inserting newline; Shift+Enter still inserts newline */
+  onSubmitWithEnter?: () => void
 }
 
 export function MentionInput({
@@ -39,6 +45,8 @@ export function MentionInput({
   disabled = false,
   as = "textarea",
   rows = 1,
+  autoResize = false,
+  onSubmitWithEnter,
 }: MentionInputProps) {
   const [suggestions, setSuggestions] = useState<MentionableUser[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -46,6 +54,19 @@ export function MentionInput({
   const [mentionQuery, setMentionQuery] = useState<string | null>(null)
   const [mentionStart, setMentionStart] = useState(0)
   const inputRef = useRef<HTMLTextAreaElement | HTMLInputElement>(null)
+
+  const resizeTextarea = useCallback(() => {
+    if (as !== "textarea" || !autoResize) return
+    const el = inputRef.current as HTMLTextAreaElement | null
+    if (!el) return
+    el.style.height = "auto"
+    const h = Math.min(el.scrollHeight, TEXTAREA_MAX_HEIGHT_PX)
+    el.style.height = `${h}px`
+  }, [as, autoResize])
+
+  useEffect(() => {
+    if (as === "textarea" && autoResize) resizeTextarea()
+  }, [value, as, autoResize, resizeTextarea])
 
   // Detect @mention trigger
   const detectMention = useCallback(
@@ -122,19 +143,26 @@ export function MentionInput({
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!showSuggestions) return
+    if (showSuggestions) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault()
+        setSelectedIndex((prev) => Math.min(prev + 1, suggestions.length - 1))
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault()
+        setSelectedIndex((prev) => Math.max(prev - 1, 0))
+      } else if (e.key === "Enter" && suggestions[selectedIndex]) {
+        e.preventDefault()
+        insertMention(suggestions[selectedIndex])
+      } else if (e.key === "Escape") {
+        setShowSuggestions(false)
+      }
+      return
+    }
 
-    if (e.key === "ArrowDown") {
+    // Enter without Shift: submit (e.g. send message). Shift+Enter: newline.
+    if (e.key === "Enter" && !e.shiftKey && onSubmitWithEnter) {
       e.preventDefault()
-      setSelectedIndex((prev) => Math.min(prev + 1, suggestions.length - 1))
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault()
-      setSelectedIndex((prev) => Math.max(prev - 1, 0))
-    } else if (e.key === "Enter" && suggestions[selectedIndex]) {
-      e.preventDefault()
-      insertMention(suggestions[selectedIndex])
-    } else if (e.key === "Escape") {
-      setShowSuggestions(false)
+      onSubmitWithEnter()
     }
   }
 
@@ -143,6 +171,7 @@ export function MentionInput({
     onChange(newValue)
     const cursorPos = e.target.selectionStart ?? newValue.length
     detectMention(newValue, cursorPos)
+    if (as === "textarea" && autoResize) requestAnimationFrame(resizeTextarea)
   }
 
   const handleClick = () => {
@@ -164,10 +193,13 @@ export function MentionInput({
     rows: as === "textarea" ? rows : undefined,
   }
 
+  const textareaStyle =
+    as === "textarea" && autoResize ? { maxHeight: TEXTAREA_MAX_HEIGHT_PX } : undefined
+
   return (
-    <div className="relative">
+    <div className="relative w-full min-w-0 h-full">
       {as === "textarea" ? (
-        <textarea {...sharedProps} />
+        <textarea {...sharedProps} style={textareaStyle} />
       ) : (
         <input type="text" {...sharedProps} />
       )}

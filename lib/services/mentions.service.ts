@@ -165,10 +165,10 @@ class MentionsService {
       let subject: string
 
       if (params.postId) {
-        link = `/post/${params.postId}`
+        link = `/status/${params.postId}`
         subject = 'mentioned you in a post'
       } else if (params.commentId) {
-        link = `/post/${params.postId}#comment-${params.commentId}`
+        link = `/status/${params.postId}#comment-${params.commentId}`
         subject = 'mentioned you in a comment'
       } else {
         subject = 'mentioned you in a message'
