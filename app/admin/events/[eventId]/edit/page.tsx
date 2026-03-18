@@ -14,6 +14,8 @@ import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
 import { User } from "@/lib/types";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { EventsService } from "@/lib/services/events.service";
+import type { CreateEventData as ApiCreateEventData } from "@/lib/services/events.service";
 
 export default function AdminEditEventPage() {
   const params = useParams();
@@ -39,14 +41,23 @@ export default function AdminEditEventPage() {
     router.back();
   };
 
-  const handleSubmit = async (_data: CreateEventData | UpdateEventData) => {
+  const handleSubmit = async (data: CreateEventData | UpdateEventData) => {
     setIsSubmitting(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const updates: Partial<ApiCreateEventData> = {
+        title: data.title,
+        description: data.description,
+        start_date: data.start_date,
+        end_date: data.end_date,
+        location: data.location?.name,
+        max_capacity: data.capacity?.max,
+        program_id: data.program ? Number(data.program) : undefined,
+      };
+      await EventsService.updateEvent(eventId, updates);
       toast.success("Event updated successfully!");
       router.push(`/admin/events/${eventId}`);
     } catch (error) {
-      console.error('Error updating event:', error);
+      console.error("Error updating event:", error);
       toast.error("Failed to update event. Please try again.");
     } finally {
       setIsSubmitting(false);
@@ -148,7 +159,7 @@ export default function AdminEditEventPage() {
         event={event}
         onSubmit={handleSubmit}
         onCancel={handleCancel}
-        loading={isSubmitting}
+        loading={loading || isSubmitting}
       />
 
       {/* Preview Link */}

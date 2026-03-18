@@ -7,9 +7,9 @@ interface MemberPaymentsCardProps {
   memberId: string;
 }
 
-export function MemberPaymentsCard({ memberId: _memberId }: MemberPaymentsCardProps) {
+export function MemberPaymentsCard({ memberId }: MemberPaymentsCardProps) {
   return (
-    <Card>
+    <Card data-member-id={memberId}>
       <CardHeader>
         <CardTitle className="text-base">Payment History</CardTitle>
       </CardHeader>

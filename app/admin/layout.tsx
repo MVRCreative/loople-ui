@@ -1,39 +1,48 @@
-'use client'
+import { createServerClient } from '@supabase/ssr'
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { userHasAdminAccess } from '@/lib/auth/admin-access'
+import { AdminLayoutClient } from './admin-layout-client'
 
-import { AdminLayoutWrapper } from '@/components/admin/admin-layout-wrapper'
-import { useAuth } from '@/lib/auth-context'
-import { useRouter } from 'next/navigation'
-import { useEffect } from 'react'
-
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const { isAuthenticated, loading: authLoading } = useAuth()
-  const router = useRouter()
-
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      router.push('/auth/login')
+  const cookieStore = await cookies()
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll()
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) =>
+              cookieStore.set(name, value, options)
+            )
+          } catch {
+            /* set from RSC — middleware refreshes session */
+          }
+        },
+      },
     }
-  }, [isAuthenticated, authLoading, router])
+  )
 
-  if (authLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-        </div>
-      </div>
-    )
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (!user) {
+    redirect('/auth/login')
   }
 
-  if (!isAuthenticated) {
-    return null // Will redirect via useEffect
+  const allowed = await userHasAdminAccess(supabase, user)
+  if (!allowed) {
+    redirect('/')
   }
 
-  return <AdminLayoutWrapper>{children}</AdminLayoutWrapper>
+  return <AdminLayoutClient>{children}</AdminLayoutClient>
 }

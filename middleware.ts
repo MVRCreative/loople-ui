@@ -47,7 +47,8 @@ export async function middleware(request: NextRequest) {
 
     const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route))
     const isAuthRoute = authRoutes.some(route => path.startsWith(route))
-    const isAdminRoute = path.startsWith('/admin')
+
+    // Admin DB checks run in app/admin/layout (Node), not Edge middleware.
 
     if (isProtectedRoute && !user) {
       const redirectUrl = new URL(`${basePath}/auth/login`, request.url)
@@ -56,46 +57,6 @@ export async function middleware(request: NextRequest) {
     }
 
     if (isAuthRoute && user && !path.startsWith('/auth/logout')) {
-      return NextResponse.redirect(new URL(basePath, request.url))
-    }
-
-    if (user && isAdminRoute) {
-      const metadata = user.user_metadata as Record<string, unknown> | undefined
-      const appMeta = user.app_metadata as Record<string, unknown> | undefined
-
-      const hasGlobalAdmin =
-        appMeta?.isAdmin === true ||
-        metadata?.role === 'Admin' ||
-        metadata?.isAdmin === true
-
-      if (hasGlobalAdmin) {
-        return supabaseResponse
-      }
-
-      const userId = user.id
-      if (userId) {
-        const { data: ownedClubs } = await supabase
-          .from('clubs')
-          .select('id')
-          .eq('owner_id', userId)
-          .limit(1)
-
-        if (ownedClubs?.length) {
-          return supabaseResponse
-        }
-
-        const { data: adminMemberships } = await supabase
-          .from('members')
-          .select('id')
-          .eq('user_id', userId)
-          .in('role', ['admin', 'Admin'])
-          .limit(1)
-
-        if (adminMemberships?.length) {
-          return supabaseResponse
-        }
-      }
-
       return NextResponse.redirect(new URL(basePath, request.url))
     }
 

@@ -39,12 +39,12 @@ interface AdminEventFormProps {
   className?: string;
 }
 
-export function AdminEventForm({ 
-  event, 
-  onSubmit, 
-  onCancel, 
-  loading: _loading = false,
-  className 
+export function AdminEventForm({
+  event,
+  onSubmit,
+  onCancel,
+  loading = false,
+  className,
 }: AdminEventFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<keyof EventFormData, string>>>({});
@@ -468,7 +468,7 @@ export function AdminEventForm({
               type="button"
               variant="outline"
               onClick={onCancel}
-              disabled={isSubmitting}
+              disabled={isSubmitting || loading}
             >
               <X className="h-4 w-4 mr-1" />
               Cancel
@@ -476,12 +476,12 @@ export function AdminEventForm({
             
             <Button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || loading}
             >
-              {isSubmitting ? (
+              {isSubmitting || loading ? (
                 <>
                   <Loader size="sm" className="mr-2" />
-                  Saving...
+                  {isSubmitting ? "Saving..." : "Loading..."}
                 </>
               ) : (
                 <>

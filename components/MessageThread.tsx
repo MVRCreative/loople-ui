@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useRef, useCallback } from "react"
 import type { RealtimeChannel } from "@supabase/supabase-js"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Loader2, Send, Plus, Image, Smile, Users, Pencil, UserPlus } from "lucide-react"
+import { Loader2, Send, Plus, Image as ImageIcon, Smile, Users, Pencil, UserPlus } from "lucide-react"
 import { toast } from "sonner"
 import { messagesService, type Message } from "@/lib/services/messages.service"
 import { mentionsService } from "@/lib/services/mentions.service"
@@ -212,7 +212,7 @@ export function MessageThread({ id }: MessageThreadProps) {
       }
 
       void refreshConversations()
-    } catch (_error) {
+    } catch {
       // Best-effort recovery; transient failures expected during focus/visibility changes
     }
   }, [conversationId, refreshConversations, scrollToBottom])
@@ -399,7 +399,7 @@ export function MessageThread({ id }: MessageThreadProps) {
     if (editingGroupTitle && conversation) {
       setGroupTitleDraft(conversation.title?.trim() || "Group chat")
     }
-  }, [editingGroupTitle, conversation?.title])
+  }, [editingGroupTitle, conversation])
 
   useEffect(() => {
     if (!addPeopleOpen) return
@@ -887,7 +887,7 @@ export function MessageThread({ id }: MessageThreadProps) {
             className="h-12 w-12 shrink-0 rounded-full text-muted-foreground hover:text-foreground"
             aria-label="GIF"
           >
-            <Image className="h-5 w-5" />
+            <ImageIcon className="h-5 w-5" aria-hidden />
           </Button>
           <Button
             type="button"

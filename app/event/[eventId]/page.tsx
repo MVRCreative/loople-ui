@@ -105,38 +105,6 @@ export default function EventDetailsPage() {
     router.back();
   };
 
-  const _handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: event?.title || "Event",
-          text: `Check out this event: ${event?.title}`,
-          url: window.location.href,
-        });
-      } catch {
-        // User cancelled sharing
-      }
-    } else {
-      await navigator.clipboard.writeText(window.location.href);
-      toast.success("Event link copied to clipboard!");
-    }
-  };
-
-  const _handleAddToCalendar = () => {
-    if (!event) return;
-    
-    const startDate = new Date(event.start_date);
-    const endDate = new Date(event.end_date);
-    
-    const formatDate = (date: Date) => {
-      return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-    };
-    
-    const calendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(event.title)}&dates=${formatDate(startDate)}/${formatDate(endDate)}&details=${encodeURIComponent(event.description || '')}&location=${encodeURIComponent(event.location.name)}`;
-    
-    window.open(calendarUrl, '_blank');
-  };
-
   const handleRSVPUpdate = (status: string) => {
     updateRSVP(status as EventRSVPStatus);
   };
