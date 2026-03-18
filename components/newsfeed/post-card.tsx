@@ -47,7 +47,6 @@ export function PostCard({
   onShare,
   onPostUpdate,
   onPostDelete,
-  isFirst: _isFirst = false,
   detailMode = false,
 }: PostCardProps) {
   const [showComments, setShowComments] = useState(false);

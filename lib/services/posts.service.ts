@@ -421,7 +421,7 @@ class PostsService {
         ),
       ]
 
-      let membersMap: Record<number, {
+      const membersMap: Record<number, {
         id: number
         first_name: string
         last_name: string
