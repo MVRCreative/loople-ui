@@ -8,12 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/ui/loader";
-import { useAuth } from "@/lib/auth-context";
 import { useClub } from "@/lib/club-context";
-import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
+import { useAdminClubPageAccess } from "@/lib/hooks/use-admin-club-page-access";
 import { ProgramsService } from "@/lib/services/programs.service";
 import type { ProgramWithMemberCount } from "@/lib/programs/types";
-import type { User } from "@/lib/types";
 import {
   Search,
   Plus,
@@ -33,19 +31,14 @@ import {
 
 export default function AdminProgramsPage() {
   const router = useRouter();
-  const { user: authUser } = useAuth();
   const { selectedClub, loading: clubLoading } = useClub();
+  const { canManageSelectedClub } = useAdminClubPageAccess();
 
   const [programs, setPrograms] = useState<ProgramWithMemberCount[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-
-  const currentUser: User = authUser
-    ? convertAuthUserToUser(authUser)
-    : createGuestUser();
-  const isAdmin = currentUser.isAdmin;
 
   const loadPrograms = useCallback(async () => {
     if (!selectedClub) return;
@@ -92,19 +85,6 @@ export default function AdminProgramsPage() {
     );
   }
 
-  if (!isAdmin) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg font-medium text-destructive">Access Denied</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            You don&apos;t have permission to access this page.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (!selectedClub) {
     return (
       <div className="flex-1 space-y-6">
@@ -129,6 +109,19 @@ export default function AdminProgramsPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (!canManageSelectedClub) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <p className="text-lg font-medium text-destructive">Access denied</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            You don&apos;t have permission to manage this club. Choose a club you administer from the switcher.
+          </p>
+        </div>
       </div>
     );
   }

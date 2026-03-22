@@ -29,10 +29,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { useAuth } from "@/lib/auth-context";
 import { useClub } from "@/lib/club-context";
-import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
-import { User } from "@/lib/types";
+import { useAdminClubPageAccess } from "@/lib/hooks/use-admin-club-page-access";
 import {
   WaitlistService,
   WaitlistApplication,
@@ -44,11 +42,9 @@ import { MoreHorizontal, UserPlus, ExternalLink, Copy } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function AdminWaitlistPage() {
-  const { user: authUser } = useAuth();
   const { selectedClub, loading: clubLoading } = useClub();
+  const { canManageSelectedClub } = useAdminClubPageAccess();
   const router = useRouter();
-  const currentUser: User = authUser ? convertAuthUserToUser(authUser) : createGuestUser();
-  const isAdmin = currentUser.isAdmin;
 
   const [settings, setSettings] = useState<ClubWaitlistSettings | null>(null);
   const [applications, setApplications] = useState<WaitlistApplication[]>([]);
@@ -213,15 +209,7 @@ export default function AdminWaitlistPage() {
     }
   };
 
-  if (!isAdmin) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <p className="text-lg font-medium text-destructive">Access Denied</p>
-      </div>
-    );
-  }
-
-  if (clubLoading || (loading && !applications.length)) {
+  if (clubLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <Loader className="mx-auto" />
@@ -248,6 +236,27 @@ export default function AdminWaitlistPage() {
             </CardContent>
           </Card>
         </div>
+      </div>
+    );
+  }
+
+  if (!canManageSelectedClub) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <p className="text-lg font-medium text-destructive">Access denied</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            You don&apos;t have permission to manage this club. Choose a club you administer from the switcher.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading && !applications.length) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <Loader className="mx-auto" />
       </div>
     );
   }

@@ -50,7 +50,7 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
               </Link>
             </div>
             <div className="px-3 pb-3">
-              <ClubSwitcher ownerOnly className="w-full" />
+              <ClubSwitcher variant="admin" className="w-full" />
             </div>
           </SidebarHeader>
           

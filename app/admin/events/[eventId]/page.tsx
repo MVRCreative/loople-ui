@@ -10,9 +10,7 @@ import { AdminEventStats } from "@/components/events/AdminEventStats";
 import { EventMeta } from "@/components/events/EventMeta";
 import { useEvent } from "@/lib/events/hooks";
 import { useClub } from "@/lib/club-context";
-import { useAuth } from "@/lib/auth-context";
-import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
-import { User } from "@/lib/types";
+import { useAdminClubPageAccess } from "@/lib/hooks/use-admin-club-page-access";
 import { ArrowLeft, Edit, Eye, Share2, BarChart3, Trash2, CheckCircle2, Ban, Download } from "lucide-react";
 import { toast } from "sonner";
 import { RSVPService, EventRegistration } from "@/lib/services/rsvp.service";
@@ -25,19 +23,10 @@ import { EventsService } from "@/lib/services/events.service";
 export default function AdminEventDetailsPage() {
   const params = useParams();
   const router = useRouter();
-  const { user: authUser } = useAuth();
-  
   const eventId = typeof params?.eventId === "string" ? params.eventId : "";
   const { event, posts, loading, error, loadEvent } = useEvent(eventId);
-  const { loading: clubLoading } = useClub();
-  
-  // Convert auth user to frontend User type
-  const currentUser: User = authUser 
-    ? convertAuthUserToUser(authUser)
-    : createGuestUser();
-
-  // Check if user is admin
-  const isAdmin = currentUser.isAdmin;
+  const { loading: clubLoading, selectedClub } = useClub();
+  const { globalAdmin, canManageSelectedClub } = useAdminClubPageAccess();
 
   // Load event on mount
   useEffect(() => {
@@ -237,13 +226,29 @@ export default function AdminEventDetailsPage() {
     );
   }
 
-  if (!isAdmin) {
+  if (!globalAdmin && !selectedClub) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg font-medium text-destructive">Access Denied</p>
+        <div className="text-center max-w-md">
+          <p className="text-lg font-medium text-foreground">Select a club</p>
           <p className="text-sm text-muted-foreground mt-2">
-            You don&apos;t have permission to access this page.
+            Use the club switcher above to manage events for your organization.
+          </p>
+          <Button onClick={() => router.push("/admin/events")} className="mt-4">
+            Back to events
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canManageSelectedClub) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <p className="text-lg font-medium text-destructive">Access denied</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            You don&apos;t have permission to manage this club.
           </p>
         </div>
       </div>

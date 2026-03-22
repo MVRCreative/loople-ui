@@ -5,10 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
-import { useAuth } from "@/lib/auth-context";
-import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
-import { User } from "@/lib/types";
 import { useClub } from "@/lib/club-context";
+import { useAdminClubPageAccess } from "@/lib/hooks/use-admin-club-page-access";
 import { MembersService, Member } from "@/lib/services/members.service";
 import { MembersTable } from "@/components/club-management/members-table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -20,17 +18,14 @@ import { Plus, Users } from "lucide-react";
 
 export default function AdminUsersPage() {
   const router = useRouter();
-  const { user: authUser } = useAuth();
   const { selectedClub, loading: clubLoading } = useClub();
+  const { canManageSelectedClub } = useAdminClubPageAccess();
   const [members, setMembers] = useState<Member[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [membersError, setMembersError] = useState<string | null>(null);
   const [showInviteMember, setShowInviteMember] = useState(false);
   const [showCreateMember, setShowCreateMember] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
-
-  const currentUser: User = authUser ? convertAuthUserToUser(authUser) : createGuestUser();
-  const isAdmin = currentUser.isAdmin;
 
   useEffect(() => {
     const loadMembers = async () => {
@@ -51,23 +46,12 @@ export default function AdminUsersPage() {
     loadMembers();
   }, [selectedClub]);
 
-  if (clubLoading || membersLoading) {
+  if (clubLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
           <Loader className="mx-auto mb-4" />
-          <p className="text-lg text-muted-foreground">Loading members...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg font-medium text-destructive">Access Denied</p>
-          <p className="text-sm text-muted-foreground mt-2">You don&apos;t have permission to access this page.</p>
+          <p className="text-lg text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
@@ -94,6 +78,30 @@ export default function AdminUsersPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (!canManageSelectedClub) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <p className="text-lg font-medium text-destructive">Access denied</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            You don&apos;t have permission to manage this club. Choose a club you administer from the switcher, or contact an owner.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (membersLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="mx-auto mb-4" />
+          <p className="text-lg text-muted-foreground">Loading members...</p>
+        </div>
       </div>
     );
   }

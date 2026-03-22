@@ -7,12 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/ui/loader";
-import { useAuth } from "@/lib/auth-context";
 import { useClub } from "@/lib/club-context";
-import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
+import { useAdminClubPageAccess } from "@/lib/hooks/use-admin-club-page-access";
 import { ProgramsService } from "@/lib/services/programs.service";
 import type { ProgramWithMemberCount, ProgramMembershipWithMember, ProgramScheduleEntry } from "@/lib/programs/types";
-import type { User } from "@/lib/types";
 import {
   Edit,
   Trash2,
@@ -42,19 +40,14 @@ export default function AdminProgramDetailPage() {
   const router = useRouter();
   const programId = params.programId as string;
 
-  const { user: authUser } = useAuth();
-  const { loading: clubLoading } = useClub();
+  const { selectedClub, loading: clubLoading } = useClub();
+  const { globalAdmin, canManageSelectedClub } = useAdminClubPageAccess();
 
   const [program, setProgram] = useState<ProgramWithMemberCount | null>(null);
   const [members, setMembers] = useState<ProgramMembershipWithMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const currentUser: User = authUser
-    ? convertAuthUserToUser(authUser)
-    : createGuestUser();
-  const isAdmin = currentUser.isAdmin;
 
   const loadProgram = useCallback(async () => {
     setLoading(true);
@@ -101,10 +94,31 @@ export default function AdminProgramDetailPage() {
     );
   }
 
-  if (!isAdmin) {
+  if (!globalAdmin && !selectedClub) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-lg font-medium text-destructive">Access Denied</p>
+        <div className="text-center max-w-md">
+          <p className="text-lg font-medium text-foreground">Select a club</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Use the club switcher above, then open this program again.
+          </p>
+          <Button onClick={() => router.push("/admin/programs")} className="mt-4">
+            Back to programs
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canManageSelectedClub) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <p className="text-lg font-medium text-destructive">Access denied</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            You don&apos;t have permission to manage this club.
+          </p>
+        </div>
       </div>
     );
   }

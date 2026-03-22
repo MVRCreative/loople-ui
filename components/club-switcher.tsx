@@ -17,12 +17,30 @@ import { Club } from "@/lib/services/clubs.service";
 
 interface ClubSwitcherProps {
   className?: string;
+  /** When true, only clubs you own appear in the list (main app / owner workflows). */
   ownerOnly?: boolean;
+  /**
+   * `admin`: copy and empty states match the admin panel (user already passed admin gate).
+   * `default`: general dashboard / member messaging.
+   */
+  variant?: "default" | "admin";
 }
 
-export function ClubSwitcher({ className, ownerOnly }: ClubSwitcherProps) {
+export function ClubSwitcher({
+  className,
+  ownerOnly,
+  variant = "default",
+}: ClubSwitcherProps) {
   const router = useRouter();
-  const { clubs, selectedClub, loading, selectClub, isOwner, isAdmin } = useClub();
+  const {
+    clubs,
+    selectedClub,
+    loading,
+    selectClub,
+    isOwner,
+    isAdmin,
+    error: clubError,
+  } = useClub();
   const { isAuthenticated, user } = useAuth();
   const [isOpen, setIsOpen] = React.useState(false);
   const [isClient, setIsClient] = React.useState(false);
@@ -68,8 +86,29 @@ export function ClubSwitcher({ className, ownerOnly }: ClubSwitcherProps) {
   const clubsArray = Array.isArray(clubs) ? clubs : [];
   const visibleClubs = ownerOnly ? clubsArray.filter((c) => c.owner_id === user?.id) : clubsArray;
 
+  const emptyLabels = (() => {
+    if (clubError) {
+      return {
+        title: "Couldn't load clubs",
+        subtitle: "Check your connection, then try again.",
+      };
+    }
+    if (variant === "admin") {
+      return {
+        title: "No clubs listed",
+        subtitle:
+          "Open Club Management to create a club or confirm your club access.",
+      };
+    }
+    return {
+      title: "No clubs",
+      subtitle: "Create or join a club",
+    };
+  })();
+
   // Show club management links when no clubs available after filtering
   if (!Array.isArray(visibleClubs) || visibleClubs.length === 0) {
+    const { title, subtitle } = emptyLabels;
     return (
       <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
         <DropdownMenuTrigger asChild>
@@ -78,13 +117,13 @@ export function ClubSwitcher({ className, ownerOnly }: ClubSwitcherProps) {
             className={`h-auto w-full p-2 justify-start gap-2 ${className}`}
           >
             <Building2 className="h-4 w-4" />
-            <div className="flex flex-col items-start">
-              <span className="text-sm font-medium">No Clubs</span>
-              <span className="text-xs text-muted-foreground">
-                Create or join a club
+            <div className="flex flex-col items-start text-left min-w-0">
+              <span className="text-sm font-medium truncate w-full">{title}</span>
+              <span className="text-xs text-muted-foreground line-clamp-2">
+                {subtitle}
               </span>
             </div>
-            <ChevronDown className="h-3 w-3 ml-auto" />
+            <ChevronDown className="h-3 w-3 ml-auto shrink-0" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-64">

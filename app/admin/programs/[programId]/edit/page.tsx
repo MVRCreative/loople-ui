@@ -5,13 +5,11 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
-import { useAuth } from "@/lib/auth-context";
 import { useClub } from "@/lib/club-context";
-import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
+import { useAdminClubPageAccess } from "@/lib/hooks/use-admin-club-page-access";
 import { ProgramsService } from "@/lib/services/programs.service";
 import { ProgramForm } from "@/components/programs/program-form";
 import type { Program } from "@/lib/programs/types";
-import type { User } from "@/lib/types";
 import { ArrowLeft } from "lucide-react";
 
 export default function EditProgramPage() {
@@ -19,17 +17,12 @@ export default function EditProgramPage() {
   const router = useRouter();
   const programId = params.programId as string;
 
-  const { user: authUser } = useAuth();
   const { selectedClub, loading: clubLoading } = useClub();
+  const { globalAdmin, canManageSelectedClub } = useAdminClubPageAccess();
 
   const [program, setProgram] = useState<Program | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const currentUser: User = authUser
-    ? convertAuthUserToUser(authUser)
-    : createGuestUser();
-  const isAdmin = currentUser.isAdmin;
 
   const loadProgram = useCallback(async () => {
     setLoading(true);
@@ -59,10 +52,34 @@ export default function EditProgramPage() {
     );
   }
 
-  if (!isAdmin) {
+  if (!globalAdmin && !selectedClub) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-lg font-medium text-destructive">Access Denied</p>
+        <div className="text-center max-w-md">
+          <p className="text-lg font-medium text-foreground">Select a club</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Use the club switcher above, then open this program again.
+          </p>
+          <Button
+            onClick={() => router.push("/admin/programs")}
+            className="mt-4"
+          >
+            Back to programs
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!canManageSelectedClub) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <p className="text-lg font-medium text-destructive">Access denied</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            You don&apos;t have permission to manage this club.
+          </p>
+        </div>
       </div>
     );
   }

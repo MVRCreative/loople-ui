@@ -18,17 +18,6 @@ import Link from "next/link";
 import { Loader } from "@/components/ui/loader";
 import { Badge } from "@/components/ui/badge";
 
-const tabs = [
-  { name: "Overview", href: "/admin", current: true },
-  { name: "Club Management", href: "/admin/club-management", current: false },
-  { name: "User Management", href: "/admin/users", current: false },
-  { name: "Reports", href: "/admin/reports", current: false },
-];
-
-function classNames(...classes: (string | undefined | null | false)[]) {
-  return classes.filter(Boolean).join(" ");
-}
-
 function statusVariant(status: Member["status"]): "default" | "secondary" | "destructive" | "outline" {
   switch (status) {
     case "active":
@@ -196,31 +185,6 @@ export default function AdminPage() {
             </CardContent>
           </Card>
         ))}
-      </div>
-
-      {/* Tabs Section */}
-      <div>
-        <div className="hidden sm:block">
-          <div className="border-b border-border">
-            <nav aria-label="Tabs" className="-mb-px flex space-x-8">
-              {tabs.map((tab) => (
-                <Link
-                  key={tab.name}
-                  href={tab.href}
-                  aria-current={tab.current ? "page" : undefined}
-                  className={classNames(
-                    tab.current
-                      ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:border-border hover:text-foreground",
-                    "border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap"
-                  )}
-                >
-                  {tab.name}
-                </Link>
-              ))}
-            </nav>
-          </div>
-        </div>
       </div>
 
       {/* Members Table */}

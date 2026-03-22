@@ -12,27 +12,17 @@ import { Badge } from "@/components/ui/badge";
 import { useEvents } from "@/lib/events/hooks";
 import { formatEventDateTime, formatEventLocation, getEventStatusText } from "@/lib/events/selectors";
 import { Search, Plus, Eye, BarChart3, Filter, Calendar, Edit } from "lucide-react";
-import { useAuth } from "@/lib/auth-context";
 import { useClub } from "@/lib/club-context";
-import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
-import { User } from "@/lib/types";
+import { useAdminClubPageAccess } from "@/lib/hooks/use-admin-club-page-access";
 
 export default function AdminEventsPage() {
   const router = useRouter();
   const { events, loading, error, loadEvents } = useEvents();
-  const { user: authUser } = useAuth();
   const { selectedClub, loading: clubLoading } = useClub();
+  const { canManageSelectedClub } = useAdminClubPageAccess();
   
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  
-  // Convert auth user to frontend User type
-  const currentUser: User = authUser 
-    ? convertAuthUserToUser(authUser)
-    : createGuestUser();
-
-  // Check if user is admin
-  const isAdmin = currentUser.isAdmin;
 
   // Load events on component mount
   useEffect(() => {
@@ -113,19 +103,6 @@ export default function AdminEventsPage() {
     );
   }
 
-  if (!isAdmin) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-lg font-medium text-destructive">Access Denied</p>
-          <p className="text-sm text-muted-foreground mt-2">
-            You don&apos;t have permission to access this page.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   if (!selectedClub) {
     return (
       <div className="flex-1 space-y-6">
@@ -147,6 +124,19 @@ export default function AdminEventsPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (!canManageSelectedClub) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <p className="text-lg font-medium text-destructive">Access denied</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            You don&apos;t have permission to manage this club. Choose a club you administer from the switcher.
+          </p>
+        </div>
       </div>
     );
   }

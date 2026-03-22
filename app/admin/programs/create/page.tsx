@@ -1,37 +1,22 @@
 "use client";
 
-import { useAuth } from "@/lib/auth-context";
 import { useClub } from "@/lib/club-context";
-import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
+import { useAdminClubPageAccess } from "@/lib/hooks/use-admin-club-page-access";
 import { ProgramForm } from "@/components/programs/program-form";
 import { Loader } from "@/components/ui/loader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Layers } from "lucide-react";
 import Link from "next/link";
-import type { User } from "@/lib/types";
 
 export default function CreateProgramPage() {
-  const { user: authUser } = useAuth();
   const { selectedClub, loading: clubLoading } = useClub();
-
-  const currentUser: User = authUser
-    ? convertAuthUserToUser(authUser)
-    : createGuestUser();
-  const isAdmin = currentUser.isAdmin;
+  const { canManageSelectedClub } = useAdminClubPageAccess();
 
   if (clubLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <Loader className="mx-auto" />
-      </div>
-    );
-  }
-
-  if (!isAdmin) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <p className="text-lg font-medium text-destructive">Access Denied</p>
       </div>
     );
   }
@@ -51,6 +36,19 @@ export default function CreateProgramPage() {
             </Button>
           </CardContent>
         </Card>
+      </div>
+    );
+  }
+
+  if (!canManageSelectedClub) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <p className="text-lg font-medium text-destructive">Access denied</p>
+          <p className="text-sm text-muted-foreground mt-2">
+            You don&apos;t have permission to manage this club.
+          </p>
+        </div>
       </div>
     );
   }

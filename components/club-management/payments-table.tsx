@@ -31,9 +31,14 @@ import { Payment } from "@/lib/types/club-management";
 
 interface PaymentsTableProps {
   payments: Payment[];
+  /**
+   * Use inside an already-framed layout (e.g. admin shell). Omits an extra
+   * bordered box around the table so you do not get nested rectangles.
+   */
+  flush?: boolean;
 }
 
-export function PaymentsTable({ payments }: PaymentsTableProps) {
+export function PaymentsTable({ payments, flush = false }: PaymentsTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredPayments = payments.filter(payment =>
@@ -90,54 +95,42 @@ export function PaymentsTable({ payments }: PaymentsTableProps) {
     }).format(amount);
   };
 
-  return (
-    <div className="space-y-4">
-      {/* Search */}
-      <div className="flex items-center justify-between">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-          <Input
-            placeholder="Search payments..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-          <Button size="sm">
-            Export Report
-          </Button>
-        </div>
-      </div>
-
-      {/* Payments Table */}
-      <div className="rounded-md border border-border overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="min-w-[180px]">Member</TableHead>
-              <TableHead className="min-w-[160px]">Event</TableHead>
-              <TableHead className="min-w-[120px]">Amount</TableHead>
-              <TableHead className="min-w-[100px]">Method</TableHead>
-              <TableHead className="min-w-[100px]">Status</TableHead>
-              <TableHead className="min-w-[140px]">Payment Date</TableHead>
-              <TableHead className="min-w-[180px]">Transaction ID</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
+  const tableSection = (
+    <Table>
+          <TableHeader className="bg-muted/30">
+            <TableRow className="border-border hover:bg-transparent">
+              <TableHead className="min-w-[180px] text-xs font-medium text-muted-foreground">
+                Member
+              </TableHead>
+              <TableHead className="min-w-[160px] text-xs font-medium text-muted-foreground">
+                Event
+              </TableHead>
+              <TableHead className="min-w-[120px] text-xs font-medium text-muted-foreground">
+                Amount
+              </TableHead>
+              <TableHead className="min-w-[100px] text-xs font-medium text-muted-foreground">
+                Method
+              </TableHead>
+              <TableHead className="min-w-[100px] text-xs font-medium text-muted-foreground">
+                Status
+              </TableHead>
+              <TableHead className="min-w-[140px] text-xs font-medium text-muted-foreground">
+                Payment date
+              </TableHead>
+              <TableHead className="min-w-[180px] text-xs font-medium text-muted-foreground">
+                Transaction ID
+              </TableHead>
+              <TableHead className="w-[50px]" aria-label="Actions" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {filteredPayments.map((payment) => (
               <TableRow key={payment.id}>
                 <TableCell>
-                  <div className="flex items-center space-x-3">
-                    <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
-                      <span className="text-sm font-medium text-green-600">
-                        {payment.registration.member.firstName[0]}{payment.registration.member.lastName[0]}
-                      </span>
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground">
+                        {payment.registration.member.firstName[0]}
+                        {payment.registration.member.lastName[0]}
                     </div>
                     <div>
                       <div className="font-medium">
@@ -154,7 +147,9 @@ export function PaymentsTable({ payments }: PaymentsTableProps) {
                 <TableCell>
                   <div className="flex items-center text-sm">
                     <DollarSign className="h-3 w-3 mr-1 text-muted-foreground" />
-                    <span className="font-medium">{formatCurrency(payment.amount)}</span>
+                    <span className="font-medium tabular-nums">
+                      {formatCurrency(payment.amount)}
+                    </span>
                     {payment.feeAmount && payment.feeAmount > 0 && (
                       <span className="text-muted-foreground ml-1">
                         (fee: {formatCurrency(payment.feeAmount)})
@@ -211,14 +206,45 @@ export function PaymentsTable({ payments }: PaymentsTableProps) {
               </TableRow>
             ))}
           </TableBody>
-        </Table>
+    </Table>
+  );
+
+  return (
+    <div className="space-y-0">
+      <div className="flex flex-col gap-3 border-b border-border pb-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Search payments..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <Button variant="outline" size="sm" type="button">
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
+          <Button size="sm" type="button">
+            Export report
+          </Button>
+        </div>
       </div>
 
-      {filteredPayments.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          <p>No payments found matching your search.</p>
-        </div>
-      )}
+      <div className="pt-4">
+        {filteredPayments.length === 0 ? (
+          <p className="py-12 text-center text-sm text-muted-foreground">
+            No payments match your search.
+          </p>
+        ) : flush ? (
+          tableSection
+        ) : (
+          <div className="overflow-x-auto rounded-md border border-border">
+            {tableSection}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

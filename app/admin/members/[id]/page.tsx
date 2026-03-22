@@ -4,10 +4,10 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
-import { useAuth } from "@/lib/auth-context";
-import { convertAuthUserToUser, createGuestUser } from "@/lib/utils/auth.utils";
-import { User } from "@/lib/types";
+import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
 import { useClub } from "@/lib/club-context";
+import { useAdminClubPageAccess } from "@/lib/hooks/use-admin-club-page-access";
 import { MembersService, Member } from "@/lib/services/members.service";
 import { RegistrationsService, Registration } from "@/lib/services/registrations.service";
 import { MemberDetailHeader } from "@/components/club-management/member-detail-header";
@@ -23,8 +23,8 @@ import { ArrowLeft } from "lucide-react";
 export default function AdminMemberDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const { user: authUser } = useAuth();
   const { selectedClub, loading: clubLoading } = useClub();
+  const { globalAdmin, canManageSelectedClub } = useAdminClubPageAccess();
 
   const memberId = typeof params?.id === "string" ? params.id : "";
   const [member, setMember] = useState<Member | null>(null);
@@ -33,21 +33,31 @@ export default function AdminMemberDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [showEditDialog, setShowEditDialog] = useState(false);
 
-  const currentUser: User = authUser ? convertAuthUserToUser(authUser) : createGuestUser();
-  const isAdmin = currentUser.isAdmin;
-
   useEffect(() => {
     const load = async () => {
-      if (!memberId || !selectedClub) return;
+      if (!memberId) {
+        setLoading(false);
+        setError("Invalid member link");
+        return;
+      }
+      if (!globalAdmin && !selectedClub) {
+        setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
         setError(null);
-        const [memberData, regs] = await Promise.all([
-          MembersService.getMemberById(memberId),
-          RegistrationsService.getRegistrations({ member_id: memberId, club_id: selectedClub.id }),
-        ]);
+        const memberData = await MembersService.getMemberById(memberId);
         setMember(memberData ?? null);
-        setRegistrations(Array.isArray(regs) ? regs : []);
+        if (selectedClub) {
+          const regs = await RegistrationsService.getRegistrations({
+            member_id: memberId,
+            club_id: selectedClub.id,
+          });
+          setRegistrations(Array.isArray(regs) ? regs : []);
+        } else {
+          setRegistrations([]);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load member");
       } finally {
@@ -55,7 +65,7 @@ export default function AdminMemberDetailPage() {
       }
     };
     load();
-  }, [memberId, selectedClub]);
+  }, [memberId, selectedClub, globalAdmin]);
 
   const handleBack = () => router.back();
 
@@ -67,28 +77,74 @@ export default function AdminMemberDetailPage() {
     }
   };
 
-  if (clubLoading || loading) {
+  if (clubLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
           <Loader className="mx-auto mb-4" />
-          <p className="text-lg text-muted-foreground">Loading member...</p>
+          <p className="text-lg text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
-  if (!isAdmin) {
+  if (!memberId) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-lg font-medium text-destructive">Access Denied</p>
+          <p className="text-lg font-medium text-destructive">Invalid link</p>
+          <Button onClick={handleBack} className="mt-4">
+            Go Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!globalAdmin && !selectedClub) {
+    return (
+      <div className="flex-1 space-y-6">
+        <Button variant="outline" size="sm" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back
+        </Button>
+        <Card>
+          <CardContent className="text-center py-16 px-6">
+            <h3 className="text-lg font-medium mb-2">Select a club</h3>
+            <p className="text-muted-foreground mb-6">
+              Choose the club this member belongs to from the switcher, then reload this page.
+            </p>
+            <Button variant="outline" asChild>
+              <Link href="/admin/users">User management</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (selectedClub && !canManageSelectedClub) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <p className="text-lg font-medium text-destructive">Access denied</p>
           <p className="text-sm text-muted-foreground mt-2">
-            You don&apos;t have permission to access this page.
+            You don&apos;t have permission to manage members for this club.
           </p>
           <Button onClick={handleBack} className="mt-4">
             Go Back
           </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="mx-auto mb-4" />
+          <p className="text-lg text-muted-foreground">Loading member...</p>
         </div>
       </div>
     );
@@ -114,7 +170,11 @@ export default function AdminMemberDetailPage() {
     );
   }
 
-  if (selectedClub && String(member.club_id) !== String(selectedClub.id)) {
+  if (
+    selectedClub &&
+    member.club_id != null &&
+    String(member.club_id) !== String(selectedClub.id)
+  ) {
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center">
