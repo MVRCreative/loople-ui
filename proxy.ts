@@ -2,7 +2,7 @@ import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@supabase/ssr'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
 
   const supabase = createServerClient(
@@ -47,10 +47,11 @@ export async function middleware(request: NextRequest) {
 
     const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route))
     const isAuthRoute = authRoutes.some(route => path.startsWith(route))
+    const isHomeRoute = path === '/'
 
     // Admin DB checks run in app/admin/layout (Node), not Edge middleware.
 
-    if (isProtectedRoute && !user) {
+    if ((isProtectedRoute || isHomeRoute) && !user) {
       const redirectUrl = new URL(`${basePath}/auth/login`, request.url)
       redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
       return NextResponse.redirect(redirectUrl)

@@ -53,7 +53,7 @@ async function main() {
     process.exit(1);
   }
 
-  const { data, error } = await supabase.auth.admin.updateUserById(user.id, {
+  const { error } = await supabase.auth.admin.updateUserById(user.id, {
     app_metadata: { ...user.app_metadata, isAdmin: true },
   });
 

@@ -77,14 +77,18 @@ export function MentionInput({
 
       if (atIndex === -1) {
         setMentionQuery(null)
+        setSuggestions([])
         setShowSuggestions(false)
+        setSelectedIndex(0)
         return
       }
 
       // Ensure the @ is at the start of a word
       if (atIndex > 0 && !/\s/.test(beforeCursor[atIndex - 1])) {
         setMentionQuery(null)
+        setSuggestions([])
         setShowSuggestions(false)
+        setSelectedIndex(0)
         return
       }
 
@@ -93,7 +97,18 @@ export function MentionInput({
       // If there's a space after the query text, the mention is complete
       if (query.includes(" ")) {
         setMentionQuery(null)
+        setSuggestions([])
         setShowSuggestions(false)
+        setSelectedIndex(0)
+        return
+      }
+
+      if (query.length < 1) {
+        setMentionQuery(query)
+        setMentionStart(atIndex)
+        setSuggestions([])
+        setShowSuggestions(false)
+        setSelectedIndex(0)
         return
       }
 
@@ -105,20 +120,21 @@ export function MentionInput({
 
   // Search for users when mention query changes
   useEffect(() => {
-    if (mentionQuery === null || mentionQuery.length < 1) {
-      setSuggestions([])
-      setShowSuggestions(false)
-      return
-    }
+    if (mentionQuery === null || mentionQuery.length < 1) return
 
+    let cancelled = false
     const timer = setTimeout(async () => {
       const results = await mentionsService.searchMentionableUsers(clubId, mentionQuery)
+      if (cancelled) return
       setSuggestions(results)
       setShowSuggestions(results.length > 0)
       setSelectedIndex(0)
     }, 200)
 
-    return () => clearTimeout(timer)
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
   }, [mentionQuery, clubId])
 
   const insertMention = (user: MentionableUser) => {
@@ -129,7 +145,9 @@ export function MentionInput({
     )
     const newValue = `${before}@${handle} ${after}`
     onChange(newValue)
+    setSuggestions([])
     setShowSuggestions(false)
+    setSelectedIndex(0)
     setMentionQuery(null)
 
     // Re-focus the input

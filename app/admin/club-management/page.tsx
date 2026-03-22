@@ -34,7 +34,6 @@ export default function ClubManagementPage() {
     if (!authLoading && !isAuthenticated) {
       router.push("/auth/login");
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authLoading, router]);
 
   const filteredClubs: Club[] = Array.isArray(clubs)

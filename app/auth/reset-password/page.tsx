@@ -40,8 +40,7 @@ export default function ResetPasswordPage() {
         setVerified(true);
       }
     }
-    verify();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    void verify();
   }, [searchParams]);
 
   const onSubmit = async (e: React.FormEvent) => {

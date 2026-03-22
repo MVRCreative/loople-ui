@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -24,20 +24,30 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false)
   const channelRef = useRef<ReturnType<typeof inAppNotificationsService.subscribeToNotifications> | null>(null)
 
-  const loadNotifications = useCallback(async () => {
-    const [notifs, count] = await Promise.all([
-      inAppNotificationsService.getNotifications(20),
-      inAppNotificationsService.getUnreadCount(),
-    ])
-    setNotifications(notifs)
-    setUnreadCount(count)
-  }, [])
-
   // Load on mount and when auth changes
   useEffect(() => {
     if (!isAuthenticated) return
-    loadNotifications()
-  }, [isAuthenticated, loadNotifications])
+
+    let cancelled = false
+
+    const loadNotifications = async () => {
+      const [notifs, count] = await Promise.all([
+        inAppNotificationsService.getNotifications(20),
+        inAppNotificationsService.getUnreadCount(),
+      ])
+
+      if (cancelled) return
+
+      setNotifications(notifs)
+      setUnreadCount(count)
+    }
+
+    void loadNotifications()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isAuthenticated])
 
   // Real-time subscription
   useEffect(() => {

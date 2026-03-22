@@ -308,7 +308,9 @@ export default function CreateEventPage() {
 
   // Pre-fill form when in edit mode
   useEffect(() => {
-    if (isEditMode && currentEvent) {
+    if (!isEditMode || !currentEvent) return;
+
+    const timeoutId = window.setTimeout(() => {
       setTitle(currentEvent.title || "");
       setSummary(currentEvent.description || "");
       setLocation(currentEvent.location?.name || "");
@@ -339,7 +341,11 @@ export default function CreateEventPage() {
       
       setVisibility(currentEvent.visibility);
       setStatus(currentEvent.status);
-    }
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [isEditMode, currentEvent]);
 
   // Close dropdown when clicking outside
