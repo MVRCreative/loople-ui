@@ -3,6 +3,10 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   basePath: "/app", // your environment's mount path
   assetPrefix: "/app", // ensure this matches your environment's mount path
+  logging: {
+    // Next.js 16.2 browser log forwarding (errors + warnings into terminal)
+    browserToTerminal: "warn",
+  },
   async redirects() {
     return [
       {
