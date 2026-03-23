@@ -4,6 +4,8 @@ import type {
   ProgramWithMemberCount,
   ProgramMembership,
   ProgramMembershipWithMember,
+  ProgramRegistrationEventSelection,
+  ProgramRegistrationSelectionsByMember,
   ProgramScheduleEntry,
   CreateProgramData,
   UpdateProgramData,
@@ -344,6 +346,275 @@ export class ProgramsService {
     }
   }
 
+  /** Get program memberships for a list of members */
+  static async getProgramMembershipsForMembers(
+    programId: string,
+    memberIds: string[]
+  ): Promise<ProgramMembership[]> {
+    if (memberIds.length === 0) return [];
+
+    try {
+      const numericMemberIds = memberIds
+        .map((id) => Number(id))
+        .filter((id) => Number.isFinite(id));
+
+      if (numericMemberIds.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from("program_memberships")
+        .select("*")
+        .eq("program_id", Number(programId))
+        .in("member_id", numericMemberIds);
+
+      if (error) {
+        console.error("Error fetching program memberships for members:", error);
+        throw error;
+      }
+
+      return (data ?? []).map((row) => ({
+        id: String(row.id),
+        program_id: String(row.program_id),
+        member_id: String(row.member_id),
+        role: row.role ?? "participant",
+        status: row.status ?? "active",
+        joined_at: row.joined_at ?? row.created_at,
+        payment_status: row.payment_status ?? "free",
+        last_payment_date: row.last_payment_date ?? null,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      }));
+    } catch (error) {
+      console.error("Error in getProgramMembershipsForMembers:", error);
+      throw error;
+    }
+  }
+
+  /** Register one or more members in a program */
+  static async registerMembers(
+    programId: string,
+    memberIds: string[],
+    options?: {
+      paymentStatus?: ProgramMembership["payment_status"];
+      membershipStatus?: ProgramMembership["status"];
+      role?: ProgramMembership["role"];
+    }
+  ): Promise<ProgramMembership[]> {
+    if (memberIds.length === 0) return [];
+
+    const rows = memberIds
+      .map((memberId) => Number(memberId))
+      .filter((id) => Number.isFinite(id))
+      .map((memberId) => ({
+        program_id: Number(programId),
+        member_id: memberId,
+        role: options?.role ?? "participant",
+        status: options?.membershipStatus ?? "active",
+        payment_status: options?.paymentStatus ?? "pending",
+        joined_at: new Date().toISOString(),
+      }));
+
+    if (rows.length === 0) return [];
+
+    try {
+      const { data, error } = await supabase
+        .from("program_memberships")
+        .upsert(rows, { onConflict: "program_id,member_id" })
+        .select();
+
+      if (error) {
+        console.error("Error registering program members:", error);
+        throw error;
+      }
+
+      return (data ?? []).map((row) => ({
+        id: String(row.id),
+        program_id: String(row.program_id),
+        member_id: String(row.member_id),
+        role: row.role ?? "participant",
+        status: row.status ?? "active",
+        joined_at: row.joined_at ?? row.created_at,
+        payment_status: row.payment_status ?? "pending",
+        last_payment_date: row.last_payment_date ?? null,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      }));
+    } catch (error) {
+      console.error("Error in registerMembers:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Replace all event selections for the provided program/member set.
+   * This is used by the registration wizard to keep per-registrant choices in sync.
+   */
+  static async upsertRegistrationEventSelections(
+    programId: string,
+    selectionsByMember: ProgramRegistrationSelectionsByMember
+  ): Promise<void> {
+    const numericProgramId = Number(programId);
+    if (!Number.isFinite(numericProgramId)) return;
+
+    const memberIds = Object.keys(selectionsByMember);
+    if (memberIds.length === 0) return;
+
+    const numericMemberIds = memberIds
+      .map((memberId) => Number(memberId))
+      .filter((memberId) => Number.isFinite(memberId));
+
+    if (numericMemberIds.length === 0) return;
+
+    const rows = Object.entries(selectionsByMember).flatMap(([memberId, eventIds]) => {
+      const numericMemberId = Number(memberId);
+      if (!Number.isFinite(numericMemberId)) return [];
+
+      return eventIds
+        .map((eventId) => Number(eventId))
+        .filter((eventId) => Number.isFinite(eventId))
+        .map((eventId) => ({
+          program_id: numericProgramId,
+          member_id: numericMemberId,
+          event_id: eventId,
+        }));
+    });
+
+    try {
+      const { error: deleteError } = await supabase
+        .from("program_registration_event_selections")
+        .delete()
+        .eq("program_id", numericProgramId)
+        .in("member_id", numericMemberIds);
+
+      if (deleteError) {
+        if (ProgramsService.isMissingRegistrationSelectionsRelation(deleteError)) {
+          console.warn(
+            "program_registration_event_selections table is unavailable; skipping selection persistence."
+          );
+          return;
+        }
+        console.error("Error clearing previous registration event selections:", deleteError);
+        throw deleteError;
+      }
+
+      if (rows.length === 0) return;
+
+      const { error: insertError } = await supabase
+        .from("program_registration_event_selections")
+        .insert(rows);
+
+      if (insertError) {
+        if (ProgramsService.isMissingRegistrationSelectionsRelation(insertError)) {
+          console.warn(
+            "program_registration_event_selections table is unavailable; skipping selection persistence."
+          );
+          return;
+        }
+        console.error("Error inserting registration event selections:", insertError);
+        throw insertError;
+      }
+    } catch (error) {
+      if (ProgramsService.isMissingRegistrationSelectionsRelation(error)) {
+        console.warn(
+          "program_registration_event_selections table is unavailable; skipping selection persistence."
+        );
+        return;
+      }
+      console.error("Error in upsertRegistrationEventSelections:", error);
+      throw error;
+    }
+  }
+
+  /** Read previously saved event selections for a program registration context */
+  static async getRegistrationEventSelections(
+    programId: string,
+    memberIds?: string[]
+  ): Promise<ProgramRegistrationEventSelection[]> {
+    const numericProgramId = Number(programId);
+    if (!Number.isFinite(numericProgramId)) return [];
+
+    try {
+      let query = supabase
+        .from("program_registration_event_selections")
+        .select("*")
+        .eq("program_id", numericProgramId);
+
+      if (memberIds && memberIds.length > 0) {
+        const numericMemberIds = memberIds
+          .map((memberId) => Number(memberId))
+          .filter((memberId) => Number.isFinite(memberId));
+        if (numericMemberIds.length > 0) {
+          query = query.in("member_id", numericMemberIds);
+        }
+      }
+
+      const { data, error } = await query.order("created_at", { ascending: true });
+      if (error) {
+        if (!ProgramsService.isMissingRegistrationSelectionsRelation(error)) {
+          console.warn(
+            "Unable to fetch registration event selections; continuing without saved selections.",
+            error
+          );
+        }
+        return [];
+      }
+
+      return (data ?? []).map((row) => ({
+        id: String(row.id),
+        program_id: String(row.program_id),
+        member_id: String(row.member_id),
+        event_id: String(row.event_id),
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      }));
+    } catch (error) {
+      if (!ProgramsService.isMissingRegistrationSelectionsRelation(error)) {
+        console.warn(
+          "Unexpected registration event selections error; continuing without saved selections.",
+          error
+        );
+      }
+      return [];
+    }
+  }
+
+  /** Bulk update payment status for specific program memberships */
+  static async updateMembershipPaymentStatus(
+    programId: string,
+    memberIds: string[],
+    paymentStatus: ProgramMembership["payment_status"]
+  ): Promise<void> {
+    if (memberIds.length === 0) return;
+    const numericMemberIds = memberIds
+      .map((id) => Number(id))
+      .filter((id) => Number.isFinite(id));
+    if (numericMemberIds.length === 0) return;
+
+    try {
+      const updates: Record<string, unknown> = {
+        payment_status: paymentStatus,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (paymentStatus === "paid" || paymentStatus === "free") {
+        updates.last_payment_date = new Date().toISOString();
+      }
+
+      const { error } = await supabase
+        .from("program_memberships")
+        .update(updates)
+        .eq("program_id", Number(programId))
+        .in("member_id", numericMemberIds);
+
+      if (error) {
+        console.error("Error updating program membership payment status:", error);
+        throw error;
+      }
+    } catch (error) {
+      console.error("Error in updateMembershipPaymentStatus:", error);
+      throw error;
+    }
+  }
+
   /** Get all programs a specific member belongs to */
   static async getMemberPrograms(
     memberId: string
@@ -415,5 +686,22 @@ export class ProgramsService {
       created_at: (row.created_at as string) ?? new Date().toISOString(),
       updated_at: (row.updated_at as string) ?? new Date().toISOString(),
     };
+  }
+
+  private static isMissingRegistrationSelectionsRelation(error: unknown): boolean {
+    if (!error || typeof error !== "object") return false;
+    const maybeError = error as { code?: string; message?: string; details?: string; hint?: string };
+    const code = maybeError.code ?? "";
+    const message = maybeError.message ?? "";
+    const details = maybeError.details ?? "";
+    const hint = maybeError.hint ?? "";
+    const combined = `${message} ${details} ${hint}`.toLowerCase();
+
+    return (
+      code === "42P01" ||
+      code === "PGRST205" ||
+      combined.includes("program_registration_event_selections") ||
+      combined.includes("relation") && combined.includes("does not exist")
+    );
   }
 }

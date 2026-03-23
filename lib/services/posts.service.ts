@@ -7,6 +7,7 @@ export interface CreatePostRequest {
   content_type: 'text' | 'event' | 'poll'
   content_text: string
   event_id?: number
+  program_id?: number
   poll_question?: string
   poll_options?: string[]
 }
@@ -33,6 +34,7 @@ export interface PostsQueryParams {
   user_id?: string
   content_type?: string
   event_id?: number
+  program_id?: number
   page?: number
   limit?: number
   search?: string
@@ -120,6 +122,42 @@ class PostsService {
     return data?.id ?? null
   }
 
+  private async canAccessProgramPosts(clubId: number, programId: number): Promise<boolean> {
+    const { data: program, error } = await supabase
+      .from('programs')
+      .select('id, club_id, visibility')
+      .eq('id', programId)
+      .eq('club_id', clubId)
+      .maybeSingle()
+
+    if (error) {
+      console.error('Error checking program access:', error)
+      return false
+    }
+    if (!program) return false
+
+    const visibility = (program.visibility as string | null) ?? 'public'
+    if (visibility === 'public') return true
+
+    const memberId = await this.getMemberIdForCurrentUser(clubId)
+    if (!memberId) return false
+
+    const { data: membership, error: membershipError } = await supabase
+      .from('program_memberships')
+      .select('id, status')
+      .eq('program_id', programId)
+      .eq('member_id', memberId)
+      .eq('status', 'active')
+      .maybeSingle()
+
+    if (membershipError) {
+      console.error('Error checking program membership for post access:', membershipError)
+      return false
+    }
+
+    return !!membership
+  }
+
   // Posts
   async getPosts(params: PostsQueryParams = {}): Promise<ApiResponse<Post[]>> {
     return this.getPostsDirect(params)
@@ -157,6 +195,20 @@ class PostsService {
 
       if (params.club_id) query = query.eq('club_id', params.club_id)
       if (params.event_id) query = query.eq('event_id', params.event_id)
+      if (params.program_id) {
+        const clubIdForAccess = params.club_id
+        if (!clubIdForAccess) {
+          return {
+            success: false,
+            error: 'club_id is required when filtering posts by program_id',
+          }
+        }
+        const hasProgramAccess = await this.canAccessProgramPosts(clubIdForAccess, params.program_id)
+        if (!hasProgramAccess) {
+          return { success: true, data: [] }
+        }
+        query = query.eq('program_id', params.program_id)
+      }
 
       const sortBy = params.sort_by || 'created_at'
       const ascending = params.sort_order === 'asc'
@@ -221,6 +273,7 @@ class PostsService {
         return {
           id: row.id,
           club_id: row.club_id,
+          program_id: row.program_id ?? undefined,
           user_id: author?.user_id ?? '',
           content_type: row.kind === 'post' ? 'text' : row.kind === 'event_update' ? 'event' : 'text',
           content_text: row.body ?? '',
@@ -352,6 +405,7 @@ class PostsService {
       const apiPost = {
         id: row.id,
         club_id: row.club_id,
+        program_id: row.program_id ?? undefined,
         user_id: author?.user_id ?? '',
         content_type: row.kind === 'post' ? 'text' : row.kind === 'event_update' ? 'event' : 'text',
         content_text: row.body ?? '',
@@ -599,6 +653,15 @@ class PostsService {
       if (!memberId) {
         return { success: false, error: 'You must be a member of this club to post.' }
       }
+      if (postData.program_id) {
+        const canAccessProgram = await this.canAccessProgramPosts(postData.club_id, postData.program_id)
+        if (!canAccessProgram) {
+          return {
+            success: false,
+            error: 'You do not have access to post in this program.',
+          }
+        }
+      }
 
       // Map content_type to post kind
       const kind = postData.content_type === 'text' ? 'post'
@@ -623,6 +686,7 @@ class PostsService {
           body: postData.content_text,
           rich: Object.keys(richContent).length > 0 ? richContent : null,
           event_id: postData.event_id ?? null,
+          program_id: postData.program_id ?? null,
         })
         .select()
         .single()
@@ -650,6 +714,7 @@ class PostsService {
       const apiPost = {
         id: data.id,
         club_id: data.club_id,
+        program_id: data.program_id ?? undefined,
         user_id: memberData?.user_id ?? '',
         content_type: postData.content_type,
         content_text: data.body ?? '',

@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/ui/loader";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,7 @@ import {
 import { useClub } from "@/lib/club-context";
 import { ProgramsService } from "@/lib/services/programs.service";
 import { useProgramMembership } from "@/lib/programs/hooks";
+import { ProgramFeed } from "@/components/programs/program-feed";
 import type {
   ProgramWithMemberCount,
   ProgramMembershipWithMember,
@@ -38,6 +40,7 @@ import {
 
 export default function ProgramDetailPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const programId = params.programId as string;
   const { loading: clubLoading } = useClub();
 
@@ -52,7 +55,6 @@ export default function ProgramDetailPage() {
     isMember,
     loading: membershipLoading,
     memberId,
-    join,
     leave,
     refresh: refreshMembership,
   } = useProgramMembership(programId);
@@ -79,22 +81,6 @@ export default function ProgramDetailPage() {
       loadProgram();
     }
   }, [clubLoading, loadProgram]);
-
-  const handleJoin = async () => {
-    setActionLoading(true);
-    setActionError(null);
-    try {
-      await join();
-      // Refresh data
-      await Promise.all([loadProgram(), refreshMembership()]);
-    } catch (err) {
-      setActionError(
-        err instanceof Error ? err.message : "Failed to join program"
-      );
-    } finally {
-      setActionLoading(false);
-    }
-  };
 
   const handleLeave = async () => {
     setActionLoading(true);
@@ -140,6 +126,10 @@ export default function ProgramDetailPage() {
     program.member_count >= program.max_members;
   const isFree = !program.has_fees || !program.registration_fee;
   const canJoin = !isMember && !isFull && memberId != null;
+  const requiresMembershipAccess = program.visibility !== "public";
+  const canViewProgramHub = !requiresMembershipAccess || isMember;
+  const registrationState = searchParams.get("registration");
+  const registeredCount = searchParams.get("members");
 
   const formatDate = (date: string | null) => {
     if (!date) return "Not set";
@@ -239,15 +229,13 @@ export default function ProgramDetailPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : canJoin ? (
-            <Button onClick={handleJoin} disabled={actionLoading}>
-              {actionLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
-              ) : (
+            <Button asChild>
+              <Link href={`/programs/${program.id}/register`}>
                 <LogIn className="h-4 w-4 mr-1" />
-              )}
-              {isFree
-                ? "Join for Free"
-                : `Join \u2014 $${program.registration_fee}`}
+                {isFree
+                  ? "Register members"
+                  : `Register members \u2014 $${program.registration_fee}`}
+              </Link>
             </Button>
           ) : isFull ? (
             <Button disabled>Program Full</Button>
@@ -262,6 +250,17 @@ export default function ProgramDetailPage() {
       {actionError && (
         <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
           {actionError}
+        </div>
+      )}
+      {registrationState === "success" && (
+        <div className="rounded-md bg-primary/10 p-3 text-sm text-primary">
+          Registration complete for {registeredCount ?? "selected"} member(s).
+        </div>
+      )}
+      {registrationState === "pending-payment" && (
+        <div className="rounded-md bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-400">
+          Registration started for {registeredCount ?? "selected"} member(s). Payment
+          is still pending.
         </div>
       )}
 
@@ -316,90 +315,128 @@ export default function ProgramDetailPage() {
         </Card>
       </div>
 
-      {/* Schedule */}
-      {program.schedule && (program.schedule as ProgramScheduleEntry[]).length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Clock className="h-5 w-5" />
-              Weekly Schedule
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {(program.schedule as ProgramScheduleEntry[]).map(
-                (entry, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-3 p-3 rounded-lg border bg-card"
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary shrink-0">
-                      {entry.day_of_week.slice(0, 3)}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium">
-                        {entry.start_time} &ndash; {entry.end_time}
-                      </p>
-                      {entry.location && (
-                        <p className="text-xs text-muted-foreground">
-                          {entry.location}
-                        </p>
-                      )}
-                      {entry.notes && (
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                          {entry.notes}
-                        </p>
-                      )}
-                    </div>
+      {canViewProgramHub ? (
+        <Tabs defaultValue="feed" className="space-y-4">
+          <TabsList className="grid w-full max-w-xl grid-cols-3">
+            <TabsTrigger value="feed">Feed</TabsTrigger>
+            <TabsTrigger value="members">Members</TabsTrigger>
+            <TabsTrigger value="schedule">Schedule</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="feed" className="space-y-4">
+            <ProgramFeed
+              programId={program.id}
+              clubId={Number(program.club_id)}
+              canPost={isMember}
+            />
+          </TabsContent>
+
+          <TabsContent value="members">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Users className="h-5 w-5" />
+                  Members ({members.length})
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {members.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {members.map((m) => (
+                      <div
+                        key={m.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border bg-card"
+                      >
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-sm font-medium">
+                          {m.member.first_name[0]}
+                          {m.member.last_name[0]}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium truncate">
+                            {m.member.first_name} {m.member.last_name}
+                          </p>
+                          <p className="text-xs text-muted-foreground capitalize">
+                            {m.role}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )
-              )}
-            </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">
+                      No members yet. Be the first to join.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="schedule">
+            {program.schedule && (program.schedule as ProgramScheduleEntry[]).length > 0 ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Clock className="h-5 w-5" />
+                    Weekly Schedule
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {(program.schedule as ProgramScheduleEntry[]).map((entry, index) => (
+                      <div
+                        key={index}
+                        className="flex items-start gap-3 p-3 rounded-lg border bg-card"
+                      >
+                        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-xs font-bold text-primary shrink-0">
+                          {entry.day_of_week.slice(0, 3)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium">
+                            {entry.start_time} &ndash; {entry.end_time}
+                          </p>
+                          {entry.location && (
+                            <p className="text-xs text-muted-foreground">
+                              {entry.location}
+                            </p>
+                          )}
+                          {entry.notes && (
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {entry.notes}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  No schedule has been published for this program yet.
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <p className="text-muted-foreground">
+              This is a private program space. Register to view the feed, member
+              roster, and schedule.
+            </p>
+            {canJoin ? (
+              <Button asChild className="mt-4">
+                <Link href={`/programs/${program.id}/register`}>Register now</Link>
+              </Button>
+            ) : null}
           </CardContent>
         </Card>
       )}
-
-      {/* Members */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Users className="h-5 w-5" />
-            Members ({members.length})
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {members.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {members.map((m) => (
-                <div
-                  key={m.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border bg-card"
-                >
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-sm font-medium">
-                    {m.member.first_name[0]}
-                    {m.member.last_name[0]}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium truncate">
-                      {m.member.first_name} {m.member.last_name}
-                    </p>
-                    <p className="text-xs text-muted-foreground capitalize">
-                      {m.role}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <Users className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
-              <p className="text-sm text-muted-foreground">
-                No members yet. Be the first to join!
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

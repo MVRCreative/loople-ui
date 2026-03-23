@@ -80,6 +80,19 @@ export interface ProgramMembershipWithMember extends ProgramMembership {
   };
 }
 
+/** Per-registrant event selections captured during program registration */
+export interface ProgramRegistrationEventSelection {
+  id: string;
+  program_id: string;
+  member_id: string;
+  event_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Convenience mapping for registration forms: member_id -> event_ids[] */
+export type ProgramRegistrationSelectionsByMember = Record<string, string[]>;
+
 /** Data required to create a new program */
 export interface CreateProgramData {
   club_id: string;

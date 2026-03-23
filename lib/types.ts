@@ -63,6 +63,7 @@ export const mediaAttachmentSchema = z.object({
 export const apiPostSchema = z.object({
   id: z.number(),
   club_id: z.number(),
+  program_id: z.number().optional(),
   user_id: z.string(), // UUID as string
   content_type: z.enum(["text", "event", "poll"]),
   content_text: z.string(),

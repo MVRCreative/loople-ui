@@ -10,6 +10,7 @@ import { Loader } from "@/components/ui/loader";
 import { useClub } from "@/lib/club-context";
 import { useAdminClubPageAccess } from "@/lib/hooks/use-admin-club-page-access";
 import { ProgramsService } from "@/lib/services/programs.service";
+import { postsService } from "@/lib/services/posts.service";
 import type { ProgramWithMemberCount, ProgramMembershipWithMember, ProgramScheduleEntry } from "@/lib/programs/types";
 import {
   Edit,
@@ -22,7 +23,10 @@ import {
   Lock,
   Layers,
   Clock,
+  Copy,
+  Megaphone,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,7 +51,9 @@ export default function AdminProgramDetailPage() {
   const [members, setMembers] = useState<ProgramMembershipWithMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [posting, setPosting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [origin, setOrigin] = useState("");
 
   const loadProgram = useCallback(async () => {
     setLoading(true);
@@ -73,6 +79,12 @@ export default function AdminProgramDetailPage() {
     }
   }, [clubLoading, loadProgram]);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setOrigin(window.location.origin);
+    }
+  }, []);
+
   const handleDelete = async () => {
     setDeleting(true);
     try {
@@ -83,6 +95,43 @@ export default function AdminProgramDetailPage() {
       setError(err instanceof Error ? err.message : "Failed to delete program");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const shareUrl = program ? `${origin}/app/programs/${program.id}` : "";
+  const registrationUrl = program ? `${origin}/app/programs/${program.id}/register` : "";
+
+  const handleCopyShareUrl = async () => {
+    if (!shareUrl) return;
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      toast.success("Program URL copied");
+    } catch {
+      toast.error("Failed to copy link");
+    }
+  };
+
+  const handleCreateRegistrationPost = async () => {
+    if (!program) return;
+    setPosting(true);
+    setError(null);
+    try {
+      const response = await postsService.createPost({
+        club_id: Number(program.club_id),
+        program_id: Number(program.id),
+        content_type: "text",
+        content_text: `Registration is open for ${program.name}. Register here: ${registrationUrl}`,
+      });
+      if (!response.success) {
+        throw new Error(response.error || "Failed to create registration post.");
+      }
+      toast.success("Registration post created");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to create registration post."
+      );
+    } finally {
+      setPosting(false);
     }
   };
 
@@ -285,6 +334,39 @@ export default function AdminProgramDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Share + Promotion */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Share and promotion</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <div className="flex-1 rounded-md border bg-muted/30 px-3 py-2 text-sm break-all">
+              {shareUrl || `/app/programs/${program.id}`}
+            </div>
+            <Button variant="outline" onClick={handleCopyShareUrl}>
+              <Copy className="h-4 w-4 mr-1" />
+              Copy URL
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={handleCreateRegistrationPost}
+              disabled={posting}
+            >
+              <Megaphone className="h-4 w-4 mr-1" />
+              {posting ? "Creating..." : "Create registration post"}
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href={`/programs/${program.id}/register`} target="_blank">
+                Open registration page
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Schedule */}
       {program.schedule && (program.schedule as ProgramScheduleEntry[]).length > 0 && (

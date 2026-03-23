@@ -111,15 +111,20 @@ export default function AdminPaymentsPage() {
 
   return (
     <div className="flex-1 space-y-8">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-          Payments
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          {selectedClub
-            ? `Transactions for ${selectedClub.name}.`
-            : "All transactions (global view)."}
-        </p>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Payments
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            {selectedClub
+              ? `Transactions for ${selectedClub.name}.`
+              : "All transactions (global view)."}
+          </p>
+        </div>
+        <Button asChild variant="outline">
+          <Link href="/admin/payments/settings">Payment settings</Link>
+        </Button>
       </header>
 
       <PaymentsTable payments={payments} flush />

@@ -146,14 +146,14 @@ export function ProgramForm({ clubId, program, mode }: ProgramFormProps) {
       };
 
       if (mode === "create") {
-        await ProgramsService.createProgram(data);
+        const created = await ProgramsService.createProgram(data);
+        router.push(`/admin/programs/${created.id}?created=1`);
       } else if (program) {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { club_id: _clubId, ...updates } = data;
         await ProgramsService.updateProgram(program.id, updates);
+        router.push(`/admin/programs/${program.id}`);
       }
-
-      router.push("/admin/programs");
       router.refresh();
     } catch (err) {
       console.error("Error saving program:", err);

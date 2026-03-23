@@ -15,3 +15,4 @@ export * from './messages.service';
 export * from './in-app-notifications.service';
 export * from './mentions.service';
 export * from './search.service';
+export * from './stripe-connect.service';
