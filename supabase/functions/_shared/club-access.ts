@@ -31,33 +31,21 @@ export async function assertUserCanManageClub(userId: string, clubId: string): P
   const club = await getClubForAccess(clubId);
   if (club.owner_id && club.owner_id === userId) return;
 
-  const [memberRes, userRes] = await Promise.all([
-    supabaseAdmin
-      .from("members")
-      .select("id")
-      .eq("club_id", clubId)
-      .eq("user_id", userId)
-      .in("role", ["admin", "Admin"])
-      .limit(1),
-    supabaseAdmin
-      .from("users")
-      .select("club_id, is_admin, is_super_admin, role")
-      .eq("id", userId)
-      .maybeSingle(),
-  ]);
+  const { data: userData, error: userError } = await supabaseAdmin
+    .from("users")
+    .select("club_id, is_admin, is_super_admin, role")
+    .eq("id", userId)
+    .maybeSingle();
 
-  if (memberRes.error) throw memberRes.error;
-  if (userRes.error) throw userRes.error;
+  if (userError) throw userError;
 
-  if (memberRes.data && memberRes.data.length > 0) return;
-
-  const role = String(userRes.data?.role ?? "").toLowerCase();
-  const sameClub = String(userRes.data?.club_id ?? "") === String(clubId);
+  const role = String(userData?.role ?? "").toLowerCase();
+  const sameClub = String(userData?.club_id ?? "") === String(clubId);
   if (
     sameClub &&
     (
-      userRes.data?.is_admin === true ||
-      userRes.data?.is_super_admin === true ||
+      userData?.is_admin === true ||
+      userData?.is_super_admin === true ||
       role === "owner" ||
       role === "admin"
     )

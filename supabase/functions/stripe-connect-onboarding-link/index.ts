@@ -83,6 +83,19 @@ Deno.serve(async (req: Request) => {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error.";
+    const details =
+      typeof error === "object" && error !== null
+        ? {
+            name: "name" in error ? String((error as { name?: unknown }).name) : undefined,
+            type: "type" in error ? String((error as { type?: unknown }).type) : undefined,
+            code: "code" in error ? String((error as { code?: unknown }).code) : undefined,
+            statusCode:
+              "statusCode" in error
+                ? Number((error as { statusCode?: unknown }).statusCode)
+                : undefined,
+          }
+        : undefined;
+    console.error("stripe-connect-onboarding-link failed", { message, details });
     const status = message === "Unauthorized."
       ? 401
       : message === "Forbidden."
@@ -90,6 +103,6 @@ Deno.serve(async (req: Request) => {
       : message === "Club not found."
       ? 404
       : 500;
-    return jsonResponse({ error: message }, { status });
+    return jsonResponse({ error: message, details }, { status });
   }
 });

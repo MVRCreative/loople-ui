@@ -1,5 +1,6 @@
 import { env } from "../env";
 import { supabase } from "../supabase";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 
 export interface StripeConnectStatus {
   clubId: string;
@@ -37,6 +38,33 @@ export class StripeConnectService {
     stripe_country,
     stripe_connect_updated_at
   `;
+
+  private static async toFunctionErrorMessage(
+    error: unknown,
+    fallback: string,
+  ): Promise<string> {
+    if (error instanceof FunctionsHttpError) {
+      try {
+        const payload = await error.context.clone().json() as {
+          error?: unknown;
+          details?: Record<string, unknown>;
+        };
+        const remoteError =
+          typeof payload?.error === "string" ? payload.error : undefined;
+        const remoteCode =
+          typeof payload?.details?.code === "string"
+            ? payload.details.code
+            : undefined;
+        if (remoteError && remoteCode) return `${remoteError} (${remoteCode})`;
+        if (remoteError) return remoteError;
+      } catch {
+        // Fall through to generic message when response body is unavailable.
+      }
+    }
+
+    if (error instanceof Error && error.message) return error.message;
+    return fallback;
+  }
 
   static async getClubStatus(clubId: string): Promise<StripeConnectStatus> {
     const fallback: StripeConnectStatus = {
@@ -124,7 +152,12 @@ export class StripeConnectService {
     );
 
     if (error) {
-      throw new Error(error.message || "Failed to create onboarding link.");
+      throw new Error(
+        await this.toFunctionErrorMessage(
+          error,
+          "Failed to create onboarding link.",
+        ),
+      );
     }
     if (!data || typeof data !== "object" || !("url" in data)) {
       throw new Error(
@@ -144,7 +177,12 @@ export class StripeConnectService {
     );
 
     if (error) {
-      throw new Error(error.message || "Failed to create dashboard link.");
+      throw new Error(
+        await this.toFunctionErrorMessage(
+          error,
+          "Failed to create dashboard link.",
+        ),
+      );
     }
     if (!data || typeof data !== "object" || !("url" in data)) {
       throw new Error(
