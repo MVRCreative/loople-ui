@@ -274,6 +274,12 @@ export default function ProgramRegistrationPage() {
         if (primaryMemberName) metadata.member_name = primaryMemberName;
         if (primaryMemberEmail) metadata.member_email = primaryMemberEmail;
 
+        console.log("[program-register] createStripePaymentIntent args", {
+          clubId: program.club_id,
+          totalAmount,
+          metadata,
+        });
+
         const paymentIntent = (await PaymentsService.createStripePaymentIntent(
           program.club_id,
           totalAmount,
