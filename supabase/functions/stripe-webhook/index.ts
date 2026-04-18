@@ -1,7 +1,36 @@
-import type Stripe from "npm:stripe@17.7.0";
+import Stripe from "npm:stripe@17.7.0";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
-import { getStripeClient, readWebhookSecret } from "../_shared/stripe.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
+
+const isTestMode = Deno.env.get("STRIPE_TEST_MODE") === "true";
+const stripeSecretKey = isTestMode
+  ? Deno.env.get("STRIPE_SECRET_KEY_TEST")
+  : Deno.env.get("STRIPE_SECRET_KEY");
+const webhookSecret = isTestMode
+  ? Deno.env.get("STRIPE_PAYMENT_WEBHOOK_SECRET_TEST")
+  : Deno.env.get("STRIPE_PAYMENT_WEBHOOK_SECRET");
+
+function getStripe(): Stripe {
+  if (!stripeSecretKey) {
+    throw new Error(
+      isTestMode
+        ? "Missing STRIPE_SECRET_KEY_TEST."
+        : "Missing STRIPE_SECRET_KEY.",
+    );
+  }
+  return new Stripe(stripeSecretKey);
+}
+
+function getWebhookSecret(): string {
+  if (!webhookSecret) {
+    throw new Error(
+      isTestMode
+        ? "Missing STRIPE_PAYMENT_WEBHOOK_SECRET_TEST."
+        : "Missing STRIPE_PAYMENT_WEBHOOK_SECRET.",
+    );
+  }
+  return webhookSecret;
+}
 
 type PaymentType = "waitlist" | "program" | "event";
 
@@ -219,8 +248,8 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const stripe = getStripeClient();
-    const webhookSecret = readWebhookSecret();
+    const stripe = getStripe();
+    const signingSecret = getWebhookSecret();
     const signature = req.headers.get("stripe-signature");
     if (!signature) {
       return jsonResponse({ error: "Missing stripe-signature header." }, { status: 400 });
@@ -230,7 +259,7 @@ Deno.serve(async (req: Request) => {
 
     let event: Stripe.Event;
     try {
-      event = await stripe.webhooks.constructEventAsync(rawBody, signature, webhookSecret);
+      event = await stripe.webhooks.constructEventAsync(rawBody, signature, signingSecret);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Invalid signature.";
       console.error("stripe-webhook signature verification failed", { message });

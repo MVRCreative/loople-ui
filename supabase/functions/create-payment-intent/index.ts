@@ -1,6 +1,22 @@
+import Stripe from "npm:stripe@17.7.0";
 import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
-import { getStripeClient } from "../_shared/stripe.ts";
 import { supabaseAdmin } from "../_shared/supabase.ts";
+
+const isTestMode = Deno.env.get("STRIPE_TEST_MODE") === "true";
+const stripeSecretKey = isTestMode
+  ? Deno.env.get("STRIPE_SECRET_KEY_TEST")
+  : Deno.env.get("STRIPE_SECRET_KEY");
+
+function getStripe(): Stripe {
+  if (!stripeSecretKey) {
+    throw new Error(
+      isTestMode
+        ? "Missing STRIPE_SECRET_KEY_TEST."
+        : "Missing STRIPE_SECRET_KEY.",
+    );
+  }
+  return new Stripe(stripeSecretKey);
+}
 
 type PaymentType = "waitlist" | "program" | "event";
 
@@ -110,7 +126,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const stripe = getStripeClient();
+    const stripe = getStripe();
     const amountInCents = Math.round(amount * 100);
 
     const paymentIntent = await stripe.paymentIntents.create({
