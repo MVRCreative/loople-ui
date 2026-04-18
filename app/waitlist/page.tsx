@@ -11,8 +11,8 @@ export default function WaitlistPage() {
         <CardHeader>
           <CardTitle>Waitlist</CardTitle>
           <CardDescription>
-            To join a club waitlist, use the application link provided by your club. The link will look like
-            /waitlist/apply?club=CLUB_ID
+            To join a club waitlist, open the club&apos;s site and visit
+            /waitlist/apply (e.g. your-club.loople.app/waitlist/apply).
           </CardDescription>
         </CardHeader>
         <CardContent>

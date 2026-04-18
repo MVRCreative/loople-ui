@@ -14,6 +14,7 @@ import { Loader } from "@/components/ui/loader";
 import { supabase } from "@/lib/supabase";
 import { PaymentsService } from "@/lib/services/payments.service";
 import { env } from "@/lib/env";
+import { extractSubdomain, isReservedSubdomain } from "@/lib/utils/subdomain";
 
 interface ClubInfo {
   id: string;
@@ -24,7 +25,24 @@ interface ClubInfo {
 
 function WaitlistApplyForm() {
   const searchParams = useSearchParams();
-  const clubId = searchParams.get("club") ?? searchParams.get("clubId") ?? "";
+  // Prefer the subdomain from the request host (multi-tenant world);
+  // fall back to `?club=` for legacy shared links during the transition.
+  const [clubId, setClubIdState] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      const sub = extractSubdomain(window.location.hostname, env.ROOT_DOMAIN);
+      if (sub && !isReservedSubdomain(sub)) return sub;
+    }
+    return searchParams.get("club") ?? searchParams.get("clubId") ?? "";
+  });
+  // Keep a stable ref to the original setter so the later useEffect can
+  // still fall back to the query param on remounts without the host.
+  const setClubId = setClubIdState;
+  useEffect(() => {
+    if (clubId) return;
+    const fallback =
+      searchParams.get("club") ?? searchParams.get("clubId") ?? "";
+    if (fallback) setClubId(fallback);
+  }, [clubId, searchParams, setClubId]);
 
   const [club, setClub] = useState<ClubInfo | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,7 +59,9 @@ function WaitlistApplyForm() {
 
   useEffect(() => {
     if (!clubId) {
-      setError("Missing club. Use ?club=CLUB_ID or ?club=subdomain in the URL.");
+      setError(
+        "This waitlist link is missing its club. Open it from the club's site (e.g. your-club.loople.app/waitlist/apply)."
+      );
       setLoading(false);
       return;
     }

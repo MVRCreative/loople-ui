@@ -37,6 +37,7 @@ import {
   ClubWaitlistSettings,
 } from "@/lib/services/waitlist.service";
 import { env } from "@/lib/env";
+import { buildTenantUrl } from "@/lib/utils/subdomain";
 import { Loader } from "@/components/ui/loader";
 import { MoreHorizontal, UserPlus, ExternalLink, Copy } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -88,9 +89,20 @@ export default function AdminWaitlistPage() {
 
   useEffect(() => {
     if (typeof window === "undefined" || !selectedClub) return;
+    // Prefer the tenant subdomain so the link works in the multi-tenant
+    // world without needing ?club=. Fall back to APP_URL+query only if
+    // the club has no subdomain configured (legacy records).
+    if (selectedClub.subdomain) {
+      const url = buildTenantUrl(
+        selectedClub.subdomain,
+        env.ROOT_DOMAIN,
+        "/waitlist/apply"
+      );
+      setShareableUrl(url);
+      return;
+    }
     const base = env.APP_URL || window.location.origin;
-    const slug = selectedClub.subdomain || selectedClub.id;
-    setShareableUrl(`${base}/waitlist/apply?club=${slug}`);
+    setShareableUrl(`${base}/waitlist/apply?club=${selectedClub.id}`);
   }, [selectedClub]);
 
   const handleToggleEnabled = async (checked: boolean) => {

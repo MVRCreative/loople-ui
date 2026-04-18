@@ -83,8 +83,11 @@ Safari does **not** resolve `*.localhost` by default. Two options:
 
 ### Testing unknown tenants
 
-`http://nonexistent.localhost:3000/` should render the
-`/unknown-tenant` page once Phase 2 ships.
+Visit `http://nonexistent.localhost:3000/`. The tenant layout
+(`app/s/[subdomain]/layout.tsx`) calls `notFound()` when the
+subdomain doesn't map to a club, which renders the sibling
+`not-found.tsx`. The root-host `/unknown-tenant` page is kept as
+an explicit navigation target for direct links and emails.
 
 ## Production DNS
 
@@ -116,3 +119,28 @@ Troubleshooting:
 `search_path = public`. It returns only the columns safe to expose to
 unauthenticated traffic. Adding a column requires a migration and a
 brief security review - the middleware is called from anon contexts.
+
+## Stripe and email URLs
+
+- Stripe Connect onboarding/refresh URLs are built from
+  `window.location.origin` at call time. On a tenant subdomain the
+  origin is already the tenant host, so Stripe returns users to
+  e.g. `eastside-fc.loople.app/admin/payments/settings` without any
+  extra code.
+- Supabase `resetPasswordForEmail` uses the tenant's origin for the
+  redirect URL. Make sure `https://*.loople.app/**` is in the
+  Supabase **Authentication > URL Configuration** allow list so
+  subdomain redirects aren't blocked.
+- Supabase email templates (confirm signup, magic link, invite) use
+  `{{ .SiteURL }}` by default. Keep `.SiteURL` set to
+  `https://www.loople.app` so auth emails consistently land on
+  `www` first; users are then routed to their tenant by the post-
+  login flow.
+
+## Transitional `/app/:path*` redirect
+
+`next.config.ts` has a temporary `/app/:path* -> /:path*` redirect
+to keep existing email links, bookmarks, and Stripe return URLs
+alive after the `basePath="/app"` removal. Remove it after a
+30-day observation window once metrics show no traffic on the
+old paths.
