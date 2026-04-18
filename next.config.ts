@@ -15,6 +15,17 @@ const nextConfig: NextConfig = {
         basePath: false,
         permanent: false,
       },
+      // Transitional: after Phase 0 removes basePath, external links pointing
+      // at /app/* (emails, Stripe return URLs, bookmarks) keep resolving.
+      // Safe while basePath="/app" is still present because the "/" redirect
+      // above runs first and routes traffic through basePath normally.
+      // Remove after a 30-day grace period post-Phase 6.
+      {
+        source: "/app/:path*",
+        destination: "/:path*",
+        basePath: false,
+        permanent: false,
+      },
     ];
   },
   images: {

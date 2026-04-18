@@ -9,5 +9,6 @@ Before any Next.js work, find and read the relevant doc in `node_modules/next/di
 ## This repo (human + agent context)
 
 - **App Router** lives at the repo root: `app/`, `components/`, `lib/`.
-- **`basePath`** is `/app` (see `next.config.ts`); public URLs are under `/app/...` unless redirects say otherwise.
+- **`basePath`** is `/app` (see `next.config.ts`); public URLs are under `/app/...` unless redirects say otherwise. (Removed in Phase 0 of the multi-tenant migration.)
 - **Auth edge logic** is in `proxy.ts` (Next 16 proxy; replaces legacy `middleware.ts`).
+- **Multi-tenant migration in progress.** Follow [docs/MULTITENANT_PLAN.md](docs/MULTITENANT_PLAN.md) for the current status and the full subdomain-routing architecture.
