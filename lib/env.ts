@@ -20,6 +20,19 @@ export const env = {
    * lib/utils/subdomain.ts and the subdomain-aware middleware.
    */
   ROOT_DOMAIN: process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "loople.app",
+  /**
+   * Feature flag for subdomain-based multi-tenant routing. When false,
+   * the proxy only refreshes the session and applies the legacy auth
+   * redirects (current behavior). When true, the proxy additionally
+   * extracts the tenant subdomain from the host header and rewrites
+   * requests into the /s/[subdomain]/... route tree.
+   *
+   * Keep this OFF until the /s/[subdomain] routes exist (Phase 3).
+   * Flipping this ON without those routes will 404 every tenant
+   * request.
+   */
+  ENABLE_SUBDOMAIN_ROUTING:
+    process.env.NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING === "true",
 } as const;
 
 /**

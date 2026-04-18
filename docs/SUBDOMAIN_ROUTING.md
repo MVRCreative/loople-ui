@@ -27,8 +27,9 @@ cookie scoped to `.loople.app` so sign-in spans every tenant.
 - [supabase/migrations/20260418204501_add_club_by_subdomain_rpc.sql](../supabase/migrations/20260418204501_add_club_by_subdomain_rpc.sql) -
   creates the RPC and a case-insensitive unique index on
   `clubs.subdomain`.
-- `proxy.ts` (renamed to `middleware.ts` in Phase 2) - owns the
-  per-request routing decision.
+- [proxy.ts](../proxy.ts) - Next 16 proxy (formerly `middleware.ts`).
+  Owns the per-request routing decision. Subdomain rewrites are
+  gated behind `NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING=true`.
 
 ## Reserved subdomains
 
@@ -43,6 +44,7 @@ super-admin surface.
 | --- | --- | --- |
 | `NEXT_PUBLIC_ROOT_DOMAIN` | `loople.app` | Apex used to derive tenant subdomains. Set per environment. |
 | `NEXT_PUBLIC_APP_URL` | `https://www.loople.app` | Legacy base URL; falls back to `window.location.origin`. |
+| `NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING` | `true` | Flag gating the proxy subdomain rewrites. Leave unset / `false` until the `/s/[subdomain]` route tree exists (Phase 3). |
 
 ## Local development
 
