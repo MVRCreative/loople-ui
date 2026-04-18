@@ -17,6 +17,21 @@ export interface Club {
   updated_at: string;
 }
 
+/**
+ * Minimal, anon-safe club payload returned by the public subdomain
+ * lookup RPC. Used by the multi-tenant middleware and tenant layouts to
+ * resolve the current club from the request host without requiring an
+ * authenticated session.
+ */
+export interface PublicClub {
+  id: string;
+  name: string;
+  subdomain: string;
+  logo_url: string | null;
+  onboarding_completed: boolean;
+  waitlist_enabled: boolean;
+}
+
 export interface CreateClubData {
   name: string;
   subdomain: string;
@@ -367,6 +382,48 @@ export class ClubsService {
       console.error('Error in updateOnboardingStatus:', error);
       throw error;
     }
+  }
+
+  /**
+   * Resolve a tenant club by its subdomain via the public security-definer
+   * RPC. Safe to call from anon contexts (middleware, public pages).
+   *
+   * Returns null when no club matches. Subdomain matching is
+   * case-insensitive server-side.
+   */
+  static async getClubBySubdomain(subdomain: string): Promise<PublicClub | null> {
+    const trimmed = subdomain?.trim();
+    if (!trimmed) return null;
+
+    const { data, error } = await supabase.rpc("club_by_subdomain", {
+      sub: trimmed,
+    });
+
+    if (error) {
+      console.error("Error resolving club by subdomain:", error);
+      return null;
+    }
+
+    const row = Array.isArray(data) ? data[0] : data;
+    if (!row || typeof row !== "object") return null;
+
+    const r = row as {
+      id: unknown;
+      name: unknown;
+      subdomain: unknown;
+      logo_url: unknown;
+      onboarding_completed: unknown;
+      waitlist_enabled: unknown;
+    };
+
+    return {
+      id: String(r.id ?? ""),
+      name: typeof r.name === "string" ? r.name : "",
+      subdomain: typeof r.subdomain === "string" ? r.subdomain : "",
+      logo_url: typeof r.logo_url === "string" ? r.logo_url : null,
+      onboarding_completed: Boolean(r.onboarding_completed),
+      waitlist_enabled: Boolean(r.waitlist_enabled),
+    };
   }
 
   /**

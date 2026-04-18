@@ -14,6 +14,12 @@ export const env = {
   STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   /** App base URL for shareable links (e.g. https://www.loople.app). Falls back to window.location.origin when unset. */
   APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+  /**
+   * Apex domain used to derive tenant subdomains (e.g. "loople.app" in
+   * production, "localhost:3000" for local dev). Consumed by
+   * lib/utils/subdomain.ts and the subdomain-aware middleware.
+   */
+  ROOT_DOMAIN: process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? "loople.app",
 } as const;
 
 /**
