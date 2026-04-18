@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { userIsMemberOfClub } from "@/lib/auth/admin-access";
 import { CurrentClubProvider } from "@/lib/club-context";
 import { env } from "@/lib/env";
 import {
@@ -36,6 +37,12 @@ export default async function MemberLayout(
     const loginUrl = new URL(buildRootUrl(env.ROOT_DOMAIN, "/auth/login"));
     loginUrl.searchParams.set("redirectTo", `/s/${subdomain}`);
     redirect(loginUrl.toString());
+  }
+
+  // Scope check: only members of THIS club can see member pages.
+  const isMember = await userIsMemberOfClub(supabase, user, club.id);
+  if (!isMember) {
+    redirect(`/s/${subdomain}/not-a-member`);
   }
 
   // Once the member is authenticated, RLS lets us load the full club row

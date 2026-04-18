@@ -43,8 +43,7 @@ export default async function TenantAdminLayout(
     redirect(loginUrl.toString());
   }
 
-  // Phase 5 TODO: pass club.id once userHasAdminAccess is clubId-aware.
-  const allowed = await userHasAdminAccess(supabase, user);
+  const allowed = await userHasAdminAccess(supabase, user, club.id);
   if (!allowed) {
     redirect(`/s/${subdomain}`);
   }
