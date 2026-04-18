@@ -89,10 +89,47 @@ function WaitlistApplyForm() {
         return;
       }
 
+      const { data: lastRow, error: positionError } = await supabase
+        .from("waitlist_applications")
+        .select("position")
+        .eq("club_id", club.id)
+        .order("position", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (positionError) {
+        setError(positionError.message || "Failed to reserve a waitlist spot.");
+        return;
+      }
+
+      const nextPosition = (lastRow?.position ?? -1) + 1;
+
+      const { data: inserted, error: insertError } = await supabase
+        .from("waitlist_applications")
+        .insert({
+          club_id: club.id,
+          email: formData.email,
+          first_name: formData.first_name,
+          last_name: formData.last_name,
+          phone: formData.phone || null,
+          payment_amount: amount,
+          payment_status: "pending",
+          position: nextPosition,
+          status: "pending",
+        })
+        .select("id")
+        .single();
+
+      if (insertError || !inserted?.id) {
+        setError(insertError?.message || "Failed to create waitlist application.");
+        return;
+      }
+
       const metadata: Record<string, string> = {
         email: formData.email,
         first_name: formData.first_name,
         last_name: formData.last_name,
+        waitlist_application_id: String(inserted.id),
       };
       if (formData.phone) metadata.phone = formData.phone;
 
