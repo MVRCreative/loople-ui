@@ -241,20 +241,45 @@ export default function ProgramRegistrationPage() {
       );
 
       if (isFeeProgram) {
-        await ProgramsService.registerMembers(program.id, selectedIds, {
-          paymentStatus: "pending",
-          membershipStatus: "active",
-          role: "participant",
-        });
+        const memberships = await ProgramsService.registerMembers(
+          program.id,
+          selectedIds,
+          {
+            paymentStatus: "pending",
+            membershipStatus: "active",
+            role: "participant",
+          }
+        );
         await ProgramsService.upsertRegistrationEventSelections(
           program.id,
           selectionsPayload
         );
         setPendingMemberIds(selectedIds);
 
+        const registrationIds = memberships.map((membership) => membership.id);
+        const primaryMember =
+          selectedMembers.find((member) => member.id === currentMemberId) ??
+          selectedMembers[0];
+        const primaryMemberName = primaryMember
+          ? `${primaryMember.first_name} ${primaryMember.last_name}`.trim()
+          : undefined;
+        const primaryMemberEmail = primaryMember?.email || undefined;
+
+        const metadata: Record<string, string> = {
+          program_id: String(program.id),
+        };
+        if (registrationIds.length > 0) {
+          metadata.program_registration_ids = registrationIds.join(",");
+        }
+        if (primaryMemberName) metadata.member_name = primaryMemberName;
+        if (primaryMemberEmail) metadata.member_email = primaryMemberEmail;
+
         const paymentIntent = (await PaymentsService.createStripePaymentIntent(
+          program.club_id,
           totalAmount,
-          "usd"
+          "program",
+          "usd",
+          metadata
         )) as { client_secret?: string } | null;
 
         if (!paymentIntent?.client_secret) {

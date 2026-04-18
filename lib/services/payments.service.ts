@@ -147,24 +147,45 @@ export class PaymentsService {
   }
 
   /**
-   * Create Stripe payment intent
+   * Create a Stripe PaymentIntent for the specified club.
+   *
+   * Payments are always routed to the club's connected Stripe account via the
+   * `create-payment-intent` Edge Function, which sets `on_behalf_of` and
+   * `transfer_data.destination`. Do not invoke the legacy
+   * `waitlist-create-payment-intent` function directly.
    */
-  static async createStripePaymentIntent(amount: number, currency: string = 'usd', applicationFeeAmount?: number): Promise<unknown> {
+  static async createStripePaymentIntent(
+    clubId: string,
+    amount: number,
+    type: 'waitlist' | 'program' | 'event',
+    currency: string = 'usd',
+    metadata?: Record<string, string>,
+    applicationFeeAmount?: number
+  ): Promise<unknown> {
     try {
+      const body: Record<string, unknown> = {
+        club_id: clubId,
+        amount,
+        currency,
+        type,
+      };
+      if (metadata && Object.keys(metadata).length > 0) {
+        body.metadata = metadata;
+      }
+      if (typeof applicationFeeAmount === 'number' && Number.isFinite(applicationFeeAmount)) {
+        body.application_fee_amount = applicationFeeAmount;
+      }
+
       const { data, error } = await supabase.functions.invoke('create-payment-intent', {
         method: 'POST',
-        body: {
-          amount,
-          currency,
-          application_fee_amount: applicationFeeAmount
-        }
+        body,
       });
-      
+
       if (error) {
         console.error('Error creating payment intent:', error);
         throw error;
       }
-      
+
       return data as unknown;
     } catch (error) {
       console.error('Error in createStripePaymentIntent:', error);
