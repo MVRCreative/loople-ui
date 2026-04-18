@@ -136,7 +136,7 @@ export function NewsfeedSidebar() {
         <Link href="/" className="flex items-center">
           {/* Light mode logo */}
           <Image 
-            src="/app/loople-logo3.svg" 
+            src="/loople-logo3.svg" 
             alt="Loople Logo" 
             width={32}
             height={32}
@@ -144,7 +144,7 @@ export function NewsfeedSidebar() {
           />
           {/* Dark mode logo */}
           <Image 
-            src="/app/loople-logo-white.svg" 
+            src="/loople-logo-white.svg" 
             alt="Loople Logo" 
             width={32}
             height={32}

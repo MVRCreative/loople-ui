@@ -42,7 +42,7 @@ export function AdminLayoutWrapper({ children }: AdminLayoutWrapperProps) {
               <Link href="/" className="flex items-center rounded-md hover:opacity-80 transition-opacity" aria-label="Back to home">
                 <Image
                   alt="Loople"
-                  src="/app/loople-logo3.svg"
+                  src="/loople-logo3.svg"
                   width={32}
                   height={32}
                   className="h-8 w-auto"

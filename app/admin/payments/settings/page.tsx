@@ -11,7 +11,6 @@ import { Loader } from "@/components/ui/loader";
 import { useClub } from "@/lib/club-context";
 import { useAdminClubPageAccess } from "@/lib/hooks/use-admin-club-page-access";
 import { StripeConnectService, type StripeConnectStatus } from "@/lib/services/stripe-connect.service";
-import { env } from "@/lib/env";
 
 function getSeverity(status: StripeConnectStatus | null) {
   if (!status) return "pending";
@@ -53,7 +52,6 @@ export default function AdminPaymentSettingsPage() {
   }, [loadStatus]);
 
   const severity = getSeverity(status);
-  const basePath = env.BASE_PATH ?? "/app";
 
   const statusPill = useMemo(() => {
     if (severity === "ready") {
@@ -77,8 +75,8 @@ export default function AdminPaymentSettingsPage() {
     setError(null);
     try {
       const origin = typeof window !== "undefined" ? window.location.origin : "";
-      const returnUrl = `${origin}${basePath}/admin/payments/settings?stripe=return`;
-      const refreshUrl = `${origin}${basePath}/admin/payments/settings?stripe=refresh`;
+      const returnUrl = `${origin}/admin/payments/settings?stripe=return`;
+      const refreshUrl = `${origin}/admin/payments/settings?stripe=refresh`;
       const { url } = await StripeConnectService.createOnboardingLink({
         clubId: selectedClub.id,
         returnUrl,

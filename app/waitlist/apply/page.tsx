@@ -386,8 +386,7 @@ function PaymentFormInner({
     setLoading(true);
     setError(null);
     try {
-      const basePath = typeof window !== "undefined" ? (env.BASE_PATH || "/app") : "/app";
-      const returnUrl = typeof window !== "undefined" ? `${window.location.origin}${basePath}/waitlist/apply/success` : "";
+      const returnUrl = typeof window !== "undefined" ? `${window.location.origin}/waitlist/apply/success` : "";
       const { error: stripeError } = await stripe.confirmPayment({
         elements,
         clientSecret,
@@ -427,7 +426,7 @@ export default function WaitlistApplyPage() {
     <div className="min-h-screen bg-background">
       <header className="border-b px-4 py-3">
         <Link href="/" className="flex items-center">
-          <Image src="/app/loople-logo3.svg" alt="Loople" width={140} height={60} />
+          <Image src="/loople-logo3.svg" alt="Loople" width={140} height={60} />
         </Link>
       </header>
       <Suspense fallback={<div className="min-h-[60vh] flex items-center justify-center"><Loader /></div>}>

@@ -89,9 +89,8 @@ export default function AdminWaitlistPage() {
   useEffect(() => {
     if (typeof window === "undefined" || !selectedClub) return;
     const base = env.APP_URL || window.location.origin;
-    const basePath = env.BASE_PATH || "/app";
     const slug = selectedClub.subdomain || selectedClub.id;
-    setShareableUrl(`${base}${basePath}/waitlist/apply?club=${slug}`);
+    setShareableUrl(`${base}/waitlist/apply?club=${slug}`);
   }, [selectedClub]);
 
   const handleToggleEnabled = async (checked: boolean) => {

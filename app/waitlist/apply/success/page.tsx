@@ -10,7 +10,7 @@ export default function WaitlistApplySuccessPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <header className="fixed top-0 left-0 right-0 border-b px-4 py-3 bg-background">
         <Link href="/" className="flex items-center">
-          <Image src="/app/loople-logo3.svg" alt="Loople" width={140} height={60} />
+          <Image src="/loople-logo3.svg" alt="Loople" width={140} height={60} />
         </Link>
       </header>
       <Card className="max-w-md w-full mt-16">

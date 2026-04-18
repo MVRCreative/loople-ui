@@ -12,10 +12,8 @@ export const env = {
   FUNCTIONS_URL: process.env.NEXT_PUBLIC_FUNCTIONS_URL,
   /** Stripe publishable key for waitlist payments (NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) */
   STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
-  /** App base URL for shareable links (e.g. https://app.loople.com). Falls back to window.location.origin when unset. */
+  /** App base URL for shareable links (e.g. https://www.loople.app). Falls back to window.location.origin when unset. */
   APP_URL: process.env.NEXT_PUBLIC_APP_URL,
-  /** Base path for routes (must match next.config basePath). Default /app. */
-  BASE_PATH: process.env.NEXT_PUBLIC_BASE_PATH ?? "/app",
 } as const;
 
 /**

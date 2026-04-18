@@ -36,8 +36,7 @@ Optional fallback names already supported:
 ## Required env vars (Vercel / Next.js)
 
 - `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-- `NEXT_PUBLIC_APP_URL` (for example `https://your-app.vercel.app`)
-- `NEXT_PUBLIC_BASE_PATH` (use `/app` unless you intentionally changed it)
+- `NEXT_PUBLIC_APP_URL` (for example `https://www.loople.app`)
 
 ## Deploy commands
 

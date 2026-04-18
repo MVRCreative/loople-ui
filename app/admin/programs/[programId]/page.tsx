@@ -98,8 +98,8 @@ export default function AdminProgramDetailPage() {
     }
   };
 
-  const shareUrl = program ? `${origin}/app/programs/${program.id}` : "";
-  const registrationUrl = program ? `${origin}/app/programs/${program.id}/register` : "";
+  const shareUrl = program ? `${origin}/programs/${program.id}` : "";
+  const registrationUrl = program ? `${origin}/programs/${program.id}/register` : "";
 
   const handleCopyShareUrl = async () => {
     if (!shareUrl) return;
@@ -343,7 +343,7 @@ export default function AdminProgramDetailPage() {
         <CardContent className="space-y-3">
           <div className="flex flex-col gap-2 sm:flex-row">
             <div className="flex-1 rounded-md border bg-muted/30 px-3 py-2 text-sm break-all">
-              {shareUrl || `/app/programs/${program.id}`}
+              {shareUrl || `/programs/${program.id}`}
             </div>
             <Button variant="outline" onClick={handleCopyShareUrl}>
               <Copy className="h-4 w-4 mr-1" />

@@ -10,7 +10,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: `${baseURL}/app`,
+    baseURL,
     trace: 'on-first-retry',
   },
   projects: [
@@ -20,7 +20,7 @@ export default defineConfig({
     ? undefined
     : {
         command: 'npm run dev',
-        url: `${baseURL}/app`,
+        url: baseURL,
         reuseExistingServer: !process.env.CI,
         timeout: 120 * 1000,
       },

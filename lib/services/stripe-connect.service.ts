@@ -127,16 +127,15 @@ export class StripeConnectService {
     refreshUrl?: string;
   }): Promise<{ url: string }> {
     const defaultAppUrl = env.APP_URL;
-    const basePath = env.BASE_PATH ?? "/app";
     const returnUrl =
       params.returnUrl ??
       (defaultAppUrl
-        ? `${defaultAppUrl}${basePath}/admin/payments/settings?stripe=return`
+        ? `${defaultAppUrl}/admin/payments/settings?stripe=return`
         : undefined);
     const refreshUrl =
       params.refreshUrl ??
       (defaultAppUrl
-        ? `${defaultAppUrl}${basePath}/admin/payments/settings?stripe=refresh`
+        ? `${defaultAppUrl}/admin/payments/settings?stripe=refresh`
         : undefined);
 
     const { data, error } = await supabase.functions.invoke(

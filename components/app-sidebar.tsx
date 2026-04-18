@@ -89,7 +89,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* Logo + Notifications */}
         <div className="flex h-16 items-center justify-between px-6">
           <Image 
-            src="/app/loople-logo3.svg" 
+            src="/loople-logo3.svg" 
             alt="Loople Logo" 
             width={32}
             height={32}

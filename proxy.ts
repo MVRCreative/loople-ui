@@ -39,8 +39,7 @@ export async function proxy(request: NextRequest) {
         .forEach(cookie => supabaseResponse.cookies.delete(cookie.name))
     }
 
-    const basePath = '/app'
-    const path = request.nextUrl.pathname.replace(new RegExp(`^${basePath}`), '') || '/'
+    const path = request.nextUrl.pathname
 
     const protectedRoutes = ['/dashboard', '/messages', '/events', '/members', '/programs', '/settings', '/admin']
     const authRoutes = ['/auth/login', '/auth/signup', '/auth/logout', '/auth/forgot', '/auth/reset-password']
@@ -52,13 +51,13 @@ export async function proxy(request: NextRequest) {
     // Admin DB checks run in app/admin/layout (Node), not Edge middleware.
 
     if ((isProtectedRoute || isHomeRoute) && !user) {
-      const redirectUrl = new URL(`${basePath}/auth/login`, request.url)
+      const redirectUrl = new URL('/auth/login', request.url)
       redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname)
       return NextResponse.redirect(redirectUrl)
     }
 
     if (isAuthRoute && user && !path.startsWith('/auth/logout')) {
-      return NextResponse.redirect(new URL(basePath, request.url))
+      return NextResponse.redirect(new URL('/', request.url))
     }
 
     return supabaseResponse
@@ -70,8 +69,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // Explicitly match root - required when basePath is set (Next.js doesn't match / otherwise)
-    '/',
     /*
      * Match all request paths except for the ones starting with:
      * - _next/static (static files)
