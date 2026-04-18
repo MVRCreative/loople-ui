@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 import { env } from "@/lib/env";
+import type { Club } from "@/lib/services/clubs.service";
 import { isLocalDomain } from "@/lib/utils/subdomain";
 
 /**
@@ -82,4 +83,36 @@ export async function getServerClubBySubdomain(subdomain: string) {
     onboarding_completed: Boolean(r.onboarding_completed),
     waitlist_enabled: Boolean(r.waitlist_enabled),
   };
+}
+
+/**
+ * Resolve the full, RLS-gated club row by subdomain. Requires that the
+ * current session has access to the row (member/admin/owner). Returns
+ * null when no row matches or RLS denies the read. Used by tenant
+ * member/admin layouts so the client `useClub()` can consume the full
+ * Club type.
+ */
+export async function getServerFullClubBySubdomain(
+  subdomain: string
+): Promise<Club | null> {
+  const trimmed = subdomain?.trim();
+  if (!trimmed) return null;
+
+  const supabase = await getServerSupabase();
+  const { data, error } = await supabase
+    .from("clubs")
+    .select("*")
+    .ilike("subdomain", trimmed)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    if (error.code !== "PGRST116") {
+      console.error("Error resolving full club by subdomain:", error);
+    }
+    return null;
+  }
+
+  if (!data) return null;
+  return data as unknown as Club;
 }

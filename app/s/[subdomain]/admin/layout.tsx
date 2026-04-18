@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation";
 
 import { userHasAdminAccess } from "@/lib/auth/admin-access";
+import { CurrentClubProvider } from "@/lib/club-context";
 import { env } from "@/lib/env";
 import {
   getServerClubBySubdomain,
+  getServerFullClubBySubdomain,
   getServerSupabase,
 } from "@/lib/supabase-server";
 import { buildRootUrl, buildTenantUrl } from "@/lib/utils/subdomain";
@@ -47,5 +49,11 @@ export default async function TenantAdminLayout(
     redirect(`/s/${subdomain}`);
   }
 
-  return <AdminLayoutClient>{props.children}</AdminLayoutClient>;
+  const fullClub = await getServerFullClubBySubdomain(subdomain);
+
+  return (
+    <CurrentClubProvider initialClub={fullClub}>
+      <AdminLayoutClient>{props.children}</AdminLayoutClient>
+    </CurrentClubProvider>
+  );
 }

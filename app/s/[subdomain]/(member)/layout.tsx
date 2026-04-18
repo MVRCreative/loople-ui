@@ -1,8 +1,10 @@
 import { redirect } from "next/navigation";
 
+import { CurrentClubProvider } from "@/lib/club-context";
 import { env } from "@/lib/env";
 import {
   getServerClubBySubdomain,
+  getServerFullClubBySubdomain,
   getServerSupabase,
 } from "@/lib/supabase-server";
 import { buildRootUrl } from "@/lib/utils/subdomain";
@@ -36,5 +38,13 @@ export default async function MemberLayout(
     redirect(loginUrl.toString());
   }
 
-  return <>{props.children}</>;
+  // Once the member is authenticated, RLS lets us load the full club row
+  // so `useClub()`-style consumers get the full shape (owner_id, etc.).
+  const fullClub = await getServerFullClubBySubdomain(subdomain);
+
+  return (
+    <CurrentClubProvider initialClub={fullClub}>
+      {props.children}
+    </CurrentClubProvider>
+  );
 }
