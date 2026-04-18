@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
 import { supabase } from "@/lib/supabase";
-import { getFunctionsUrl } from "@/lib/supabase";
+import { PaymentsService } from "@/lib/services/payments.service";
 import { env } from "@/lib/env";
 
 interface ClubInfo {
@@ -82,34 +82,30 @@ function WaitlistApplyForm() {
     setError(null);
 
     try {
-      const url = `${getFunctionsUrl()}/waitlist-create-payment-intent`;
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          club_id: club.id,
-          email: formData.email,
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          phone: formData.phone || undefined,
-          amount: club.waitlist_payment_amount ?? 0,
-        }),
-      });
+      const amount = club.waitlist_payment_amount ?? 0;
 
-      const json = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setError(json.error ?? "Something went wrong.");
-        return;
-      }
-
-      if (json.no_payment) {
+      if (amount <= 0) {
         setSuccess(true);
         return;
       }
 
-      if (json.client_secret) {
-        setClientSecret(json.client_secret);
+      const metadata: Record<string, string> = {
+        email: formData.email,
+        first_name: formData.first_name,
+        last_name: formData.last_name,
+      };
+      if (formData.phone) metadata.phone = formData.phone;
+
+      const result = (await PaymentsService.createStripePaymentIntent(
+        club.id,
+        amount,
+        "waitlist",
+        "usd",
+        metadata
+      )) as { client_secret?: string } | null;
+
+      if (result?.client_secret) {
+        setClientSecret(result.client_secret);
         return;
       }
 
