@@ -25,6 +25,13 @@ import { EventsService, type Event } from "@/lib/services/events.service";
 import type { ProgramWithMemberCount, ProgramMembership } from "@/lib/programs/types";
 import { env } from "@/lib/env";
 
+// loadStripe must be called once at module scope. If it runs inside a render
+// body it returns a fresh Promise each pass, which violates the Stripe
+// contract ("You cannot change the stripe prop after setting it").
+const stripePromise = env.STRIPE_PUBLISHABLE_KEY
+  ? loadStripe(env.STRIPE_PUBLISHABLE_KEY)
+  : null;
+
 type Step = 1 | 2 | 3 | 4;
 
 export default function ProgramRegistrationPage() {
@@ -689,8 +696,7 @@ function ProgramPaymentStep({
   onBack: () => void;
   onSuccess: () => void;
 }) {
-  const publishableKey = env.STRIPE_PUBLISHABLE_KEY;
-  if (!publishableKey) {
+  if (!stripePromise) {
     return (
       <div className="px-4 sm:px-6 lg:px-8 pt-6">
         <Card>
@@ -718,10 +724,7 @@ function ProgramPaymentStep({
           <CardTitle>Complete payment</CardTitle>
         </CardHeader>
         <CardContent>
-          <Elements
-            stripe={loadStripe(publishableKey)}
-            options={{ clientSecret }}
-          >
+          <Elements stripe={stripePromise} options={{ clientSecret }}>
             <ProgramPaymentElement
               clientSecret={clientSecret}
               onBack={onBack}
