@@ -1,0 +1,274 @@
+/* ------------------------------------------------------------------
+ * Loople UI — Design Tokens
+ * ------------------------------------------------------------------
+ * Generated from `app/globals.css` + component audit.
+ * This file is a *reference* artifact: it documents every design
+ * token currently in effect across the app, plus a few proposed
+ * additions (prefixed with `--proposed-*`) that would resolve the
+ * inconsistencies called out in STYLE_GUIDE.md §8.
+ *
+ * Source of truth for the live app remains `app/globals.css`.
+ * If you change a token here, mirror it there (or vice versa).
+ * ------------------------------------------------------------------ */
+
+:root {
+  /* ---------- Color — Surfaces ---------- */
+  --background: oklch(1.0000 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+
+  /* ---------- Color — Brand ---------- */
+  --primary: oklch(0.50 0.12 262);
+  --primary-foreground: oklch(1.0000 0 0);
+
+  /* ---------- Color — Neutral accents ---------- */
+  --secondary: oklch(0.965 0 0);
+  --secondary-foreground: oklch(0.40 0 0);
+  --muted: oklch(0.965 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.95 0 0);
+  --accent-foreground: oklch(0.25 0 0);
+
+  /* ---------- Color — Destructive / status ---------- */
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(1.0000 0 0);
+
+  /* Proposed: currently inlined everywhere as raw tailwind palette.
+     Wire these up when migrating green-*/amber-*/blue-* usage. */
+  --proposed-success: oklch(0.65 0.15 150);
+  --proposed-success-foreground: oklch(1 0 0);
+  --proposed-warning: oklch(0.80 0.15 85);
+  --proposed-warning-foreground: oklch(0.20 0 0);
+  --proposed-info: oklch(0.65 0.15 240);
+  --proposed-info-foreground: oklch(1 0 0);
+
+  /* ---------- Color — Borders / rings ---------- */
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.55 0.14 262);
+
+  /* ---------- Color — Charts (restricted to chart components) ---------- */
+  --chart-1: oklch(0.55 0.14 262); /* blue */
+  --chart-2: oklch(0.60 0.16 150); /* green */
+  --chart-3: oklch(0.55 0.18 30);  /* red-orange */
+  --chart-4: oklch(0.65 0.15 310); /* purple */
+  --chart-5: oklch(0.60 0.12 70);  /* gold */
+
+  /* ---------- Color — Sidebar surface ---------- */
+  --sidebar: oklch(0.978 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.50 0.12 262);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.95 0 0);
+  --sidebar-accent-foreground: oklch(0.25 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.55 0.14 262);
+
+  /* ---------- Typography ---------- */
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-source-serif), ui-serif, Georgia, serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --tracking-normal: 0em;
+
+  /* Type scale (mirror of Tailwind v4 defaults; included for authoring). */
+  --text-xs:   0.75rem;   /* 12px / 16 */
+  --text-sm:   0.875rem;  /* 14px / 20 */
+  --text-base: 1rem;      /* 16px / 24 */
+  --text-lg:   1.125rem;  /* 18px / 28 */
+  --text-xl:   1.25rem;   /* 20px / 28 */
+  --text-2xl:  1.5rem;    /* 24px / 32 */
+  --text-3xl:  1.875rem;  /* 30px / 36 */
+  --text-4xl:  2.25rem;   /* 36px / 40 */
+
+  --leading-none:    1;
+  --leading-tight:   1.25;
+  --leading-snug:    1.375;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.625;
+
+  /* Weights actually used. Poppins is loaded with 100–900. */
+  --font-weight-normal:   400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  /* Bespoke sizes currently used in the feed. Prefer migrating to the
+     scale above. Leaving these tokenized for now to make the drift
+     trackable. */
+  --text-feed-body:   15px; /* post body & header line */
+  --text-feed-meta:   13px; /* reaction counter */
+  --text-message:     12px; /* message editor */
+  --text-debug-badge: 11px; /* auth debug badge */
+
+  /* ---------- Spacing & layout ---------- */
+  --spacing: 0.25rem; /* Tailwind v4 base spacing unit (4px) */
+
+  /* Container widths (conventions, not enforced) */
+  --container-auth:     24rem;  /* max-w-sm  (384px) */
+  --container-modal-sm: 28rem;  /* max-w-md  (448px) */
+  --container-modal:    32rem;  /* max-w-lg  (512px) */
+  --container-modal-lg: 36rem;  /* max-w-xl  (576px) */
+  --container-form:     42rem;  /* max-w-2xl (672px) */
+  --container-content:  56rem;  /* max-w-4xl (896px) */
+  --container-app:      64rem;  /* max-w-5xl (1024px) — main column */
+
+  /* Sidebar geometry (from components/ui/sidebar.tsx) */
+  --sidebar-width:         16rem; /* expanded */
+  --sidebar-width-icon:     3rem; /* icon-collapsed */
+  --sidebar-width-mobile:  18rem; /* off-canvas sheet */
+
+  /* Breakpoints (informational; Tailwind generates media queries) */
+  --breakpoint-sm:  640px;
+  --breakpoint-md:  768px;  /* useIsMobile() cutoff */
+  --breakpoint-lg:  1024px;
+  --breakpoint-xl:  1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* ---------- Radius ---------- */
+  --radius:    0.5rem; /* base = 8px */
+  --radius-sm: calc(var(--radius) - 4px); /* 4px */
+  --radius-md: calc(var(--radius) - 2px); /* 6px */
+  --radius-lg: var(--radius);             /* 8px */
+  --radius-xl: calc(var(--radius) + 4px); /* 12px */
+  --radius-full: 9999px;
+
+  /* ---------- Shadows (elevation) ---------- */
+  --shadow-2xs: 0 1px 2px 0px hsl(0 0% 0% / 0.03);
+  --shadow-xs:  0 1px 2px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm:  0 1px 3px 0px hsl(0 0% 0% / 0.08), 0 1px 2px -1px hsl(0 0% 0% / 0.08);
+  --shadow:     0 1px 3px 0px hsl(0 0% 0% / 0.08), 0 1px 2px -1px hsl(0 0% 0% / 0.08);
+  --shadow-md:  0 2px 4px -1px hsl(0 0% 0% / 0.06), 0 4px 6px -1px hsl(0 0% 0% / 0.08);
+  --shadow-lg:  0 4px 6px -2px hsl(0 0% 0% / 0.05), 0 10px 15px -3px hsl(0 0% 0% / 0.08);
+  --shadow-xl:  0 8px 10px -4px hsl(0 0% 0% / 0.04), 0 20px 25px -5px hsl(0 0% 0% / 0.08);
+  --shadow-2xl: 0 25px 50px -12px hsl(0 0% 0% / 0.20);
+
+  /* ---------- Motion ---------- */
+  --duration-instant: 100ms;
+  --duration-fast:    150ms; /* default transition-colors, animate-in */
+  --duration-base:    200ms; /* sidebar layout, dialog */
+  --duration-medium:  300ms; /* comment section expand, sheet close */
+  --duration-slow:    500ms; /* sheet open, poll bar fill */
+  --duration-pop:     400ms; /* like-pop */
+
+  --ease-linear: linear;
+  --ease-in:     cubic-bezier(0.4, 0, 1, 1);
+  --ease-out:    cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-pop:    cubic-bezier(0.175, 0.885, 0.32, 1.275); /* like heart */
+
+  /* ---------- Z-index layers (observed) ---------- */
+  --z-sidebar:     10;
+  --z-sidebar-rail: 20;
+  --z-overlay:     50; /* dialog overlay, sheet overlay */
+  --z-portal:      50; /* dropdown, popover, tooltip */
+
+  /* ---------- Iconography ---------- */
+  --icon-size-xs:  0.75rem;  /* 12px — badges, breadcrumb chevron (0.875rem in places) */
+  --icon-size-sm:  0.875rem; /* 14px */
+  --icon-size-md:  1rem;     /* 16px — default in buttons */
+  --icon-size-lg:  1.25rem;  /* 20px */
+  --icon-size-xl:  3rem;     /* 48px — confirm screen status icon */
+  --icon-size-feed: 18px;    /* post-action icons (heart/comment/share) */
+
+  /* Avatars */
+  --avatar-size-default: 2rem;   /* size-8  — shadcn default */
+  --avatar-size-feed:    2.5rem; /* h-10 w-10 — post author */
+  --avatar-size-detail:  3.5rem; /* h-14 w-14 — member detail header */
+}
+
+.dark {
+  /* ---------- Color — Surfaces (dark) ---------- */
+  --background: oklch(0.13 0 0);
+  --foreground: oklch(0.93 0 0);
+  --card: oklch(0.13 0 0);
+  --card-foreground: oklch(0.93 0 0);
+  --popover: oklch(0.16 0 0);
+  --popover-foreground: oklch(0.93 0 0);
+
+  /* Brand */
+  --primary: oklch(0.60 0.16 262);
+  --primary-foreground: oklch(1.0000 0 0);
+
+  /* Neutral accents */
+  --secondary: oklch(0.18 0 0);
+  --secondary-foreground: oklch(0.90 0 0);
+  --muted: oklch(0.18 0 0);
+  --muted-foreground: oklch(0.60 0 0);
+  --accent: oklch(0.20 0 0);
+  --accent-foreground: oklch(0.90 0 0);
+
+  /* Destructive */
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(1.0000 0 0);
+
+  /* Proposed status colors (dark) */
+  --proposed-success: oklch(0.70 0.15 150);
+  --proposed-success-foreground: oklch(0.15 0 0);
+  --proposed-warning: oklch(0.80 0.15 85);
+  --proposed-warning-foreground: oklch(0.15 0 0);
+  --proposed-info: oklch(0.70 0.15 240);
+  --proposed-info-foreground: oklch(0.15 0 0);
+
+  /* Borders / rings */
+  --border: oklch(0.25 0 0);
+  --input: oklch(0.25 0 0);
+  --ring: oklch(0.60 0.16 262);
+
+  /* Charts */
+  --chart-1: oklch(0.65 0.16 262);
+  --chart-2: oklch(0.65 0.16 150);
+  --chart-3: oklch(0.60 0.18 30);
+  --chart-4: oklch(0.70 0.15 310);
+  --chart-5: oklch(0.65 0.12 70);
+
+  /* Sidebar */
+  --sidebar: oklch(0.13 0 0);
+  --sidebar-foreground: oklch(0.93 0 0);
+  --sidebar-primary: oklch(0.60 0.16 262);
+  --sidebar-primary-foreground: oklch(1.0000 0 0);
+  --sidebar-accent: oklch(0.20 0 0);
+  --sidebar-accent-foreground: oklch(0.90 0 0);
+  --sidebar-border: oklch(0.25 0 0);
+  --sidebar-ring: oklch(0.60 0.16 262);
+
+  /* Shadows get ~2× alpha in dark mode */
+  --shadow-2xs: 0 1px 2px 0px hsl(0 0% 0% / 0.15);
+  --shadow-xs:  0 1px 2px 0px hsl(0 0% 0% / 0.20);
+  --shadow-sm:  0 1px 3px 0px hsl(0 0% 0% / 0.25), 0 1px 2px -1px hsl(0 0% 0% / 0.20);
+  --shadow:     0 1px 3px 0px hsl(0 0% 0% / 0.25), 0 1px 2px -1px hsl(0 0% 0% / 0.20);
+  --shadow-md:  0 2px 4px -1px hsl(0 0% 0% / 0.20), 0 4px 6px -1px hsl(0 0% 0% / 0.25);
+  --shadow-lg:  0 4px 6px -2px hsl(0 0% 0% / 0.15), 0 10px 15px -3px hsl(0 0% 0% / 0.25);
+  --shadow-xl:  0 8px 10px -4px hsl(0 0% 0% / 0.15), 0 20px 25px -5px hsl(0 0% 0% / 0.25);
+  --shadow-2xl: 0 25px 50px -12px hsl(0 0% 0% / 0.50);
+}
+
+/* ------------------------------------------------------------------
+ * Animations (from app/globals.css)
+ * ------------------------------------------------------------------ */
+
+@keyframes like-pop {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(1.3); }
+  50%  { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+.animate-like-pop {
+  animation: like-pop var(--duration-pop) var(--ease-pop);
+}
+
+/* Suggested (not currently shipped) — honor reduced-motion globally. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

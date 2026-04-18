@@ -758,6 +758,12 @@ function ProgramPaymentElement({
     setLoading(true);
     setError(null);
     try {
+      const { error: submitError } = await elements.submit();
+      if (submitError) {
+        setError(submitError.message ?? "Payment failed.");
+        return;
+      }
+
       const result = await stripe.confirmPayment({
         elements,
         clientSecret,
