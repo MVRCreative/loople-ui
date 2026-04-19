@@ -54,17 +54,14 @@ create policy "posts_select"
     )
   );
 
--- anon: support tenant public landing pages (app/s/[subdomain]/(public)/...).
--- only posts explicitly marked visibility='public' are readable
--- without a session. any other visibility (members, private) stays
--- hidden from anonymous traffic.
-create policy "posts_select_public"
-  on public.posts
-  for select
-  to anon
-  using (
-    visibility = 'public'
-  );
+-- note: an anon SELECT policy for tenant public landing pages
+-- (app/s/[subdomain]/(public)/...) was considered here but is
+-- deliberately deferred. the post_visibility enum currently only
+-- has values (club, event_yes, program_members) — there is no
+-- 'public' value, so a policy like `visibility = 'public'` cannot
+-- be expressed yet. adding a 'public' enum value and the anon
+-- policy will be a follow-up migration shipped together when the
+-- product actually exposes public posts.
 
 -- =========================================================================
 -- post_comments
