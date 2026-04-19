@@ -37,6 +37,26 @@ Legend: `[ ]` = not done, `[x]` = done, `[!]` = blocked / needs owner input.
 - [ ] Confirm `create-payment-intent` edge function is deployed
 - [ ] Confirm `waitlist-create-payment-intent` is either deprecated or redirected
 
+### Subdomain routing prerequisites
+
+These must be completed **before** `NEXT_PUBLIC_ENABLE_SUBDOMAIN_ROUTING=true` is
+set in Vercel production. Supabase Auth will silently refuse redirects to hosts
+that aren't on the allow list, which breaks password reset, magic link, and
+OAuth flows for tenant subdomains.
+
+- [ ] In **Supabase Dashboard → Authentication → URL Configuration**, add
+  `https://*.loople.app/**` as an allowed redirect URL (manual dashboard
+  action; no code / migration covers this).
+- [ ] Keep `https://www.loople.app/**` in the allow list as well so the root
+  marketing site and `/login` redirects continue to work.
+- [ ] Verify `Site URL` is still `https://www.loople.app` so Supabase auth
+  emails (`{{ .SiteURL }}`) land on `www` first and are then routed to the
+  correct tenant by the post-login flow.
+- [ ] Confirm the RLS migration `20260418214500_tenant_scope_posts_rls.sql`
+  is applied in production — the pre-migration `qual = true` SELECT policies
+  on `posts`, `post_comments`, and `post_reactions` leak data across tenants
+  and must be fixed before subdomain routing is flipped on.
+
 ### Recommended additional Supabase checks
 
 - [ ] `program_memberships.payment_intent_id` column and index exist in production (migration `20260418120000_*`)
